@@ -168,4 +168,57 @@ describe('checklists store', () => {
     store.setQuantity(list.id, section.id, item.id, '')
     expect(item.quantity).toBe(null)
   })
+
+  it('manages spaces', () => {
+    const store = useChecklistsStore()
+    const space = store.addSpace('Jardin', '🌿')
+    expect(store.spaces.some((s) => s.id === space.id)).toBe(true)
+    const list = firstList(store)
+    store.setListSpace(list.id, space.id)
+    expect(list.spaceId).toBe(space.id)
+    expect(store.listsInSpace(space.id).some((l) => l.id === list.id)).toBe(true)
+    store.renameSpace(space.id, 'Potager')
+    expect(store.spaceById(space.id).name).toBe('Potager')
+    store.removeSpace(space.id)
+    expect(list.spaceId).toBe(null)
+  })
+
+  it('manages labels and list-label assignment', () => {
+    const store = useChecklistsStore()
+    const label = store.addLabel('Test', '#123456')
+    const list = firstList(store)
+    store.toggleListLabel(list.id, label.id)
+    expect(list.labelIds).toContain(label.id)
+    expect(store.listsWithLabel(label.id).some((l) => l.id === list.id)).toBe(true)
+    store.toggleListLabel(list.id, label.id)
+    expect(list.labelIds).not.toContain(label.id)
+    store.toggleListLabel(list.id, label.id)
+    store.removeLabel(label.id)
+    expect(list.labelIds).not.toContain(label.id)
+  })
+
+  it('sets list date ranges and feeds today view', () => {
+    const store = useChecklistsStore()
+    const today = new Date().toISOString().slice(0, 10)
+    const list = store.createEmptyList('Du jour')
+    store.setListDates(list.id, today, today)
+    expect(list.startDate).toBe(today)
+    expect(store.todayLists.some((l) => l.id === list.id)).toBe(true)
+    const future = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10)
+    store.setListDates(list.id, future, future)
+    expect(store.todayLists.some((l) => l.id === list.id)).toBe(false)
+    expect(store.upcomingLists.some((l) => l.id === list.id)).toBe(true)
+  })
+
+  it('distinguishes active and done lists', () => {
+    const store = useChecklistsStore()
+    const list = firstList(store)
+    expect(store.activeLists.some((l) => l.id === list.id)).toBe(true)
+    expect(store.doneLists.some((l) => l.id === list.id)).toBe(false)
+    for (const s of list.sections) {
+      for (const i of s.items) i.checked = true
+    }
+    expect(store.activeLists.some((l) => l.id === list.id)).toBe(false)
+    expect(store.doneLists.some((l) => l.id === list.id)).toBe(true)
+  })
 })

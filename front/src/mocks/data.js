@@ -1,12 +1,28 @@
 let seq = 0
 export const uid = () => `m-${Date.now().toString(36)}-${(seq++).toString(36)}`
 
+const today = new Date()
+const iso = (d) => {
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${m}-${day}`
+}
+const inDays = (n) => {
+  const d = new Date(today)
+  d.setDate(d.getDate() + n)
+  return iso(d)
+}
+
 export const groceryList = {
   id: 'l-courses',
   name: 'Liste de courses',
   emoji: '🛒',
   kind: 'simple',
   isTemplate: false,
+  spaceId: 'sp-courses',
+  labelIds: ['lb-quotidien'],
+  startDate: inDays(0),
+  endDate: inDays(0),
   sections: [
     {
       id: 's-epicerie',
@@ -45,6 +61,10 @@ export const tripList = {
   emoji: '🧳',
   kind: 'simple',
   isTemplate: false,
+  spaceId: 'sp-voyages',
+  labelIds: ['lb-sortie'],
+  startDate: inDays(7),
+  endDate: inDays(14),
   sections: [
     {
       id: 's-vetements',
