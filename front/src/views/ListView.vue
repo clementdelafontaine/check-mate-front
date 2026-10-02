@@ -7,7 +7,7 @@ import ChecklistSection from '../components/ChecklistSection.vue'
 import CheckedPile from '../components/CheckedPile.vue'
 import AddItemCard from '../components/AddItemCard.vue'
 import UndoToast from '../components/UndoToast.vue'
-import { ArrowLeft, RotateCcw } from 'lucide-vue-next'
+import { ArrowLeft, RotateCcw, Eraser } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -66,12 +66,12 @@ function duplicate() {
         <h1 class="view-title font-display">{{ list.emoji }} {{ list.name }}</h1>
         <span class="font-mono meta">{{ done }}/{{ total }} · {{ progress }}%</span>
       </div>
+      <button v-if="done > 0" class="clear" @click="confirmClear = true">
+        <Eraser :size="16" /> Vider
+      </button>
     </div>
 
     <div class="toolbar">
-      <button v-if="done > 0" class="tool-btn" @click="confirmClear = true">
-        Vider ({{ done }})
-      </button>
       <button v-if="done > 0" class="tool-btn" @click="resetList">
         <RotateCcw :size="14" /> Tout décocher
       </button>
@@ -85,7 +85,7 @@ function duplicate() {
 
     <section v-for="section in list.sections" :key="section.id" class="section-block">
       <div class="section-head">
-        <h3 class="section-name">{{ section.name }}</h3>
+        <h3 class="section-name" :class="{ empty: section.items.length === 0 }">{{ section.name }}</h3>
         <span class="section-count font-mono">
           {{ section.items.filter((i) => !i.checked).length }}/{{ section.items.length }}
         </span>
@@ -186,6 +186,25 @@ function duplicate() {
   margin: 0;
   font-size: 0.95rem;
   font-weight: 700;
+}
+.section-name.empty {
+  color: var(--ink-faint);
+  font-weight: 500;
+}
+.clear {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  color: var(--ink-muted);
+}
+.clear:active {
+  background: var(--bg-2);
 }
 .section-count {
   font-size: 0.7rem;
