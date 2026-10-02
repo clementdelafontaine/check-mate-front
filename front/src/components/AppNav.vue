@@ -1,16 +1,34 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { ClipboardList, LayoutGrid } from 'lucide-vue-next'
+import { useChecklistsStore } from '../stores/checklists'
+import { House, Sun, CalendarRange, ClipboardList, LayoutGrid } from 'lucide-vue-next'
 
 const route = useRoute()
+const store = useChecklistsStore()
+
 const items = [
-  { name: 'home', label: 'Mes listes', to: '/', icon: ClipboardList },
+  { name: 'today', label: 'Aujourd\'hui', to: '/today', icon: Sun },
+  { name: 'home', label: 'Mes listes', to: '/', icon: House },
+  { name: 'calendar', label: 'Calendrier', to: '/calendar', icon: CalendarRange },
   { name: 'templates', label: 'Templates', to: '/templates', icon: LayoutGrid }
 ]
+
+const todayCount = computed(() => {
+  const today = new Date().toISOString().slice(0, 10)
+  return store.lists.filter(
+    (l) =>
+      l.startDate &&
+      l.startDate <= today &&
+      (!l.endDate || l.endDate >= today) &&
+      l.sections.some((s) => s.items.some((i) => !i.checked))
+  ).length
+})
+
 const isActive = (item) => {
   if (item.name === 'home') return route.name === 'home' || route.name === 'list'
-  return route.name === 'templates' || route.name === 'template'
+  if (item.name === 'templates') return route.name === 'templates' || route.name === 'template'
+  return route.name === item.name
 }
 </script>
 
@@ -23,7 +41,10 @@ const isActive = (item) => {
       class="nav-item"
       :class="{ active: isActive(item) }"
     >
-      <component :is="item.icon" :size="20" :stroke-width="2" />
+      <span class="nav-icon-wrap">
+        <component :is="item.icon" :size="20" :stroke-width="2" />
+        <span v-if="item.name === 'today' && todayCount > 0" class="badge">{{ todayCount }}</span>
+      </span>
       <span>{{ item.label }}</span>
     </router-link>
   </nav>
@@ -48,14 +69,35 @@ const isActive = (item) => {
   align-items: center;
   gap: 0.2rem;
   padding: 0.55rem 0 0.5rem;
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   color: var(--ink-faint);
   transition: color 0.15s;
 }
 .nav-item.active {
   color: var(--accent);
+}
+.nav-icon-wrap {
+  position: relative;
+  display: flex;
+}
+.badge {
+  position: absolute;
+  top: -0.3rem;
+  right: -0.55rem;
+  min-width: 1rem;
+  height: 1rem;
+  padding: 0 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
 }
 </style>

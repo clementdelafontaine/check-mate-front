@@ -1,10 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import TodayView from '../views/TodayView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', name: 'home', component: HomeView },
+    { path: '/today', name: 'today', component: TodayView },
+    {
+      path: '/calendar',
+      name: 'calendar',
+      component: () => import('../views/CalendarView.vue')
+    },
     {
       path: '/templates',
       name: 'templates',
