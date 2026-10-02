@@ -1,8 +1,9 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useChecklistsStore } from '../stores/checklists'
 import ChecklistSection from '../components/ChecklistSection.vue'
+import CheckedPile from '../components/CheckedPile.vue'
 import AddItemCard from '../components/AddItemCard.vue'
 import { ArrowLeft, Eraser } from 'lucide-vue-next'
 
@@ -21,6 +22,12 @@ const done = computed(() =>
     : 0
 )
 const progress = computed(() => (total.value === 0 ? 0 : Math.round((done.value / total.value) * 100)))
+
+const checkedItems = computed(() =>
+  list.value ? list.value.sections.flatMap((s) => s.items.filter((i) => i.checked)) : []
+)
+
+const confirmClear = ref(false)
 </script>
 
 <template>
@@ -33,7 +40,7 @@ const progress = computed(() => (total.value === 0 ? 0 : Math.round((done.value 
         <h1 class="view-title font-display">{{ list.emoji }} {{ list.name }}</h1>
         <span class="font-mono meta">{{ done }}/{{ total }} · {{ progress }}%</span>
       </div>
-      <button class="clear" v-if="done > 0" @click="store.clearChecked(list.id)">
+      <button v-if="done > 0" class="clear" @click="confirmClear = true">
         <Eraser :size="16" /> Vider
       </button>
     </div>
@@ -42,14 +49,34 @@ const progress = computed(() => (total.value === 0 ? 0 : Math.round((done.value 
       <div class="global-fill" :style="{ width: progress + '%' }" />
     </div>
 
-    <ChecklistSection
-      v-for="section in list.sections"
-      :key="section.id"
-      :list-id="list.id"
-      :section="section"
-    />
+    <section v-for="section in list.sections" :key="section.id" class="section-block">
+      <div class="section-head">
+        <h3 class="section-name">{{ section.name }}</h3>
+        <span class="section-count font-mono">
+          {{ section.items.filter((i) => !i.checked).length }}/{{ section.items.length }}
+        </span>
+      </div>
+      <ChecklistSection :list-id="list.id" :section="section" />
+    </section>
+
+    <CheckedPile v-if="checkedItems.length" :list-id="list.id" :items="checkedItems" />
 
     <AddItemCard :list-id="list.id" />
+
+    <div v-if="confirmClear" class="overlay" @click.self="confirmClear = false">
+      <div class="dialog">
+        <p class="dialog-text">
+          Vider la liste <strong>{{ list.name }}</strong> ?
+          Les {{ done }} item(s) cochés seront retirés définitivement.
+        </p>
+        <div class="dialog-actions">
+          <button class="btn ghost" @click="confirmClear = false">Annuler</button>
+          <button class="btn danger" @click="store.clearChecked(list.id); confirmClear = false">
+            Vider
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -105,5 +132,67 @@ const progress = computed(() => (total.value === 0 ? 0 : Math.round((done.value 
   background: var(--accent);
   border-radius: 999px;
   transition: width 0.25s;
+}
+.section-block {
+  margin-bottom: 1.5rem;
+}
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.section-name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.section-count {
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+}
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+}
+.dialog {
+  width: min(22rem, 100%);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--bg-1);
+  padding: 1.1rem;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+.dialog-text {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.dialog-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+}
+.btn {
+  padding: 0.55rem 1rem;
+  border-radius: 0.7rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.btn.ghost {
+  border: 1px solid var(--line);
+  color: var(--ink-muted);
+}
+.btn.danger {
+  background: #e5484d;
+  color: #fff;
 }
 </style>

@@ -12,29 +12,44 @@ const store = useChecklistsStore()
 const open = ref(false)
 const label = ref('')
 const quantity = ref('')
-const sectionId = ref('')
+const sectionChoice = ref('')
+const newSectionName = ref('')
 
 const target = computed(() =>
   props.listId ? store.listById(props.listId) : store.templateById(props.templateId)
 )
 const sections = computed(() => target.value?.sections ?? [])
-const sectionPlaceholder = GENERIC_SECTION
+const isNewSection = computed(() => sectionChoice.value === '__new__')
+const newSectionPlaceholder = computed(
+  () => `Nom de la catégorie ("${GENERIC_SECTION}" si vide)`
+)
 
 function close() {
   open.value = false
   label.value = ''
   quantity.value = ''
-  sectionId.value = ''
+  sectionChoice.value = ''
+  newSectionName.value = ''
 }
 
 function submit() {
   const value = label.value.trim()
   if (!value) return
   const qty = quantity.value.trim() === '' ? null : quantity.value.trim()
+
+  let sectionId = sectionChoice.value
+  if (isNewSection.value) {
+    const name = newSectionName.value.trim() || GENERIC_SECTION
+    const created = props.listId
+      ? store.addSection(props.listId, name)
+      : store.addTemplateSection(props.templateId, name)
+    sectionId = created?.id ?? ''
+  }
+
   if (props.listId) {
-    store.addItem(props.listId, sectionId.value, value, qty)
+    store.addItem(props.listId, sectionId, value, qty)
   } else if (props.templateId) {
-    store.addTemplateItem(props.templateId, sectionId.value, value, qty)
+    store.addTemplateItem(props.templateId, sectionId, value, qty)
   }
   close()
 }
@@ -50,10 +65,18 @@ function submit() {
       <form @submit.prevent="submit">
         <input v-model="label" class="input" type="text" placeholder="Nom de l'item" autofocus />
         <input v-model="quantity" class="input" type="text" inputmode="numeric" placeholder="Nombre (optionnel)" />
-        <select v-model="sectionId" class="input select">
-          <option value="" disabled>Catégorie… ({{ sectionPlaceholder }} si vide)</option>
+        <select v-model="sectionChoice" class="input select">
+          <option value="" disabled>Catégorie… ({{ GENERIC_SECTION }} si vide)</option>
           <option v-for="s in sections" :key="s.id" :value="s.id">{{ s.name }}</option>
+          <option value="__new__">➕ Nouvelle catégorie…</option>
         </select>
+        <input
+          v-if="isNewSection"
+          v-model="newSectionName"
+          class="input"
+          type="text"
+          :placeholder="newSectionPlaceholder"
+        />
         <button type="submit" class="submit">Ajouter</button>
       </form>
     </div>

@@ -5,13 +5,21 @@ import { MoreVertical, Trash2 } from 'lucide-vue-next'
 
 const props = defineProps({
   listId: { type: String, required: true },
-  section: { type: Object, required: true }
+  items: { type: Array, required: true }
 })
 
 const store = useChecklistsStore()
 const openMenuId = ref(null)
 const confirmItem = ref(null)
 const root = ref(null)
+
+function sectionIdOf(itemId) {
+  const list = store.listById(props.listId)
+  for (const s of list.sections) {
+    if (s.items.some((i) => i.id === itemId)) return s.id
+  }
+  return null
+}
 
 function onDocClick(e) {
   if (openMenuId.value && root.value && !root.value.contains(e.target)) openMenuId.value = null
@@ -25,17 +33,24 @@ function askDelete(item) {
   confirmItem.value = item
 }
 function doDelete() {
-  if (confirmItem.value) store.removeItem(props.listId, props.section.id, confirmItem.value.id)
+  if (confirmItem.value) {
+    const sectionId = sectionIdOf(confirmItem.value.id)
+    if (sectionId) store.removeItem(props.listId, sectionId, confirmItem.value.id)
+  }
   confirmItem.value = null
 }
 </script>
 
 <template>
-  <section ref="root">
+  <section ref="root" class="pile">
+    <div class="pile-head font-mono">Fait · {{ items.length }}</div>
     <ul class="items">
-      <li v-for="item in section.items.filter((i) => !i.checked)" :key="item.id" class="item-row">
-        <button class="item" @click="store.toggleItem(listId, section.id, item.id)">
-          <span class="checkbox" />
+      <li v-for="item in items" :key="item.id" class="item-row">
+        <button
+          class="item checked"
+          @click="store.toggleItem(listId, sectionIdOf(item.id), item.id)"
+        >
+          <span class="checkbox done"><svg viewBox="0 0 24 24" width="13" height="13"><path d="M5 12.5l4 4L19 7" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
           <span class="label">{{ item.label }}</span>
           <span v-if="item.quantity" class="qty font-mono">×{{ item.quantity }}</span>
           <span
@@ -71,6 +86,20 @@ function doDelete() {
 </template>
 
 <style scoped>
+.pile {
+  margin-top: 1.75rem;
+  padding: 0.85rem 0.9rem;
+  border: 1px dashed var(--line);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--bg-1) 60%, transparent);
+}
+.pile-head {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ink-faint);
+  margin-bottom: 0.6rem;
+}
 .items {
   list-style: none;
   margin: 0;
@@ -91,10 +120,10 @@ function doDelete() {
   padding: 0.7rem 0.7rem 0.7rem 0.85rem;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--bg-1);
+  background: transparent;
   text-align: left;
-  transition: background 0.15s, border-color 0.15s;
   min-height: 2.75rem;
+  transition: background 0.15s;
 }
 .item:active {
   background: var(--bg-2);
@@ -110,14 +139,24 @@ function doDelete() {
   justify-content: center;
   color: var(--accent);
 }
+.checkbox.done {
+  border-color: var(--accent-dim);
+  background: var(--accent-deep);
+}
 .label {
   font-size: 0.95rem;
 }
 .qty {
   font-size: 0.7rem;
-  color: var(--ink-faint);
   margin-left: auto;
   flex-shrink: 0;
+}
+.item.checked {
+  opacity: 0.55;
+}
+.item.checked .label {
+  text-decoration: line-through;
+  color: var(--ink-muted);
 }
 .icon-btn {
   display: flex;
@@ -128,9 +167,6 @@ function doDelete() {
   border-radius: 0.5rem;
   color: var(--ink-muted);
   flex-shrink: 0;
-}
-.icon-btn:active {
-  background: var(--bg-2);
 }
 .menu {
   position: absolute;

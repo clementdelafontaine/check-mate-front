@@ -27,6 +27,20 @@ export const useChecklistsStore = defineStore('checklists', {
       }
       section.items.push({ id: uid(), label, quantity, checked: false })
     },
+    addSection(listId, name) {
+      const list = this.lists.find((l) => l.id === listId)
+      if (!list) return null
+      const section = { id: uid(), name, items: [] }
+      list.sections.push(section)
+      return section
+    },
+    addTemplateSection(templateId, name) {
+      const tpl = this.templates.find((t) => t.id === templateId)
+      if (!tpl) return null
+      const section = { id: uid(), name, items: [] }
+      tpl.sections.push(section)
+      return section
+    },
     addTemplateItem(templateId, sectionId, label, quantity = null) {
       const tpl = this.templates.find((t) => t.id === templateId)
       if (!tpl) return
