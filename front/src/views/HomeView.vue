@@ -1,7 +1,9 @@
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref } from 'vue'
 import { useChecklistsStore } from '../stores/checklists'
-import { ChevronRight, MoreVertical, Trash2, Plus, X } from 'lucide-vue-next'
+import ItemCard from '../components/ItemCard.vue'
+import AddCard from '../components/AddCard.vue'
+import { X, LayoutGrid, FilePlus2 } from 'lucide-vue-next'
 
 const store = useChecklistsStore()
 const progressOf = (list) => {
@@ -11,38 +13,46 @@ const progressOf = (list) => {
   return Math.round((done / items.length) * 100)
 }
 
-const openMenuId = ref(null)
-const confirmDelete = ref(null)
-const menuEl = ref(null)
-
-function toggleMenu(id) {
-  openMenuId.value = openMenuId.value === id ? null : id
-}
-
-function askDelete(list) {
-  openMenuId.value = null
-  confirmDelete.value = list
-}
-
-function doDelete() {
-  if (confirmDelete.value) store.removeList(confirmDelete.value.id)
-  confirmDelete.value = null
-}
-
-function onDocClick(e) {
-  if (menuEl.value && !menuEl.value.contains(e.target)) openMenuId.value = null
-}
-onMounted(() => document.addEventListener('click', onDocClick))
-onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
-
-const showCreate = ref(false)
+const showTemplatePicker = ref(false)
+const showForm = ref(false)
+const pickedTemplateId = ref(null)
 const newName = ref('')
-function createList() {
+
+const pickedTemplate = () =>
+  pickedTemplateId.value === 'blank'
+    ? { id: 'blank', name: 'Liste vide', emoji: '📋' }
+    : store.templateById(pickedTemplateId.value)
+
+function openPicker() {
+  showTemplatePicker.value = true
+}
+
+function pick(id) {
+  pickedTemplateId.value = id
+  showTemplatePicker.value = false
+  showForm.value = true
+  const tpl = id === 'blank' ? null : store.templateById(id)
+  newName.value = tpl ? tpl.name : ''
+}
+
+function create() {
   const name = newName.value.trim()
   if (!name) return
-  store.createEmptyList(name)
+  if (pickedTemplateId.value === 'blank') {
+    store.createEmptyList(name)
+  } else {
+    store.createListFromTemplate(pickedTemplateId.value, name)
+  }
+  showForm.value = false
+  pickedTemplateId.value = null
   newName.value = ''
-  showCreate.value = false
+}
+
+function closeAll() {
+  showTemplatePicker.value = false
+  showForm.value = false
+  pickedTemplateId.value = null
+  newName.value = ''
 }
 </script>
 
@@ -53,64 +63,63 @@ function createList() {
     </div>
 
     <ul class="lists">
-      <li v-for="list in store.lists" :key="list.id" class="list-row">
-        <router-link class="list-card" :to="`/list/${list.id}`">
-          <span class="emoji">{{ list.emoji }}</span>
-          <span class="list-info">
-            <span class="list-name">{{ list.name }}</span>
-            <span class="list-meta font-mono">
-              {{ list.sections.length }} rubriques · {{ progressOf(list) }}%
-            </span>
-          </span>
-          <ChevronRight :size="18" class="chev" />
-        </router-link>
-        <div class="menu-wrap" ref="menuEl">
-          <button
-            class="icon-btn"
-            aria-label="Options"
-            @click.stop="toggleMenu(list.id)"
-          >
-            <MoreVertical :size="18" />
-          </button>
-          <div v-if="openMenuId === list.id" class="menu">
-            <button class="menu-item danger" @click.stop="askDelete(list)">
-              <Trash2 :size="15" /> Supprimer
-            </button>
-          </div>
-        </div>
+      <li v-for="list in store.lists" :key="list.id">
+        <ItemCard
+          :to="`/list/${list.id}`"
+          :emoji="list.emoji"
+          :name="list.name"
+          :meta="`${list.sections.length} rubriques · ${progressOf(list)}%`"
+          @delete="store.removeList(list.id)"
+        />
       </li>
+      <li><AddCard label="Ajouter une liste" @click="openPicker" /></li>
     </ul>
 
-    <div v-if="store.lists.length === 0" class="empty">
-      Aucune liste pour l'instant. Créez-en une avec le bouton +.
+    <div v-if="showTemplatePicker" class="overlay" @click.self="closeAll">
+      <div class="dialog">
+        <div class="dialog-head">
+          <span class="font-mono dialog-title">Partir d'un template</span>
+          <button class="icon-btn" aria-label="Fermer" @click="closeAll"><X :size="18" /></button>
+        </div>
+        <div class="picker-list">
+          <button
+            v-for="tpl in store.templates"
+            :key="tpl.id"
+            class="picker-item"
+            @click="pick(tpl.id)"
+          >
+            <span class="emoji">{{ tpl.emoji }}</span>
+            <span class="picker-info">
+              <span class="picker-name">{{ tpl.name }}</span>
+              <span class="picker-desc">{{ tpl.description }}</span>
+            </span>
+            <LayoutGrid :size="16" class="picker-icon" />
+          </button>
+          <button class="picker-item" @click="pick('blank')">
+            <span class="emoji">📄</span>
+            <span class="picker-info">
+              <span class="picker-name">Créer une liste vide</span>
+              <span class="picker-desc">Partir d'une page blanche</span>
+            </span>
+            <FilePlus2 :size="16" class="picker-icon" />
+          </button>
+        </div>
+      </div>
     </div>
 
-    <div class="fab-zone">
-      <div v-if="showCreate" class="sheet">
-        <div class="sheet-head">
-          <span class="font-mono sheet-title">Nouvelle liste</span>
-          <button class="icon-btn" aria-label="Fermer" @click="showCreate = false"><X :size="18" /></button>
+    <div v-if="showForm" class="overlay" @click.self="closeAll">
+      <div class="dialog">
+        <div class="dialog-head">
+          <span class="font-mono dialog-title">Nouvelle liste</span>
+          <button class="icon-btn" aria-label="Fermer" @click="closeAll"><X :size="18" /></button>
         </div>
-        <form @submit.prevent="createList">
+        <form @submit.prevent="create">
+          <div class="picked-from font-mono">
+            {{ pickedTemplate()?.emoji }} {{ pickedTemplate()?.name }}
+          </div>
           <input v-model="newName" class="input" type="text" placeholder="Nom de la liste" autofocus />
           <button type="submit" class="submit">Créer</button>
         </form>
-      </div>
-      <button v-if="!showCreate" class="fab" aria-label="Ajouter une liste" @click="showCreate = true">
-        <Plus :size="26" :stroke-width="2.4" />
-      </button>
-    </div>
-
-    <div v-if="confirmDelete" class="overlay" @click.self="confirmDelete = null">
-      <div class="dialog">
-        <p class="dialog-text">
-          Supprimer <strong>{{ confirmDelete.name }}</strong> ?
-          Cette action est définitive.
-        </p>
-        <div class="dialog-actions">
-          <button class="btn ghost" @click="confirmDelete = null">Annuler</button>
-          <button class="btn danger" @click="doDelete">Supprimer</button>
-        </div>
       </div>
     </div>
   </div>
@@ -124,167 +133,6 @@ function createList() {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-}
-.list-row {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.list-card {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid var(--line);
-  border-radius: 1rem;
-  background: var(--bg-1);
-  transition: background 0.15s;
-}
-.list-card:active {
-  background: var(--bg-2);
-}
-.emoji {
-  font-size: 1.5rem;
-}
-.list-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-.list-name {
-  font-weight: 700;
-}
-.list-meta {
-  font-size: 0.75rem;
-  color: var(--ink-faint);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.chev {
-  color: var(--ink-faint);
-  flex-shrink: 0;
-}
-.menu-wrap {
-  position: relative;
-  flex-shrink: 0;
-}
-.icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 0.6rem;
-  color: var(--ink-muted);
-}
-.icon-btn:active {
-  background: var(--bg-2);
-}
-.menu {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 0.3rem);
-  z-index: 50;
-  min-width: 10rem;
-  padding: 0.35rem;
-  border: 1px solid var(--line);
-  border-radius: 0.75rem;
-  background: var(--bg-1);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
-}
-.menu-item {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.5rem 0.65rem;
-  border-radius: 0.55rem;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--ink-muted);
-}
-.menu-item:active {
-  background: var(--bg-2);
-}
-.menu-item.danger {
-  color: #ff6b6b;
-}
-.empty {
-  margin-top: 1.5rem;
-  text-align: center;
-  color: var(--ink-faint);
-  font-size: 0.9rem;
-}
-.fab-zone {
-  position: fixed;
-  right: 1rem;
-  bottom: calc(4.5rem + env(safe-area-inset-bottom));
-  z-index: 40;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.75rem;
-}
-.fab {
-  width: 3.5rem;
-  height: 3.5rem;
-  border-radius: 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--accent);
-  color: #fff;
-  box-shadow: 0 8px 24px rgba(77, 141, 255, 0.35);
-  transition: transform 0.15s;
-}
-.fab:active {
-  transform: scale(0.92);
-}
-.sheet {
-  width: min(20rem, calc(100vw - 2rem));
-  border: 1px solid var(--line);
-  border-radius: 1rem;
-  background: var(--bg-1);
-  padding: 0.85rem;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
-}
-.sheet-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.6rem;
-}
-.sheet-title {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: var(--ink-faint);
-}
-.input {
-  width: 100%;
-  padding: 0.6rem 0.75rem;
-  border: 1px solid var(--line);
-  border-radius: 0.7rem;
-  background: var(--bg-2);
-  color: var(--ink);
-  outline: none;
-  margin-bottom: 0.5rem;
-}
-.input:focus {
-  border-color: var(--accent-dim);
-}
-.submit {
-  width: 100%;
-  padding: 0.65rem;
-  border-radius: 0.7rem;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.9rem;
 }
 .overlay {
   position: fixed;
@@ -305,28 +153,97 @@ function createList() {
   padding: 1.1rem;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
 }
-.dialog-text {
-  margin: 0 0 1rem;
-  font-size: 0.95rem;
-  line-height: 1.5;
-}
-.dialog-actions {
+.dialog-head {
   display: flex;
-  gap: 0.6rem;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
 }
-.btn {
-  padding: 0.55rem 1rem;
-  border-radius: 0.7rem;
-  font-size: 0.85rem;
-  font-weight: 700;
+.dialog-title {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ink-faint);
 }
-.btn.ghost {
-  border: 1px solid var(--line);
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
   color: var(--ink-muted);
 }
-.btn.danger {
-  background: #e5484d;
+.picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.picker-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  text-align: left;
+  transition: border-color 0.15s;
+}
+.picker-item:active {
+  border-color: var(--accent-dim);
+}
+.emoji {
+  font-size: 1.25rem;
+}
+.picker-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.picker-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.picker-desc {
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.picker-icon {
+  color: var(--ink-faint);
+  flex-shrink: 0;
+}
+.picked-from {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ink-faint);
+  margin-bottom: 0.6rem;
+}
+.input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: var(--bg-2);
+  color: var(--ink);
+  outline: none;
+  margin-bottom: 0.6rem;
+}
+.input:focus {
+  border-color: var(--accent-dim);
+}
+.submit {
+  width: 100%;
+  padding: 0.65rem;
+  border-radius: 0.7rem;
+  background: var(--accent);
   color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
 }
 </style>

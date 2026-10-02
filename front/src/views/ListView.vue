@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useChecklistsStore } from '../stores/checklists'
 import ChecklistSection from '../components/ChecklistSection.vue'
-import AddItemFab from '../components/AddItemFab.vue'
+import AddItemCard from '../components/AddItemCard.vue'
 import { ArrowLeft, Eraser } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -49,7 +49,7 @@ const progress = computed(() => (total.value === 0 ? 0 : Math.round((done.value 
       :section="section"
     />
 
-    <AddItemFab :list-id="list.id" />
+    <AddItemCard :list-id="list.id" />
   </div>
 </template>
 

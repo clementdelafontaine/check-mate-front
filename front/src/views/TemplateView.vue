@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useChecklistsStore } from '../stores/checklists'
+import AddItemCard from '../components/AddItemCard.vue'
 import { ArrowLeft, CopyPlus } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -41,10 +42,13 @@ function useTemplate() {
       <ul class="items">
         <li v-for="item in section.items" :key="item.label" class="item-row">
           <span class="checkbox" />
-          <span>{{ item.label }}</span>
+          <span class="label">{{ item.label }}</span>
+          <span v-if="item.quantity" class="qty font-mono">×{{ item.quantity }}</span>
         </li>
       </ul>
     </section>
+
+    <AddItemCard :template-id="tpl.id" />
   </div>
 </template>
 
@@ -120,5 +124,14 @@ function useTemplate() {
   height: 1.25rem;
   border: 1.5px solid var(--line-bright);
   border-radius: 0.45rem;
+}
+.label {
+  flex: 1;
+  min-width: 0;
+}
+.qty {
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  flex-shrink: 0;
 }
 </style>

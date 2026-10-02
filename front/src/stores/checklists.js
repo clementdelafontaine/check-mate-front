@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { templates, initialLists, uid } from '../mocks/data'
 
+export const GENERIC_SECTION = 'Divers'
+
 export const useChecklistsStore = defineStore('checklists', {
   state: () => ({
     lists: initialLists(),
@@ -15,15 +17,25 @@ export const useChecklistsStore = defineStore('checklists', {
       const item = this.findItem(listId, sectionId, itemId)
       if (item) item.checked = !item.checked
     },
-    addItem(listId, sectionId, label) {
+    addItem(listId, sectionId, label, quantity = null) {
       const list = this.lists.find((l) => l.id === listId)
       if (!list) return
       let section = list.sections.find((s) => s.id === sectionId)
       if (!section) {
-        section = { id: uid(), name: 'Divers', items: [] }
+        section = { id: uid(), name: GENERIC_SECTION, items: [] }
         list.sections.push(section)
       }
-      section.items.push({ id: uid(), label, checked: false })
+      section.items.push({ id: uid(), label, quantity, checked: false })
+    },
+    addTemplateItem(templateId, sectionId, label, quantity = null) {
+      const tpl = this.templates.find((t) => t.id === templateId)
+      if (!tpl) return
+      let section = tpl.sections.find((s) => s.id === sectionId)
+      if (!section) {
+        section = { id: uid(), name: GENERIC_SECTION, items: [] }
+        tpl.sections.push(section)
+      }
+      section.items.push({ label, quantity })
     },
     removeItem(listId, sectionId, itemId) {
       const section = this.findSection(listId, sectionId)
@@ -75,13 +87,13 @@ export const useChecklistsStore = defineStore('checklists', {
       this.templates.push(tpl)
       return tpl
     },
-    createListFromTemplate(templateId) {
+    createListFromTemplate(templateId, name = null, emoji = null) {
       const tpl = this.templates.find((t) => t.id === templateId)
       if (!tpl) return null
       const list = {
         id: uid(),
-        name: tpl.name,
-        emoji: tpl.emoji,
+        name: name || tpl.name,
+        emoji: emoji || tpl.emoji,
         kind: 'simple',
         isTemplate: false,
         sections: tpl.sections.map((s) => ({
