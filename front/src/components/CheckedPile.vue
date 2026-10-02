@@ -53,20 +53,21 @@ function doDelete() {
           <span class="checkbox done"><svg viewBox="0 0 24 24" width="13" height="13"><path d="M5 12.5l4 4L19 7" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
           <span class="label">{{ item.label }}</span>
           <span v-if="item.quantity" class="qty font-mono">×{{ item.quantity }}</span>
-          <span
+        </button>
+        <div class="menu-wrap">
+          <button
             class="icon-btn"
-            role="button"
             aria-label="Options"
-            @click.stop.prevent="openMenuId = openMenuId === item.id ? null : item.id"
+            @click.stop="openMenuId = openMenuId === item.id ? null : item.id"
           >
             <MoreVertical :size="16" />
-          </span>
-          <div v-if="openMenuId === item.id" class="menu" @click.stop @click.prevent>
+          </button>
+          <div v-if="openMenuId === item.id" class="menu" @click.stop>
             <button class="menu-item danger" @click="askDelete(item)">
               <Trash2 :size="14" /> Supprimer
             </button>
           </div>
-        </button>
+        </div>
       </li>
     </ul>
 
@@ -109,15 +110,17 @@ function doDelete() {
   gap: 0.35rem;
 }
 .item-row {
-  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
 }
 .item {
-  position: relative;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.7rem 0.7rem 0.7rem 0.85rem;
+  padding: 0.7rem 0.85rem;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: transparent;
@@ -148,6 +151,7 @@ function doDelete() {
 }
 .qty {
   font-size: 0.7rem;
+  color: var(--ink-faint);
   margin-left: auto;
   flex-shrink: 0;
 }
@@ -158,6 +162,10 @@ function doDelete() {
   text-decoration: line-through;
   color: var(--ink-muted);
 }
+.menu-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
 .icon-btn {
   display: flex;
   align-items: center;
@@ -166,12 +174,14 @@ function doDelete() {
   height: 1.9rem;
   border-radius: 0.5rem;
   color: var(--ink-muted);
-  flex-shrink: 0;
+}
+.icon-btn:active {
+  background: var(--bg-2);
 }
 .menu {
   position: absolute;
-  right: 0.5rem;
-  top: calc(100% + 0.2rem);
+  right: 0;
+  top: calc(100% + 0.25rem);
   z-index: 50;
   min-width: 9rem;
   padding: 0.35rem;

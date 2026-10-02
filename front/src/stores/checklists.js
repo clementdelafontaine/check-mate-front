@@ -56,6 +56,13 @@ export const useChecklistsStore = defineStore('checklists', {
       if (!section) return
       section.items = section.items.filter((i) => i.id !== itemId)
     },
+    removeTemplateItem(templateId, sectionId, itemLabel) {
+      const tpl = this.templates.find((t) => t.id === templateId)
+      if (!tpl) return
+      const section = tpl.sections.find((s) => s.id === sectionId)
+      if (!section) return
+      section.items = section.items.filter((i) => i.label !== itemLabel)
+    },
     clearChecked(listId) {
       const list = this.lists.find((l) => l.id === listId)
       if (!list) return
