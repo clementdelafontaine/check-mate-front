@@ -6,11 +6,11 @@ import { ClipboardList, LayoutGrid } from 'lucide-vue-next'
 const route = useRoute()
 const items = [
   { name: 'home', label: 'Mes listes', to: '/', icon: ClipboardList },
-  { name: 'templates', label: 'Templates', to: '/#templates', icon: LayoutGrid }
+  { name: 'templates', label: 'Templates', to: '/templates', icon: LayoutGrid }
 ]
 const isActive = (item) => {
   if (item.name === 'home') return route.name === 'home' || route.name === 'list'
-  return route.name === 'template'
+  return route.name === 'templates' || route.name === 'template'
 }
 </script>
 

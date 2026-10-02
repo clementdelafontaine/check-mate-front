@@ -44,6 +44,37 @@ export const useChecklistsStore = defineStore('checklists', {
         for (const i of s.items) i.checked = false
       }
     },
+    removeList(listId) {
+      this.lists = this.lists.filter((l) => l.id !== listId)
+    },
+    removeTemplate(templateId) {
+      this.templates = this.templates.filter((t) => t.id !== templateId)
+    },
+    createEmptyList(name) {
+      const list = {
+        id: uid(),
+        name,
+        emoji: '📋',
+        kind: 'simple',
+        isTemplate: false,
+        sections: [{ id: uid(), name: 'Divers', items: [] }]
+      }
+      this.lists.unshift(list)
+      return list
+    },
+    createEmptyTemplate(name, description = '') {
+      const tpl = {
+        id: uid(),
+        name,
+        emoji: '✨',
+        kind: 'template',
+        isTemplate: true,
+        description,
+        sections: []
+      }
+      this.templates.push(tpl)
+      return tpl
+    },
     createListFromTemplate(templateId) {
       const tpl = this.templates.find((t) => t.id === templateId)
       if (!tpl) return null

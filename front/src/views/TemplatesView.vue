@@ -1,16 +1,9 @@
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useChecklistsStore } from '../stores/checklists'
-import { ChevronRight, MoreVertical, Trash2, Plus, X } from 'lucide-vue-next'
+import { Sparkles, MoreVertical, Trash2, Plus, X } from 'lucide-vue-next'
 
 const store = useChecklistsStore()
-const progressOf = (list) => {
-  const items = list.sections.flatMap((s) => s.items)
-  if (items.length === 0) return 0
-  const done = items.filter((i) => i.checked).length
-  return Math.round((done / items.length) * 100)
-}
-
 const openMenuId = ref(null)
 const confirmDelete = ref(null)
 const menuEl = ref(null)
@@ -19,13 +12,13 @@ function toggleMenu(id) {
   openMenuId.value = openMenuId.value === id ? null : id
 }
 
-function askDelete(list) {
+function askDelete(tpl) {
   openMenuId.value = null
-  confirmDelete.value = list
+  confirmDelete.value = tpl
 }
 
 function doDelete() {
-  if (confirmDelete.value) store.removeList(confirmDelete.value.id)
+  if (confirmDelete.value) store.removeTemplate(confirmDelete.value.id)
   confirmDelete.value = null
 }
 
@@ -37,11 +30,13 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 
 const showCreate = ref(false)
 const newName = ref('')
-function createList() {
+const newDescription = ref('')
+function createTemplate() {
   const name = newName.value.trim()
   if (!name) return
-  store.createEmptyList(name)
+  store.createEmptyTemplate(name, newDescription.value.trim())
   newName.value = ''
+  newDescription.value = ''
   showCreate.value = false
 }
 </script>
@@ -49,31 +44,25 @@ function createList() {
 <template>
   <div class="view">
     <div class="view-header">
-      <h1 class="view-title font-display">Mes listes</h1>
+      <h1 class="view-title font-display">Mes templates</h1>
     </div>
 
     <ul class="lists">
-      <li v-for="list in store.lists" :key="list.id" class="list-row">
-        <router-link class="list-card" :to="`/list/${list.id}`">
-          <span class="emoji">{{ list.emoji }}</span>
+      <li v-for="tpl in store.templates" :key="tpl.id" class="list-row">
+        <router-link class="list-card template" :to="`/template/${tpl.id}`">
+          <span class="emoji">{{ tpl.emoji }}</span>
           <span class="list-info">
-            <span class="list-name">{{ list.name }}</span>
-            <span class="list-meta font-mono">
-              {{ list.sections.length }} rubriques · {{ progressOf(list) }}%
-            </span>
+            <span class="list-name">{{ tpl.name }}</span>
+            <span class="list-meta">{{ tpl.description }}</span>
           </span>
-          <ChevronRight :size="18" class="chev" />
+          <Sparkles :size="16" class="spark" />
         </router-link>
         <div class="menu-wrap" ref="menuEl">
-          <button
-            class="icon-btn"
-            aria-label="Options"
-            @click.stop="toggleMenu(list.id)"
-          >
+          <button class="icon-btn" aria-label="Options" @click.stop="toggleMenu(tpl.id)">
             <MoreVertical :size="18" />
           </button>
-          <div v-if="openMenuId === list.id" class="menu">
-            <button class="menu-item danger" @click.stop="askDelete(list)">
+          <div v-if="openMenuId === tpl.id" class="menu">
+            <button class="menu-item danger" @click.stop="askDelete(tpl)">
               <Trash2 :size="15" /> Supprimer
             </button>
           </div>
@@ -81,22 +70,23 @@ function createList() {
       </li>
     </ul>
 
-    <div v-if="store.lists.length === 0" class="empty">
-      Aucune liste pour l'instant. Créez-en une avec le bouton +.
+    <div v-if="store.templates.length === 0" class="empty">
+      Aucun template pour l'instant. Créez-en un avec le bouton +.
     </div>
 
     <div class="fab-zone">
       <div v-if="showCreate" class="sheet">
         <div class="sheet-head">
-          <span class="font-mono sheet-title">Nouvelle liste</span>
+          <span class="font-mono sheet-title">Nouveau template</span>
           <button class="icon-btn" aria-label="Fermer" @click="showCreate = false"><X :size="18" /></button>
         </div>
-        <form @submit.prevent="createList">
-          <input v-model="newName" class="input" type="text" placeholder="Nom de la liste" autofocus />
+        <form @submit.prevent="createTemplate">
+          <input v-model="newName" class="input" type="text" placeholder="Nom du template" autofocus />
+          <input v-model="newDescription" class="input" type="text" placeholder="Description (optionnelle)" />
           <button type="submit" class="submit">Créer</button>
         </form>
       </div>
-      <button v-if="!showCreate" class="fab" aria-label="Ajouter une liste" @click="showCreate = true">
+      <button v-if="!showCreate" class="fab" aria-label="Ajouter un template" @click="showCreate = true">
         <Plus :size="26" :stroke-width="2.4" />
       </button>
     </div>
@@ -104,7 +94,7 @@ function createList() {
     <div v-if="confirmDelete" class="overlay" @click.self="confirmDelete = null">
       <div class="dialog">
         <p class="dialog-text">
-          Supprimer <strong>{{ confirmDelete.name }}</strong> ?
+          Supprimer le template <strong>{{ confirmDelete.name }}</strong> ?
           Cette action est définitive.
         </p>
         <div class="dialog-actions">
@@ -145,6 +135,9 @@ function createList() {
 .list-card:active {
   background: var(--bg-2);
 }
+.list-card.template {
+  border-style: dashed;
+}
 .emoji {
   font-size: 1.5rem;
 }
@@ -164,7 +157,7 @@ function createList() {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.chev {
+.spark {
   color: var(--ink-faint);
   flex-shrink: 0;
 }
