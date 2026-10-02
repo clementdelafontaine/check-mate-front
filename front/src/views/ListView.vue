@@ -66,7 +66,7 @@ function duplicate() {
         <h1 class="view-title font-display">{{ list.emoji }} {{ list.name }}</h1>
         <span class="font-mono meta">{{ done }}/{{ total }} · {{ progress }}%</span>
       </div>
-      <button v-if="done > 0" class="clear" @click="confirmClear = true">
+      <button class="clear" @click="confirmClear = true">
         <Eraser :size="16" /> Vider
       </button>
     </div>
@@ -104,7 +104,7 @@ function duplicate() {
       <div class="dialog">
         <p class="dialog-text">
           Vider la liste <strong>{{ list.name }}</strong> ?
-          Les {{ done }} item(s) cochés seront retirés définitivement.
+          {{ done > 0 ? `Les ${done} item(s) cochés seront retirés définitivement.` : "Aucun item n'est coché pour le moment." }}
         </p>
         <div class="dialog-actions">
           <button class="btn ghost" @click="confirmClear = false">Annuler</button>
