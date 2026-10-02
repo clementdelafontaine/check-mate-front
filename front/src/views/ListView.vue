@@ -2,14 +2,17 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useChecklistsStore } from '../stores/checklists'
+import { useUndoToast } from '../composables/useUndoToast'
 import ChecklistSection from '../components/ChecklistSection.vue'
 import CheckedPile from '../components/CheckedPile.vue'
 import AddItemCard from '../components/AddItemCard.vue'
-import { ArrowLeft, Eraser } from 'lucide-vue-next'
+import UndoToast from '../components/UndoToast.vue'
+import { ArrowLeft, RotateCcw } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
 const store = useChecklistsStore()
+const toast = useUndoToast()
 
 const list = computed(() => store.listById(route.params.id))
 
@@ -28,6 +31,29 @@ const checkedItems = computed(() =>
 )
 
 const confirmClear = ref(false)
+
+function clearChecked() {
+  const removed = store.clearChecked(list.value.id)
+  confirmClear.value = false
+  toast.show(`${removed.length} item(s) retiré(s)`, () => store.restoreCleared(list.value.id, removed))
+}
+
+function resetList() {
+  store.resetList(list.value.id)
+  toast.show('Liste réinitialisée')
+}
+
+function saveAsTemplate() {
+  store.saveListAsTemplate(list.value.id)
+  toast.show('Liste enregistrée comme template')
+}
+
+function duplicate() {
+  const copy = store.duplicateList(list.value.id)
+  toast.show('Liste dupliquée', () => {
+    store.removeList(copy.id)
+  })
+}
 </script>
 
 <template>
@@ -40,9 +66,17 @@ const confirmClear = ref(false)
         <h1 class="view-title font-display">{{ list.emoji }} {{ list.name }}</h1>
         <span class="font-mono meta">{{ done }}/{{ total }} · {{ progress }}%</span>
       </div>
-      <button v-if="done > 0" class="clear" @click="confirmClear = true">
-        <Eraser :size="16" /> Vider
+    </div>
+
+    <div class="toolbar">
+      <button v-if="done > 0" class="tool-btn" @click="confirmClear = true">
+        Vider ({{ done }})
       </button>
+      <button v-if="done > 0" class="tool-btn" @click="resetList">
+        <RotateCcw :size="14" /> Tout décocher
+      </button>
+      <button class="tool-btn" @click="duplicate">Dupliquer</button>
+      <button class="tool-btn" @click="saveAsTemplate">→ Template</button>
     </div>
 
     <div class="global-progress">
@@ -56,7 +90,7 @@ const confirmClear = ref(false)
           {{ section.items.filter((i) => !i.checked).length }}/{{ section.items.length }}
         </span>
       </div>
-      <ChecklistSection :list-id="list.id" :section="section" />
+      <ChecklistSection :list-id="list.id" :section="section" :all-sections="list.sections" />
     </section>
 
     <AddItemCard :list-id="list.id" />
@@ -71,9 +105,7 @@ const confirmClear = ref(false)
         </p>
         <div class="dialog-actions">
           <button class="btn ghost" @click="confirmClear = false">Annuler</button>
-          <button class="btn danger" @click="store.clearChecked(list.id); confirmClear = false">
-            Vider
-          </button>
+          <button class="btn danger" @click="clearChecked">Vider</button>
         </div>
       </div>
     </div>
@@ -105,20 +137,27 @@ const confirmClear = ref(false)
   font-size: 0.7rem;
   color: var(--ink-faint);
 }
-.clear {
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.tool-btn {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  flex-shrink: 0;
-  padding: 0.4rem 0.7rem;
-  font-size: 0.75rem;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   border: 1px solid var(--line);
-  border-radius: 0.6rem;
+  border-radius: 0.65rem;
   color: var(--ink-muted);
+  transition: border-color 0.15s, color 0.15s;
 }
-.clear:active {
-  background: var(--bg-2);
+.tool-btn:active {
+  border-color: var(--accent-dim);
+  color: var(--accent);
 }
 .global-progress {
   height: 4px;

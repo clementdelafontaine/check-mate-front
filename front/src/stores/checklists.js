@@ -162,11 +162,11 @@ export const useChecklistsStore = defineStore('checklists', {
       if (!payload) return
       this.templates.splice(Math.min(payload.index, this.templates.length), 0, payload.template)
     },
-    createEmptyList(name) {
+    createEmptyList(name, emoji = '📋') {
       const list = {
         id: uid(),
         name,
-        emoji: '📋',
+        emoji,
         kind: 'simple',
         isTemplate: false,
         sections: [{ id: uid(), name: GENERIC_SECTION, items: [] }]
@@ -174,11 +174,11 @@ export const useChecklistsStore = defineStore('checklists', {
       this.lists.unshift(list)
       return list
     },
-    createEmptyTemplate(name, description = '') {
+    createEmptyTemplate(name, description = '', emoji = '✨') {
       const tpl = {
         id: uid(),
         name,
-        emoji: '✨',
+        emoji,
         kind: 'template',
         isTemplate: true,
         description,

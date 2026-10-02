@@ -14,6 +14,25 @@
   --radius: 0.85rem;
 }
 
+html[data-theme='light'] {
+  --bg-0: #f5f6f8;
+  --bg-1: #ffffff;
+  --bg-2: #eceef2;
+  --line: #dfe2e8;
+  --line-bright: #c9cdd6;
+  --ink: #17181c;
+  --ink-muted: #5a5d68;
+  --ink-faint: #949aa8;
+  --accent: #2f6fe4;
+  --accent-dim: #a8c4f2;
+  --accent-deep: #dbe7fb;
+  --on-accent: #ffffff;
+}
+
+html[data-theme='light'] {
+  color-scheme: light;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -21,6 +40,10 @@
 html {
   background: var(--bg-0);
   color-scheme: dark;
+}
+
+html[data-theme='light'] body {
+  background: var(--bg-0);
 }
 
 body {

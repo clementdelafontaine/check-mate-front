@@ -1,27 +1,39 @@
 <script setup>
 import { ref } from 'vue'
 import { useChecklistsStore } from '../stores/checklists'
+import { useUndoToast } from '../composables/useUndoToast'
 import ItemCard from '../components/ItemCard.vue'
 import AddCard from '../components/AddCard.vue'
 import { X } from 'lucide-vue-next'
 
 const store = useChecklistsStore()
+const toast = useUndoToast()
+
+function removeTemplate(tpl) {
+  const payload = store.removeTemplate(tpl.id)
+  toast.show(`Template « ${tpl.name} » supprimé`, () => store.restoreTemplate(payload))
+}
 
 const showForm = ref(false)
 const newName = ref('')
 const newDescription = ref('')
+const newEmoji = ref('✨')
+
+const EMOJIS = ['✨', '🛒', '🧳', '✈️', '🏠', '🎒', '🎁', '📝', '🌟', '🧹', '🔧', '💊']
 
 function close() {
   showForm.value = false
   newName.value = ''
   newDescription.value = ''
+  newEmoji.value = '✨'
 }
 
 function create() {
   const name = newName.value.trim()
   if (!name) return
-  store.createEmptyTemplate(name, newDescription.value.trim())
+  store.createEmptyTemplate(name, newDescription.value.trim(), newEmoji.value)
   close()
+  toast.show('Template créé')
 }
 </script>
 
@@ -39,7 +51,7 @@ function create() {
           :name="tpl.name"
           :meta="tpl.description"
           dashed
-          @delete="store.removeTemplate(tpl.id)"
+          @delete="removeTemplate(tpl)"
         />
       </li>
       <li><AddCard label="Ajouter un template" @click="showForm = true" /></li>
@@ -52,6 +64,18 @@ function create() {
           <button class="icon-btn" aria-label="Fermer" @click="close"><X :size="18" /></button>
         </div>
         <form @submit.prevent="create">
+          <div class="emoji-row">
+            <button
+              v-for="e in EMOJIS"
+              :key="e"
+              type="button"
+              class="emoji-choice"
+              :class="{ active: newEmoji === e }"
+              @click="newEmoji = e"
+            >
+              {{ e }}
+            </button>
+          </div>
           <input v-model="newName" class="input" type="text" placeholder="Nom du template" autofocus />
           <input v-model="newDescription" class="input" type="text" placeholder="Description (optionnelle)" />
           <button type="submit" class="submit">Créer</button>
@@ -109,6 +133,27 @@ function create() {
   height: 2rem;
   border-radius: 0.5rem;
   color: var(--ink-muted);
+}
+.emoji-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+.emoji-choice {
+  width: 2.4rem;
+  height: 2.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  transition: border-color 0.15s;
+}
+.emoji-choice.active {
+  border-color: var(--accent);
+  background: var(--accent-deep);
 }
 .input {
   width: 100%;
