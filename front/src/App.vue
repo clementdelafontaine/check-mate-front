@@ -1,6 +1,10 @@
 <script setup>
 import AppHeader from './components/AppHeader.vue'
 import AppNav from './components/AppNav.vue'
+import UndoToast from './components/UndoToast.vue'
+import { useUndoToast } from './composables/useUndoToast'
+
+const toast = useUndoToast()
 </script>
 
 <template>
@@ -9,4 +13,10 @@ import AppNav from './components/AppNav.vue'
     <router-view />
   </main>
   <AppNav />
+  <UndoToast
+    :message="toast.message.value"
+    :visible="toast.visible.value"
+    @undo="toast.undo"
+    @close="toast.close"
+  />
 </template>
