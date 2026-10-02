@@ -59,9 +59,9 @@ const confirmClear = ref(false)
       <ChecklistSection :list-id="list.id" :section="section" />
     </section>
 
-    <CheckedPile v-if="checkedItems.length" :list-id="list.id" :items="checkedItems" />
-
     <AddItemCard :list-id="list.id" />
+
+    <CheckedPile v-if="checkedItems.length" :list-id="list.id" :items="checkedItems" />
 
     <div v-if="confirmClear" class="overlay" @click.self="confirmClear = false">
       <div class="dialog">
