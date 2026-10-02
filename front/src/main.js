@@ -7,10 +7,11 @@ import './styles/main.css'
 
 const pinia = createPinia()
 
-pinia.subscribe(({ storeId }) => {
-  if (storeId === 'checklists') {
-    const store = useChecklistsStore()
-    store.persist()
+pinia.use(({ store }) => {
+  if (store.$id === 'checklists') {
+    store.$subscribe(() => {
+      store.persist()
+    })
   }
 })
 
