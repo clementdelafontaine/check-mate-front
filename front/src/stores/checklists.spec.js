@@ -20,8 +20,7 @@ describe('checklists store', () => {
     const store = useChecklistsStore()
     const list = firstList(store)
     const section = list.sections[0]
-    const item = section.items[0]
-    expect(item.checked).toBe(false)
+    const item = section.items.find((i) => !i.checked)
     store.toggleItem(list.id, section.id, item.id)
     expect(item.checked).toBe(true)
     store.toggleItem(list.id, section.id, item.id)
@@ -56,10 +55,11 @@ describe('checklists store', () => {
     const store = useChecklistsStore()
     const list = firstList(store)
     const section = list.sections[0]
-    const item = section.items[0]
+    const item = section.items.find((i) => !i.checked)
     store.toggleItem(list.id, section.id, item.id)
+    const checkedBefore = list.sections.flatMap((s) => s.items).filter((i) => i.checked).length
     const removed = store.clearChecked(list.id)
-    expect(removed.length).toBe(1)
+    expect(removed.length).toBe(checkedBefore)
     expect(section.items.length).toBe(section.items.filter((i) => !i.checked).length)
     store.restoreCleared(list.id, removed)
     expect(section.items.some((i) => i.id === item.id)).toBe(true)

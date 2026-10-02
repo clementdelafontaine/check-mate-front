@@ -15,7 +15,7 @@ const inDays = (n) => {
 
 export const groceryList = {
   id: 'l-courses',
-  name: 'Liste de courses',
+  name: 'Courses du samedi',
   emoji: '🛒',
   kind: 'simple',
   isTemplate: false,
@@ -28,28 +28,28 @@ export const groceryList = {
       id: 's-epicerie',
       name: 'Épicerie',
       items: [
-        { id: 'i-1', label: 'Pâtes', checked: false },
-        { id: 'i-2', label: 'Riz', checked: false },
-        { id: 'i-3', label: 'Café', checked: false },
-        { id: 'i-4', label: 'Huile d\u2019olive', checked: false }
+        { id: 'i-1', label: 'Pâtes', quantity: '2', checked: true },
+        { id: 'i-2', label: 'Riz', quantity: null, checked: false },
+        { id: 'i-3', label: 'Café', quantity: '1', checked: true },
+        { id: 'i-4', label: 'Huile d\u2019olive', quantity: null, checked: false }
       ]
     },
     {
       id: 's-frais',
       name: 'Produits frais',
       items: [
-        { id: 'i-5', label: 'Lait', checked: false },
-        { id: 'i-6', label: 'Œufs', checked: false },
-        { id: 'i-7', label: 'Beurre', checked: false },
-        { id: 'i-8', label: 'Yaourts', checked: false }
+        { id: 'i-5', label: 'Lait', quantity: '2', checked: true },
+        { id: 'i-6', label: 'Œufs', quantity: '6', checked: false },
+        { id: 'i-7', label: 'Beurre', quantity: null, checked: false },
+        { id: 'i-8', label: 'Yaourts', quantity: '4', checked: false }
       ]
     },
     {
       id: 's-simili',
       name: 'Simili',
       items: [
-        { id: 'i-9', label: 'Steaks de soja', checked: false },
-        { id: 'i-10', label: 'Crème végétale', checked: false }
+        { id: 'i-9', label: 'Steaks de soja', quantity: null, checked: false },
+        { id: 'i-10', label: 'Crème végétale', quantity: '2', checked: false }
       ]
     }
   ]
@@ -57,32 +57,176 @@ export const groceryList = {
 
 export const tripList = {
   id: 'l-voyage',
-  name: 'Voyage — semaine',
+  name: 'Week-end chez grand-mère',
   emoji: '🧳',
   kind: 'simple',
   isTemplate: false,
   spaceId: 'sp-voyages',
   labelIds: ['lb-sortie'],
-  startDate: inDays(7),
-  endDate: inDays(14),
+  startDate: inDays(1),
+  endDate: inDays(3),
   sections: [
     {
       id: 's-vetements',
       name: 'Vêtements',
       items: [
-        { id: 'i-11', label: 'T-shirts', checked: false },
-        { id: 'i-12', label: 'Pantalon', checked: false },
-        { id: 'i-13', label: 'Pull', checked: false },
-        { id: 'i-14', label: 'Chaussettes', checked: false }
+        { id: 'i-11', label: 'T-shirts', quantity: '3', checked: false },
+        { id: 'i-12', label: 'Pantalon', quantity: null, checked: false },
+        { id: 'i-13', label: 'Pull', quantity: null, checked: false },
+        { id: 'i-14', label: 'Chaussettes', quantity: '4', checked: false }
       ]
     },
     {
       id: 's-hygiene',
       name: 'Hygiène',
       items: [
-        { id: 'i-15', label: 'Brosse à dents', checked: false },
-        { id: 'i-16', label: 'Chargeur', checked: false },
-        { id: 'i-17', label: 'Adaptateur prise', checked: false }
+        { id: 'i-15', label: 'Brosse à dents', quantity: null, checked: false },
+        { id: 'i-16', label: 'Chargeur', quantity: null, checked: false },
+        { id: 'i-17', label: 'Adaptateur prise', quantity: null, checked: false }
+      ]
+    },
+    {
+      id: 's-cadeaux',
+      name: 'Cadeaux',
+      items: [
+        { id: 'i-18', label: 'Fleurs', quantity: '1', checked: false },
+        { id: 'i-19', label: 'Macarons', quantity: '2', checked: false }
+      ]
+    }
+  ]
+}
+
+export const taxesList = {
+  id: 'l-impots',
+  name: 'Déclarer les impôts',
+  emoji: '🧾',
+  kind: 'simple',
+  isTemplate: false,
+  spaceId: 'sp-perso',
+  labelIds: ['lb-urgent'],
+  startDate: inDays(-3),
+  endDate: inDays(-1),
+  sections: [
+    {
+      id: 's-impots-docs',
+      name: 'Démarches',
+      items: [
+        { id: 'i-20', label: 'Récupérer le revenu fiscal de référence', quantity: null, checked: true },
+        { id: 'i-21', label: 'Remplir la déclaration en ligne', quantity: null, checked: false }
+      ]
+    }
+  ]
+}
+
+export const cleaningList = {
+  id: 'l-menage',
+  name: 'Ménage appartement',
+  emoji: '🧹',
+  kind: 'simple',
+  isTemplate: false,
+  spaceId: 'sp-maison',
+  labelIds: ['lb-menage'],
+  startDate: null,
+  endDate: null,
+  sections: [
+    {
+      id: 's-menage-cuisine',
+      name: 'Cuisine',
+      items: [
+        { id: 'i-22', label: 'Plans de travail', quantity: null, checked: true },
+        { id: 'i-23', label: 'Plaque de cuisson', quantity: null, checked: false },
+        { id: 'i-24', label: 'Frigo — trier les restes', quantity: null, checked: false }
+      ]
+    },
+    {
+      id: 's-menage-sdb',
+      name: 'Salle de bain',
+      items: [
+        { id: 'i-25', label: 'Lavabo + miroir', quantity: null, checked: false },
+        { id: 'i-26', label: 'Serviettes', quantity: null, checked: true }
+      ]
+    },
+    {
+      id: 's-menage-salon',
+      name: 'Salon',
+      items: [
+        { id: 'i-27', label: 'Aspirateur', quantity: null, checked: false },
+        { id: 'i-28', label: 'Poussière étagères', quantity: null, checked: false }
+      ]
+    }
+  ]
+}
+
+export const gardenList = {
+  id: 'l-jardin',
+  name: 'Jardin — entretien',
+  emoji: '🌿',
+  kind: 'simple',
+  isTemplate: false,
+  spaceId: 'sp-maison',
+  labelIds: ['lb-jardin'],
+  startDate: null,
+  endDate: null,
+  sections: [
+    {
+      id: 's-jardin-tonte',
+      name: 'Tonte',
+      items: [
+        { id: 'i-29', label: 'Tondre la pelouse', quantity: null, checked: false },
+        { id: 'i-30', label: 'Arroser les massifs', quantity: null, checked: false }
+      ]
+    },
+    {
+      id: 's-jardin-taille',
+      name: 'Taille',
+      items: [
+        { id: 'i-31', label: 'Haie de cèdres', quantity: null, checked: true },
+        { id: 'i-32', label: 'Rosiers', quantity: null, checked: false }
+      ]
+    }
+  ]
+}
+
+export const birthdayList = {
+  id: 'l-anniv',
+  name: 'Anniversaire de Léa',
+  emoji: '🎁',
+  kind: 'simple',
+  isTemplate: false,
+  spaceId: 'sp-perso',
+  labelIds: ['lb-sortie'],
+  startDate: inDays(-5),
+  endDate: inDays(-2),
+  sections: [
+    {
+      id: 's-anniv',
+      name: 'Organisation',
+      items: [
+        { id: 'i-33', label: 'Commander le gâteau', quantity: null, checked: true },
+        { id: 'i-34', label: 'Acheter les guirlandes', quantity: null, checked: true },
+        { id: 'i-35', label: 'Réserver la salle', quantity: null, checked: true }
+      ]
+    }
+  ]
+}
+
+export const giftIdeasList = {
+  id: 'l-idees',
+  name: 'Idées cadeaux',
+  emoji: '💡',
+  kind: 'simple',
+  isTemplate: false,
+  spaceId: null,
+  labelIds: [],
+  startDate: null,
+  endDate: null,
+  sections: [
+    {
+      id: 's-idees',
+      name: 'Idées',
+      items: [
+        { id: 'i-36', label: 'Livre de recettes', quantity: null, checked: false },
+        { id: 'i-37', label: 'Box vin', quantity: null, checked: false }
       ]
     }
   ]
@@ -152,10 +296,56 @@ export const templates = [
         items: [{ label: 'Steaks de soja' }, { label: 'Crème végétale' }]
       }
     ]
+  },
+  {
+    id: 't-menage',
+    name: 'Ménage par pièces',
+    emoji: '🧹',
+    kind: 'template',
+    isTemplate: true,
+    description: 'Roulement de ménage pièce par pièce.',
+    sections: [
+      {
+        id: 'ts-menage-cuisine',
+        name: 'Cuisine',
+        items: [{ label: 'Plans de travail' }, { label: 'Plaque' }, { label: 'Évier' }, { label: 'Sol' }]
+      },
+      {
+        id: 'ts-menage-sdb',
+        name: 'Salle de bain',
+        items: [{ label: 'Lavabo' }, { label: 'Douchette' }, { label: 'Toilettes' }, { label: 'Miroir' }]
+      },
+      {
+        id: 'ts-menage-salon',
+        name: 'Salon',
+        items: [{ label: 'Aspirateur' }, { label: 'Poussière' }, { label: 'Ranger les câbles' }]
+      },
+      {
+        id: 'ts-menage-chambres',
+        name: 'Chambres',
+        items: [{ label: 'Changer les draps' }, { label: 'Aérer' }]
+      }
+    ]
   }
 ]
 
+export const itemFrequencySeed = {
+  'pâtes': 4,
+  'lait': 3,
+  'café': 2,
+  'œufs': 2,
+  'riz': 1,
+  'beurre': 1,
+  'yaourts': 1,
+  'poussière étagères': 1
+}
+
 export const initialLists = () => [
   JSON.parse(JSON.stringify(groceryList)),
-  JSON.parse(JSON.stringify(tripList))
+  JSON.parse(JSON.stringify(tripList)),
+  JSON.parse(JSON.stringify(taxesList)),
+  JSON.parse(JSON.stringify(cleaningList)),
+  JSON.parse(JSON.stringify(gardenList)),
+  JSON.parse(JSON.stringify(birthdayList)),
+  JSON.parse(JSON.stringify(giftIdeasList))
 ]

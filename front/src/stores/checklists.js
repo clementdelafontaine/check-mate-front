@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { templates, initialLists, uid } from '../mocks/data'
+import { templates, initialLists, itemFrequencySeed, uid } from '../mocks/data'
 
 export const GENERIC_SECTION = 'Divers'
 const STORAGE_KEY = 'checkmate-state-v2'
@@ -39,7 +39,7 @@ const defaultState = () => ({
   templates,
   spaces: DEFAULT_SPACES,
   labels: DEFAULT_LABELS,
-  itemFrequency: {}
+  itemFrequency: { ...itemFrequencySeed }
 })
 
 export const useChecklistsStore = defineStore('checklists', {
