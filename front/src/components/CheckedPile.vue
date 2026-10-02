@@ -36,6 +36,7 @@ function deleteItem(item) {
         :key="item.id"
         :label="item.label"
         :quantity="item.quantity"
+        :kind="item.kind ?? 'task'"
         checked
         :swipeable="false"
         @toggle="store.toggleItem(listId, sectionIdOf(item.id), item.id)"

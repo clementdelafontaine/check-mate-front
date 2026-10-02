@@ -1,24 +1,27 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useSwipe } from '../composables/useSwipe'
-import { MoreVertical, Trash2, ArrowRightLeft } from 'lucide-vue-next'
+import { MoreVertical, Trash2, ArrowRightLeft, Pencil } from 'lucide-vue-next'
 
 const props = defineProps({
   label: { type: String, required: true },
   quantity: { type: [String, Number], default: null },
   checked: { type: Boolean, default: false },
+  kind: { type: String, default: 'task' },
   sections: { type: Array, default: () => [] },
   showMove: { type: Boolean, default: false },
   swipeable: { type: Boolean, default: true },
   stepper: { type: Boolean, default: false }
 })
 
+const isNote = computed(() => props.kind === 'note')
+
 const quantityNum = computed(() => {
   const n = Number(props.quantity)
   return Number.isFinite(n) && n > 0 ? n : null
 })
 
-const emit = defineEmits(['toggle', 'delete', 'move', 'increment', 'decrement'])
+const emit = defineEmits(['toggle', 'delete', 'move', 'increment', 'decrement', 'edit'])
 
 const openMenu = ref(false)
 const openMove = ref(false)
@@ -40,11 +43,12 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
       <span class="swipe-bg"><Trash2 :size="16" /></span>
       <button
         class="item"
-        :class="{ checked }"
+        :class="{ checked, note: isNote }"
         :style="{ transform: `translateX(${deltaX}px)` }"
         @click="emit('toggle')"
       >
-        <span class="checkbox" :class="{ done: checked }">
+        <span v-if="isNote" class="note-dot" />
+        <span v-else class="checkbox" :class="{ done: checked }">
           <svg v-if="checked" viewBox="0 0 24 24" width="13" height="13"><path d="M5 12.5l4 4L19 7" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </span>
         <span class="label">{{ label }}</span>
@@ -59,10 +63,11 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
     <button
       v-else
       class="item"
-      :class="{ checked }"
+      :class="{ checked, note: isNote }"
       @click="emit('toggle')"
     >
-      <span class="checkbox" :class="{ done: checked }">
+      <span v-if="isNote" class="note-dot" />
+      <span v-else class="checkbox" :class="{ done: checked }">
         <svg v-if="checked" viewBox="0 0 24 24" width="13" height="13"><path d="M5 12.5l4 4L19 7" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </span>
       <span class="label">{{ label }}</span>
@@ -81,6 +86,9 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
       <div v-if="openMenu" class="menu" @click.stop>
         <button v-if="showMove" class="menu-item" @click="openMenu = false; openMove = true">
           <ArrowRightLeft :size="14" /> Déplacer
+        </button>
+        <button class="menu-item" @click="openMenu = false; emit('edit')">
+          <Pencil :size="14" /> Modifier
         </button>
         <button class="menu-item danger" @click="openMenu = false; emit('delete')">
           <Trash2 :size="14" /> Supprimer
@@ -154,6 +162,18 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 .item.checked .label {
   text-decoration: line-through;
   color: var(--ink-muted);
+}
+.item.note .label {
+  font-style: italic;
+  color: var(--ink-muted);
+}
+.note-dot {
+  flex-shrink: 0;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--ink-faint);
+  margin: 0 0.4rem;
 }
 .checkbox {
   flex-shrink: 0;

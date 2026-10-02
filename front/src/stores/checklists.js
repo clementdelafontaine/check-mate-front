@@ -2,6 +2,12 @@ import { defineStore } from 'pinia'
 import { templates, initialLists, itemFrequencySeed, uid } from '../mocks/data'
 
 export const GENERIC_SECTION = 'Divers'
+export const ITEM_KINDS = ['task', 'product', 'note']
+export const LIST_TYPES = [
+  { id: 'checklist', label: 'Checklist', emoji: '✅', defaultItemKind: 'task' },
+  { id: 'grocery', label: 'Courses', emoji: '🛒', defaultItemKind: 'product' },
+  { id: 'todo', label: 'To-do', emoji: '📝', defaultItemKind: 'task' }
+]
 const STORAGE_KEY = 'checkmate-state-v2'
 
 export const DEFAULT_SPACES = [
@@ -123,6 +129,22 @@ export const useChecklistsStore = defineStore('checklists', {
       const value = quantity === null || quantity === undefined || quantity === '' ? null : String(quantity)
       item.quantity = value
     },
+    updateItem(listId, sectionId, itemId, { label, quantity, kind }) {
+      const item = this.findItem(listId, sectionId, itemId)
+      if (!item) return null
+      if (label !== undefined && label !== null && label !== '') item.label = label
+      if (kind !== undefined && kind !== null && ITEM_KINDS.includes(kind)) item.kind = kind
+      if (quantity !== undefined) {
+        item.quantity = kind === 'task' || quantity === null || quantity === undefined || quantity === '' ? null : String(quantity)
+      }
+      return item
+    },
+    defaultItemKind(listId) {
+      const list = this.lists.find((l) => l.id === listId)
+      if (!list) return 'task'
+      const type = LIST_TYPES.find((t) => t.id === list.type)
+      return type ? type.defaultItemKind : 'task'
+    },
     addItem(listId, sectionId, label, quantity = null, kind = 'task') {
       const list = this.lists.find((l) => l.id === listId)
       if (!list) return
@@ -233,6 +255,7 @@ export const useChecklistsStore = defineStore('checklists', {
         name,
         emoji,
         kind: 'simple',
+        type: 'checklist',
         isTemplate: false,
         spaceId: spaceId || this.spaces[0]?.id || null,
         labelIds: [...labelIds],
@@ -264,6 +287,7 @@ export const useChecklistsStore = defineStore('checklists', {
         name: name || tpl.name,
         emoji: emoji || tpl.emoji,
         kind: 'simple',
+        type: tpl.type ?? 'checklist',
         isTemplate: false,
         spaceId: spaceId || this.spaces[0]?.id || null,
         labelIds: [],
@@ -329,12 +353,16 @@ export const useChecklistsStore = defineStore('checklists', {
       const list = this.lists.find((l) => l.id === listId)
       if (list) list.spaceId = spaceId
     },
-    updateList(listId, { name, emoji, spaceId, labelIds, startDate, endDate }) {
+    updateList(listId, { name, emoji, spaceId, labelIds, startDate, endDate, type }) {
       const list = this.lists.find((l) => l.id === listId)
       if (!list) return null
       if (name !== undefined && name !== null && name !== '') list.name = name
       if (emoji !== undefined && emoji !== null && emoji !== '') list.emoji = emoji
       if (spaceId !== undefined) list.spaceId = spaceId || null
+      if (type !== undefined && type !== null) {
+        const t = LIST_TYPES.find((x) => x.id === type)
+        if (t) list.type = t.id
+      }
       if (labelIds !== undefined) list.labelIds = [...labelIds]
       if (startDate !== undefined || endDate !== undefined) {
         list.startDate = startDate || null

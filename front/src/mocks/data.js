@@ -14,7 +14,7 @@ const inDays = (n) => {
 }
 
 export const groceryList = {
-  id: 'l-courses',
+  id: 'l-courses', type: 'grocery',
   name: 'Courses du samedi',
   emoji: '🛒',
   kind: 'simple',
@@ -56,7 +56,7 @@ export const groceryList = {
 }
 
 export const tripList = {
-  id: 'l-voyage',
+  id: 'l-voyage', type: 'checklist',
   name: 'Week-end chez grand-mère',
   emoji: '🧳',
   kind: 'simple',
@@ -82,7 +82,8 @@ export const tripList = {
       items: [
         { id: 'i-15', label: 'Brosse à dents', quantity: null, checked: false, kind: 'product' },
         { id: 'i-16', label: 'Chargeur', quantity: null, checked: false, kind: 'product' },
-        { id: 'i-17', label: 'Adaptateur prise', quantity: null, checked: false, kind: 'product' }
+        { id: 'i-17', label: 'Adaptateur prise', quantity: null, checked: false, kind: 'product' },
+        { id: 'i-17b', label: 'Pense-bête : couper l\u2019eau avant de partir', quantity: null, checked: false, kind: 'note' }
       ]
     },
     {
@@ -97,7 +98,7 @@ export const tripList = {
 }
 
 export const taxesList = {
-  id: 'l-impots',
+  id: 'l-impots', type: 'todo',
   name: 'Déclarer les impôts',
   emoji: '🧾',
   kind: 'simple',
@@ -112,14 +113,15 @@ export const taxesList = {
       name: 'Démarches',
       items: [
         { id: 'i-20', label: 'Récupérer le revenu fiscal de référence', quantity: null, checked: true },
-        { id: 'i-21', label: 'Remplir la déclaration en ligne', quantity: null, checked: false }
+        { id: 'i-21', label: 'Remplir la déclaration en ligne', quantity: null, checked: false },
+        { id: 'i-21b', label: 'Disponible jusqu\u2019au 31 mai sur impots.gouv.fr', quantity: null, checked: false, kind: 'note' }
       ]
     }
   ]
 }
 
 export const cleaningList = {
-  id: 'l-menage',
+  id: 'l-menage', type: 'checklist',
   name: 'Ménage appartement',
   emoji: '🧹',
   kind: 'simple',
@@ -158,7 +160,7 @@ export const cleaningList = {
 }
 
 export const gardenList = {
-  id: 'l-jardin',
+  id: 'l-jardin', type: 'checklist',
   name: 'Jardin — entretien',
   emoji: '🌿',
   kind: 'simple',
@@ -188,7 +190,7 @@ export const gardenList = {
 }
 
 export const birthdayList = {
-  id: 'l-anniv',
+  id: 'l-anniv', type: 'checklist',
   name: 'Anniversaire de Léa',
   emoji: '🎁',
   kind: 'simple',
@@ -211,7 +213,7 @@ export const birthdayList = {
 }
 
 export const giftIdeasList = {
-  id: 'l-idees',
+  id: 'l-idees', type: 'checklist',
   name: 'Idées cadeaux',
   emoji: '💡',
   kind: 'simple',

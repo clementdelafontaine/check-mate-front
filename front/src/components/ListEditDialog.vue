@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue'
-import { useChecklistsStore } from '../stores/checklists'
+import { useChecklistsStore, LIST_TYPES } from '../stores/checklists'
 import { X } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -12,6 +12,7 @@ const store = useChecklistsStore()
 
 const name = ref('')
 const emoji = ref('')
+const type = ref('checklist')
 const spaceId = ref('')
 const labelIds = ref([])
 const startDate = ref('')
@@ -25,6 +26,7 @@ watch(
     if (!l) return
     name.value = l.name
     emoji.value = l.emoji
+    type.value = l.type ?? 'checklist'
     spaceId.value = l.spaceId ?? ''
     labelIds.value = [...(l.labelIds ?? [])]
     startDate.value = l.startDate ?? ''
@@ -45,6 +47,7 @@ function save() {
   store.updateList(props.list.id, {
     name: trimmed,
     emoji: emoji.value,
+    type: type.value,
     spaceId: spaceId.value || null,
     labelIds: labelIds.value,
     startDate: startDate.value || null,
@@ -76,6 +79,19 @@ function save() {
           </button>
         </div>
         <input v-model="name" class="input" type="text" placeholder="Nom de la liste" autofocus />
+
+        <div class="kind-row">
+          <button
+            v-for="t in LIST_TYPES"
+            :key="t.id"
+            type="button"
+            class="kind-chip"
+            :class="{ active: type === t.id }"
+            @click="type = t.id"
+          >
+            {{ t.emoji }} {{ t.label }}
+          </button>
+        </div>
 
         <select v-model="spaceId" class="input select">
           <option value="">Sans espace</option>
@@ -150,6 +166,28 @@ function save() {
   height: 2rem;
   border-radius: 0.5rem;
   color: var(--ink-muted);
+}
+.kind-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+.kind-chip {
+  flex: 1;
+  min-width: 5.5rem;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  color: var(--ink-muted);
+  transition: border-color 0.15s, color 0.15s;
+}
+.kind-chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 .emoji-row {
   display: flex;

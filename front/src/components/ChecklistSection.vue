@@ -1,8 +1,9 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useChecklistsStore } from '../stores/checklists'
 import { useUndoToast } from '../composables/useUndoToast'
 import ItemRow from './ItemRow.vue'
+import ItemEditDialog from './ItemEditDialog.vue'
 
 const props = defineProps({
   listId: { type: String, required: true },
@@ -35,6 +36,14 @@ function decrement(item) {
     store.setQuantity(props.listId, props.section.id, item.id, n - 1)
   }
 }
+
+const editingItem = ref(null)
+
+function saveEdit(payload) {
+  if (!editingItem.value) return
+  store.updateItem(props.listId, props.section.id, editingItem.value.id, payload)
+  toast.show('Item modifié')
+}
 </script>
 
 <template>
@@ -44,6 +53,7 @@ function decrement(item) {
       :key="item.id"
       :label="item.label"
       :quantity="item.quantity"
+      :kind="item.kind ?? 'task'"
       :sections="allSections.filter((s) => s.id !== section.id)"
       show-move
       :stepper="item.kind === 'product'"
@@ -52,8 +62,16 @@ function decrement(item) {
       @move="(to) => moveItem(item.id, to)"
       @increment="increment(item)"
       @decrement="decrement(item)"
+      @edit="editingItem = item"
     />
   </ul>
+
+  <ItemEditDialog
+    v-if="editingItem"
+    :item="editingItem"
+    @close="editingItem = null"
+    @saved="saveEdit"
+  />
 </template>
 
 <style scoped>

@@ -1,7 +1,7 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { X } from 'lucide-vue-next'
-import { useChecklistsStore, GENERIC_SECTION } from '../stores/checklists'
+import { useChecklistsStore, GENERIC_SECTION, ITEM_KINDS } from '../stores/checklists'
 
 const props = defineProps({
   listId: { type: String, default: null },
@@ -18,12 +18,17 @@ const newSectionName = ref('')
 
 const KINDS = [
   { id: 'task', label: 'Tâche' },
-  { id: 'product', label: 'Produit' }
+  { id: 'product', label: 'Produit' },
+  { id: 'note', label: 'Note' }
 ]
 
 const target = computed(() =>
   props.listId ? store.listById(props.listId) : store.templateById(props.templateId)
 )
+
+watch(open, (isOpen) => {
+  if (isOpen) kind.value = props.listId ? store.defaultItemKind(props.listId) : 'task'
+})
 const sections = computed(() => target.value?.sections ?? [])
 const isNewSection = computed(() => sectionChoice.value === '__new__')
 const newSectionPlaceholder = computed(
