@@ -24,12 +24,35 @@ const newSectionPlaceholder = computed(
   () => `Nom de la catégorie ("${GENERIC_SECTION}" si vide)`
 )
 
+const suggestionsDismissed = ref(false)
+const suggestions = computed(() => store.suggestionsFor(label.value))
+const showSuggestions = computed(
+  () => suggestions.value.length > 0 && label.value.trim() !== '' && !suggestionsDismissed.value
+)
+function applySuggestion(s) {
+  label.value = s
+  suggestionsDismissed.value = true
+}
+
+const sectionSuggestions = computed(() => {
+  const prefix = newSectionName.value.trim().toLowerCase()
+  if (!prefix) return []
+  return store
+    .knownSectionNames()
+    .filter((n) => n.toLowerCase().startsWith(prefix))
+    .slice(0, 4)
+})
+function applySectionSuggestion(name) {
+  newSectionName.value = name
+}
+
 function close() {
   open.value = false
   label.value = ''
   quantity.value = ''
   sectionChoice.value = ''
   newSectionName.value = ''
+  suggestionsDismissed.value = false
 }
 
 function submit() {
@@ -64,6 +87,17 @@ function submit() {
       </div>
       <form @submit.prevent="submit">
         <input v-model="label" class="input" type="text" placeholder="Nom de l'item" autofocus />
+        <div v-if="showSuggestions" class="suggestions">
+          <button
+            v-for="s in suggestions"
+            :key="s"
+            type="button"
+            class="suggestion"
+            @mousedown.prevent="applySuggestion(s)"
+          >
+            {{ s }}
+          </button>
+        </div>
         <input v-model="quantity" class="input" type="text" inputmode="numeric" placeholder="Nombre (optionnel)" />
         <select v-model="sectionChoice" class="input select">
           <option value="" disabled>Catégorie… ({{ GENERIC_SECTION }} si vide)</option>
@@ -77,6 +111,17 @@ function submit() {
           type="text"
           :placeholder="newSectionPlaceholder"
         />
+        <div v-if="isNewSection && sectionSuggestions.length" class="suggestions">
+          <button
+            v-for="name in sectionSuggestions"
+            :key="name"
+            type="button"
+            class="suggestion"
+            @mousedown.prevent="applySectionSuggestion(name)"
+          >
+            {{ name }}
+          </button>
+        </div>
         <button type="submit" class="submit">Ajouter</button>
       </form>
     </div>
@@ -171,5 +216,20 @@ function submit() {
   color: #fff;
   font-weight: 700;
   font-size: 0.9rem;
+}
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: -0.25rem 0 0.5rem;
+}
+.suggestion {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--accent-dim);
+  border-radius: 0.55rem;
+  background: var(--accent-deep);
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 </style>

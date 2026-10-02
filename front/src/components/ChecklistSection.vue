@@ -23,6 +23,18 @@ function deleteItem(item) {
 function moveItem(itemId, toSectionId) {
   store.moveItem(props.listId, props.section.id, itemId, toSectionId)
 }
+
+function increment(item) {
+  const n = Number(item.quantity)
+  store.setQuantity(props.listId, props.section.id, item.id, (Number.isFinite(n) && n > 0 ? n : 1) + 1)
+}
+
+function decrement(item) {
+  const n = Number(item.quantity)
+  if (Number.isFinite(n) && n > 1) {
+    store.setQuantity(props.listId, props.section.id, item.id, n - 1)
+  }
+}
 </script>
 
 <template>
@@ -34,9 +46,12 @@ function moveItem(itemId, toSectionId) {
       :quantity="item.quantity"
       :sections="allSections.filter((s) => s.id !== section.id)"
       show-move
+      stepper
       @toggle="store.toggleItem(listId, section.id, item.id)"
       @delete="deleteItem(item)"
       @move="(to) => moveItem(item.id, to)"
+      @increment="increment(item)"
+      @decrement="decrement(item)"
     />
   </ul>
 </template>

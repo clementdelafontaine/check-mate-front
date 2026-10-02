@@ -58,6 +58,14 @@ export const useChecklistsStore = defineStore('checklists', {
       const item = this.findItem(listId, sectionId, itemId)
       if (item) item.checked = !item.checked
     },
+    setQuantity(listId, sectionId, itemId, quantity) {
+      const item = this.findItem(listId, sectionId, itemId)
+      if (!item) return
+      const value = quantity === null || quantity === undefined || quantity === ''
+        ? null
+        : String(quantity)
+      item.quantity = value
+    },
     addItem(listId, sectionId, label, quantity = null) {
       const list = this.lists.find((l) => l.id === listId)
       if (!list) return

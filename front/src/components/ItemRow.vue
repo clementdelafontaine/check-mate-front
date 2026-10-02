@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useSwipe } from '../composables/useSwipe'
 import { MoreVertical, Trash2, ArrowRightLeft } from 'lucide-vue-next'
 
@@ -9,10 +9,16 @@ const props = defineProps({
   checked: { type: Boolean, default: false },
   sections: { type: Array, default: () => [] },
   showMove: { type: Boolean, default: false },
-  swipeable: { type: Boolean, default: true }
+  swipeable: { type: Boolean, default: true },
+  stepper: { type: Boolean, default: false }
 })
 
-const emit = defineEmits(['toggle', 'delete', 'move'])
+const quantityNum = computed(() => {
+  const n = Number(props.quantity)
+  return Number.isFinite(n) && n > 0 ? n : null
+})
+
+const emit = defineEmits(['toggle', 'delete', 'move', 'increment', 'decrement'])
 
 const openMenu = ref(false)
 const openMove = ref(false)
@@ -42,7 +48,12 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           <svg v-if="checked" viewBox="0 0 24 24" width="13" height="13"><path d="M5 12.5l4 4L19 7" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </span>
         <span class="label">{{ label }}</span>
-        <span v-if="quantity" class="qty font-mono">×{{ quantity }}</span>
+        <span v-if="!stepper && quantity" class="qty font-mono">×{{ quantity }}</span>
+        <span v-if="stepper" class="stepper">
+          <button class="step" :disabled="!quantityNum || quantityNum <= 1" @click.stop="emit('decrement')">−</button>
+          <span class="step-value font-mono">{{ quantityNum ?? 1 }}</span>
+          <button class="step" @click.stop="emit('increment')">+</button>
+        </span>
       </button>
     </div>
     <button
@@ -55,7 +66,12 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         <svg v-if="checked" viewBox="0 0 24 24" width="13" height="13"><path d="M5 12.5l4 4L19 7" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </span>
       <span class="label">{{ label }}</span>
-      <span v-if="quantity" class="qty font-mono">×{{ quantity }}</span>
+      <span v-if="!stepper && quantity" class="qty font-mono">×{{ quantity }}</span>
+      <span v-if="stepper" class="stepper">
+        <button class="step" :disabled="!quantityNum || quantityNum <= 1" @click.stop="emit('decrement')">−</button>
+        <span class="step-value font-mono">{{ quantityNum ?? 1 }}</span>
+        <button class="step" @click.stop="emit('increment')">+</button>
+      </span>
     </button>
 
     <div class="menu-wrap">
@@ -162,6 +178,37 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   color: var(--ink-faint);
   margin-left: auto;
   flex-shrink: 0;
+}
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.step {
+  width: 1.55rem;
+  height: 1.55rem;
+  border: 1px solid var(--line-bright);
+  border-radius: 0.45rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink-muted);
+}
+.step:active {
+  background: var(--bg-2);
+}
+.step:disabled {
+  opacity: 0.35;
+}
+.step-value {
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  min-width: 1rem;
+  text-align: center;
 }
 .menu-wrap {
   position: relative;
