@@ -7,7 +7,8 @@ import ChecklistSection from '../components/ChecklistSection.vue'
 import CheckedPile from '../components/CheckedPile.vue'
 import AddItemCard from '../components/AddItemCard.vue'
 import UndoToast from '../components/UndoToast.vue'
-import { ArrowLeft, RotateCcw, Eraser } from 'lucide-vue-next'
+import ListEditDialog from '../components/ListEditDialog.vue'
+import { ArrowLeft, RotateCcw, Eraser, Pencil } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -31,6 +32,7 @@ const checkedItems = computed(() =>
 )
 
 const confirmClear = ref(false)
+const showEdit = ref(false)
 
 function clearChecked() {
   const removed = store.clearChecked(list.value.id)
@@ -77,6 +79,9 @@ function duplicate() {
       </button>
       <button class="tool-btn" @click="duplicate">Dupliquer</button>
       <button class="tool-btn" @click="saveAsTemplate">→ Template</button>
+      <button class="tool-btn" @click="showEdit = true">
+        <Pencil :size="14" /> Modifier
+      </button>
     </div>
 
     <div class="global-progress">
@@ -99,6 +104,13 @@ function duplicate() {
     <AddItemCard :list-id="list.id" />
 
     <CheckedPile v-if="checkedItems.length" :list-id="list.id" :items="checkedItems" />
+
+    <ListEditDialog
+      v-if="showEdit && list"
+      :list="list"
+      @close="showEdit = false"
+      @saved="toast.show('Liste modifiée')"
+    />
 
     <div v-if="confirmClear" class="overlay" @click.self="confirmClear = false">
       <div class="dialog">

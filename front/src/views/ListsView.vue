@@ -4,6 +4,7 @@ import { useChecklistsStore } from '../stores/checklists'
 import { useUndoToast } from '../composables/useUndoToast'
 import ItemCard from '../components/ItemCard.vue'
 import AddCard from '../components/AddCard.vue'
+import ListEditDialog from '../components/ListEditDialog.vue'
 import { X, LayoutGrid, FilePlus2, ArrowDownUp, Plus, Tag } from 'lucide-vue-next'
 
 const store = useChecklistsStore()
@@ -60,6 +61,8 @@ function removeList(list) {
   const payload = store.removeList(list.id)
   toast.show(`« ${list.name} » supprimée`, () => store.restoreList(payload))
 }
+
+const editingList = ref(null)
 
 const showTemplatePicker = ref(false)
 const showForm = ref(false)
@@ -179,7 +182,9 @@ function createLabel() {
             :emoji="list.emoji"
             :name="list.name"
             :meta="`${progressOf(list)}%`"
+            editable
             @delete="removeList(list)"
+            @edit="editingList = list"
           />
         </li>
       </ul>
@@ -188,6 +193,13 @@ function createLabel() {
     <ul class="lists">
       <li><AddCard label="Ajouter une liste" @click="showTemplatePicker = true" /></li>
     </ul>
+
+    <ListEditDialog
+      v-if="editingList"
+      :list="editingList"
+      @close="editingList = null"
+      @saved="toast.show('Liste modifiée')"
+    />
 
     <div v-if="showNewLabelForm" class="overlay" @click.self="showNewLabelForm = false">
       <div class="dialog">

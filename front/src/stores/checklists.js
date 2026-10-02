@@ -329,6 +329,19 @@ export const useChecklistsStore = defineStore('checklists', {
       const list = this.lists.find((l) => l.id === listId)
       if (list) list.spaceId = spaceId
     },
+    updateList(listId, { name, emoji, spaceId, labelIds, startDate, endDate }) {
+      const list = this.lists.find((l) => l.id === listId)
+      if (!list) return null
+      if (name !== undefined && name !== null && name !== '') list.name = name
+      if (emoji !== undefined && emoji !== null && emoji !== '') list.emoji = emoji
+      if (spaceId !== undefined) list.spaceId = spaceId || null
+      if (labelIds !== undefined) list.labelIds = [...labelIds]
+      if (startDate !== undefined || endDate !== undefined) {
+        list.startDate = startDate || null
+        list.endDate = endDate || (startDate || null)
+      }
+      return list
+    },
     toggleListLabel(listId, labelId) {
       const list = this.lists.find((l) => l.id === listId)
       if (!list) return

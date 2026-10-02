@@ -1,15 +1,16 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { MoreVertical, Trash2 } from 'lucide-vue-next'
+import { MoreVertical, Trash2, Pencil } from 'lucide-vue-next'
 
 defineProps({
   to: { type: String, default: null },
   emoji: { type: String, default: '' },
   name: { type: String, required: true },
   meta: { type: String, default: '' },
-  dashed: { type: Boolean, default: false }
+  dashed: { type: Boolean, default: false },
+  editable: { type: Boolean, default: false }
 })
-const emit = defineEmits(['delete'])
+const emit = defineEmits(['delete', 'edit'])
 
 const open = ref(false)
 const confirm = ref(false)
@@ -42,6 +43,9 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           <MoreVertical :size="18" />
         </button>
         <div v-if="open" class="menu" @click.stop @click.prevent>
+          <button v-if="editable" class="menu-item" @click="open = false; emit('edit')">
+            <Pencil :size="15" /> Modifier
+          </button>
           <button class="menu-item danger" @click="open = false; confirm = true">
             <Trash2 :size="15" /> Supprimer
           </button>
