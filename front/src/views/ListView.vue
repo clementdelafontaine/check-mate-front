@@ -85,7 +85,10 @@ function duplicate() {
 
     <section v-for="section in list.sections" :key="section.id" class="section-block">
       <div class="section-head">
-        <h3 class="section-name" :class="{ empty: section.items.length === 0 }">{{ section.name }}</h3>
+        <h3
+          class="section-name"
+          :class="{ empty: section.items.filter((i) => !i.checked).length === 0 }"
+        >{{ section.name }}</h3>
         <span class="section-count font-mono">
           {{ section.items.filter((i) => !i.checked).length }}/{{ section.items.length }}
         </span>
