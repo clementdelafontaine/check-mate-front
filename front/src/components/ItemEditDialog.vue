@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { X } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -27,6 +27,20 @@ watch(
   },
   { immediate: true }
 )
+
+const quantityNum = computed(() => {
+  const n = Number(quantity.value)
+  return Number.isFinite(n) && n > 0 ? n : null
+})
+
+function incQuantity() {
+  quantity.value = String((quantityNum.value ?? 0) + 1)
+}
+
+function decQuantity() {
+  const n = quantityNum.value
+  if (n !== null && n > 1) quantity.value = String(n - 1)
+}
 
 function save() {
   const trimmed = label.value.trim()
@@ -61,14 +75,11 @@ function save() {
           </button>
         </div>
         <input v-model="label" class="input" type="text" placeholder="Nom de l'item" autofocus />
-        <input
-          v-if="kind === 'product'"
-          v-model="quantity"
-          class="input"
-          type="text"
-          inputmode="numeric"
-          placeholder="Nombre"
-        />
+        <div v-if="kind === 'product'" class="qty-row">
+          <button type="button" class="step" :disabled="!quantityNum || quantityNum <= 1" @click="decQuantity">−</button>
+          <input v-model="quantity" class="input qty-input" type="text" inputmode="numeric" placeholder="1" />
+          <button type="button" class="step" @click="incQuantity">+</button>
+        </div>
         <button type="submit" class="submit">Enregistrer</button>
       </form>
     </div>
@@ -152,6 +163,32 @@ html[data-theme='light'] .input {
 }
 .input:focus {
   border-color: var(--accent-dim);
+}
+.qty-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+.qty-input {
+  text-align: center;
+  margin-bottom: 0;
+}
+.step {
+  width: 2.4rem;
+  height: 2.4rem;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.step:active {
+  background: var(--bg-2);
+}
+.step:disabled {
+  opacity: 0.35;
 }
 .submit {
   width: 100%;

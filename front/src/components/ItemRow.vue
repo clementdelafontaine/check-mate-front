@@ -41,7 +41,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   <li ref="root" class="item-row">
     <div v-if="swipeable" class="swipe-wrap" v-bind="swipeHandlers">
       <span class="swipe-bg"><Trash2 :size="16" /></span>
-      <button
+      <div
         class="item"
         :class="{ checked, note: isNote }"
         :style="{ transform: `translateX(${deltaX}px)` }"
@@ -58,14 +58,25 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           <span class="step-value font-mono">{{ quantityNum ?? 1 }}</span>
           <button class="step" @click.stop="emit('increment')">+</button>
         </span>
-      </button>
+        <div class="menu-wrap" @click.stop>
+          <button class="icon-btn" aria-label="Options" @click="openMenu = !openMenu">
+            <MoreVertical :size="16" />
+          </button>
+          <div v-if="openMenu" class="menu" @click.stop>
+            <button v-if="showMove" class="menu-item" @click="openMenu = false; openMove = true">
+              <ArrowRightLeft :size="14" /> Déplacer
+            </button>
+            <button class="menu-item" @click="openMenu = false; emit('edit')">
+              <Pencil :size="14" /> Modifier
+            </button>
+            <button class="menu-item danger" @click="openMenu = false; emit('delete')">
+              <Trash2 :size="14" /> Supprimer
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-    <button
-      v-else
-      class="item"
-      :class="{ checked, note: isNote }"
-      @click="emit('toggle')"
-    >
+    <div v-else class="item" :class="{ checked, note: isNote }" @click="emit('toggle')">
       <span v-if="isNote" class="note-dot" />
       <span v-else class="checkbox" :class="{ done: checked }">
         <svg v-if="checked" viewBox="0 0 24 24" width="13" height="13"><path d="M5 12.5l4 4L19 7" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -77,22 +88,18 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         <span class="step-value font-mono">{{ quantityNum ?? 1 }}</span>
         <button class="step" @click.stop="emit('increment')">+</button>
       </span>
-    </button>
-
-    <div class="menu-wrap">
-      <button class="icon-btn" aria-label="Options" @click.stop="openMenu = !openMenu">
-        <MoreVertical :size="16" />
-      </button>
-      <div v-if="openMenu" class="menu" @click.stop>
-        <button v-if="showMove" class="menu-item" @click="openMenu = false; openMove = true">
-          <ArrowRightLeft :size="14" /> Déplacer
+      <div class="menu-wrap" @click.stop>
+        <button class="icon-btn" aria-label="Options" @click="openMenu = !openMenu">
+          <MoreVertical :size="16" />
         </button>
-        <button class="menu-item" @click="openMenu = false; emit('edit')">
-          <Pencil :size="14" /> Modifier
-        </button>
-        <button class="menu-item danger" @click="openMenu = false; emit('delete')">
-          <Trash2 :size="14" /> Supprimer
-        </button>
+        <div v-if="openMenu" class="menu" @click.stop>
+          <button class="menu-item" @click="openMenu = false; emit('edit')">
+            <Pencil :size="14" /> Modifier
+          </button>
+          <button class="menu-item danger" @click="openMenu = false; emit('delete')">
+            <Trash2 :size="14" /> Supprimer
+          </button>
+        </div>
       </div>
     </div>
 
