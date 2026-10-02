@@ -28,28 +28,28 @@ export const groceryList = {
       id: 's-epicerie',
       name: 'Épicerie',
       items: [
-        { id: 'i-1', label: 'Pâtes', quantity: '2', checked: true },
-        { id: 'i-2', label: 'Riz', quantity: null, checked: false },
-        { id: 'i-3', label: 'Café', quantity: '1', checked: true },
-        { id: 'i-4', label: 'Huile d\u2019olive', quantity: null, checked: false }
+        { id: 'i-1', label: 'Pâtes', quantity: '2', checked: true, kind: 'product' },
+        { id: 'i-2', label: 'Riz', quantity: null, checked: false, kind: 'product' },
+        { id: 'i-3', label: 'Café', quantity: '1', checked: true, kind: 'product' },
+        { id: 'i-4', label: 'Huile d\u2019olive', quantity: null, checked: false, kind: 'product' }
       ]
     },
     {
       id: 's-frais',
       name: 'Produits frais',
       items: [
-        { id: 'i-5', label: 'Lait', quantity: '2', checked: true },
-        { id: 'i-6', label: 'Œufs', quantity: '6', checked: false },
-        { id: 'i-7', label: 'Beurre', quantity: null, checked: false },
-        { id: 'i-8', label: 'Yaourts', quantity: '4', checked: false }
+        { id: 'i-5', label: 'Lait', quantity: '2', checked: true, kind: 'product' },
+        { id: 'i-6', label: 'Œufs', quantity: '6', checked: false, kind: 'product' },
+        { id: 'i-7', label: 'Beurre', quantity: null, checked: false, kind: 'product' },
+        { id: 'i-8', label: 'Yaourts', quantity: '4', checked: false, kind: 'product' }
       ]
     },
     {
       id: 's-simili',
       name: 'Simili',
       items: [
-        { id: 'i-9', label: 'Steaks de soja', quantity: null, checked: false },
-        { id: 'i-10', label: 'Crème végétale', quantity: '2', checked: false }
+        { id: 'i-9', label: 'Steaks de soja', quantity: null, checked: false, kind: 'product' },
+        { id: 'i-10', label: 'Crème végétale', quantity: '2', checked: false, kind: 'product' }
       ]
     }
   ]
@@ -70,27 +70,27 @@ export const tripList = {
       id: 's-vetements',
       name: 'Vêtements',
       items: [
-        { id: 'i-11', label: 'T-shirts', quantity: '3', checked: false },
-        { id: 'i-12', label: 'Pantalon', quantity: null, checked: false },
-        { id: 'i-13', label: 'Pull', quantity: null, checked: false },
-        { id: 'i-14', label: 'Chaussettes', quantity: '4', checked: false }
+        { id: 'i-11', label: 'T-shirts', quantity: '3', checked: false, kind: 'product' },
+        { id: 'i-12', label: 'Pantalon', quantity: null, checked: false, kind: 'product' },
+        { id: 'i-13', label: 'Pull', quantity: null, checked: false, kind: 'product' },
+        { id: 'i-14', label: 'Chaussettes', quantity: '4', checked: false, kind: 'product' }
       ]
     },
     {
       id: 's-hygiene',
       name: 'Hygiène',
       items: [
-        { id: 'i-15', label: 'Brosse à dents', quantity: null, checked: false },
-        { id: 'i-16', label: 'Chargeur', quantity: null, checked: false },
-        { id: 'i-17', label: 'Adaptateur prise', quantity: null, checked: false }
+        { id: 'i-15', label: 'Brosse à dents', quantity: null, checked: false, kind: 'product' },
+        { id: 'i-16', label: 'Chargeur', quantity: null, checked: false, kind: 'product' },
+        { id: 'i-17', label: 'Adaptateur prise', quantity: null, checked: false, kind: 'product' }
       ]
     },
     {
       id: 's-cadeaux',
       name: 'Cadeaux',
       items: [
-        { id: 'i-18', label: 'Fleurs', quantity: '1', checked: false },
-        { id: 'i-19', label: 'Macarons', quantity: '2', checked: false }
+        { id: 'i-18', label: 'Fleurs', quantity: '1', checked: false, kind: 'product' },
+        { id: 'i-19', label: 'Macarons', quantity: '2', checked: false, kind: 'product' }
       ]
     }
   ]

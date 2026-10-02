@@ -11,9 +11,15 @@ const props = defineProps({
 const store = useChecklistsStore()
 const open = ref(false)
 const label = ref('')
+const kind = ref('task')
 const quantity = ref('')
 const sectionChoice = ref('')
 const newSectionName = ref('')
+
+const KINDS = [
+  { id: 'task', label: 'Tâche' },
+  { id: 'product', label: 'Produit' }
+]
 
 const target = computed(() =>
   props.listId ? store.listById(props.listId) : store.templateById(props.templateId)
@@ -49,6 +55,7 @@ function applySectionSuggestion(name) {
 function close() {
   open.value = false
   label.value = ''
+  kind.value = 'task'
   quantity.value = ''
   sectionChoice.value = ''
   newSectionName.value = ''
@@ -58,7 +65,7 @@ function close() {
 function submit() {
   const value = label.value.trim()
   if (!value) return
-  const qty = quantity.value.trim() === '' ? null : quantity.value.trim()
+  const qty = kind.value === 'product' && quantity.value.trim() !== '' ? quantity.value.trim() : null
 
   let sectionId = sectionChoice.value
   if (isNewSection.value) {
@@ -70,9 +77,9 @@ function submit() {
   }
 
   if (props.listId) {
-    store.addItem(props.listId, sectionId, value, qty)
+    store.addItem(props.listId, sectionId, value, qty, kind.value)
   } else if (props.templateId) {
-    store.addTemplateItem(props.templateId, sectionId, value, qty)
+    store.addTemplateItem(props.templateId, sectionId, value, qty, kind.value)
   }
   close()
 }
@@ -86,6 +93,18 @@ function submit() {
         <button class="icon-btn" aria-label="Fermer" @click="close"><X :size="18" /></button>
       </div>
       <form @submit.prevent="submit">
+        <div class="kind-row">
+          <button
+            v-for="k in KINDS"
+            :key="k.id"
+            type="button"
+            class="kind-chip"
+            :class="{ active: kind === k.id }"
+            @click="kind = k.id"
+          >
+            {{ k.label }}
+          </button>
+        </div>
         <input v-model="label" class="input" type="text" placeholder="Nom de l'item" autofocus />
         <div v-if="showSuggestions" class="suggestions">
           <button
@@ -98,7 +117,7 @@ function submit() {
             {{ s }}
           </button>
         </div>
-        <input v-model="quantity" class="input" type="text" inputmode="numeric" placeholder="Nombre (optionnel)" />
+        <input v-if="kind === 'product'" v-model="quantity" class="input" type="text" inputmode="numeric" placeholder="Nombre (optionnel)" />
         <select v-model="sectionChoice" class="input select">
           <option value="" disabled>Catégorie… ({{ GENERIC_SECTION }} si vide)</option>
           <option v-for="s in sections" :key="s.id" :value="s.id">{{ s.name }}</option>
@@ -133,6 +152,26 @@ function submit() {
 </template>
 
 <style scoped>
+.kind-row {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+.kind-chip {
+  flex: 1;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  color: var(--ink-muted);
+  transition: border-color 0.15s, color 0.15s;
+}
+.kind-chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
 .add-inline {
   width: 100%;
   display: flex;

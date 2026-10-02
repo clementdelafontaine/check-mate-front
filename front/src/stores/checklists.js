@@ -123,7 +123,7 @@ export const useChecklistsStore = defineStore('checklists', {
       const value = quantity === null || quantity === undefined || quantity === '' ? null : String(quantity)
       item.quantity = value
     },
-    addItem(listId, sectionId, label, quantity = null) {
+    addItem(listId, sectionId, label, quantity = null, kind = 'task') {
       const list = this.lists.find((l) => l.id === listId)
       if (!list) return
       let section = list.sections.find((s) => s.id === sectionId)
@@ -131,7 +131,7 @@ export const useChecklistsStore = defineStore('checklists', {
         section = { id: uid(), name: GENERIC_SECTION, items: [] }
         list.sections.push(section)
       }
-      section.items.push({ id: uid(), label, quantity, checked: false })
+      section.items.push({ id: uid(), label, quantity, kind, checked: false })
       this.trackItemLabel(label)
     },
     addSection(listId, name) {
@@ -148,7 +148,7 @@ export const useChecklistsStore = defineStore('checklists', {
       tpl.sections.push(section)
       return section
     },
-    addTemplateItem(templateId, sectionId, label, quantity = null) {
+    addTemplateItem(templateId, sectionId, label, quantity = null, kind = 'task') {
       const tpl = this.templates.find((t) => t.id === templateId)
       if (!tpl) return
       let section = tpl.sections.find((s) => s.id === sectionId)
@@ -156,7 +156,7 @@ export const useChecklistsStore = defineStore('checklists', {
         section = { id: uid(), name: GENERIC_SECTION, items: [] }
         tpl.sections.push(section)
       }
-      section.items.push({ label, quantity })
+      section.items.push({ label, quantity, kind })
       this.trackItemLabel(label)
     },
     removeItem(listId, sectionId, itemId) {
@@ -272,7 +272,7 @@ export const useChecklistsStore = defineStore('checklists', {
         sections: tpl.sections.map((s) => ({
           id: uid(),
           name: s.name,
-          items: s.items.map((i) => ({ id: uid(), label: i.label, quantity: i.quantity ?? null, checked: false }))
+          items: s.items.map((i) => ({ id: uid(), label: i.label, quantity: i.quantity ?? null, kind: i.kind ?? 'task', checked: false }))
         }))
       }
       this.lists.unshift(list)
@@ -307,7 +307,7 @@ export const useChecklistsStore = defineStore('checklists', {
         sections: list.sections.map((s) => ({
           id: uid(),
           name: s.name,
-          items: s.items.map((i) => ({ label: i.label, quantity: i.quantity ?? null }))
+          items: s.items.map((i) => ({ label: i.label, quantity: i.quantity ?? null, kind: i.kind ?? 'task' }))
         }))
       }
       this.templates.push(tpl)

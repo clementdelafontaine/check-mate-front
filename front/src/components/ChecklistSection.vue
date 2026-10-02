@@ -46,7 +46,7 @@ function decrement(item) {
       :quantity="item.quantity"
       :sections="allSections.filter((s) => s.id !== section.id)"
       show-move
-      stepper
+      :stepper="item.kind === 'product'"
       @toggle="store.toggleItem(listId, section.id, item.id)"
       @delete="deleteItem(item)"
       @move="(to) => moveItem(item.id, to)"
