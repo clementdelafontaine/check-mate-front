@@ -1,14 +1,12 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { useChecklistsStore } from '../stores/checklists'
 import { useUndoToast } from '../composables/useUndoToast'
 import ItemCard from '../components/ItemCard.vue'
 import AddCard from '../components/AddCard.vue'
-import { X, LayoutGrid, FilePlus2, ArrowDownUp } from 'lucide-vue-next'
+import { X, LayoutGrid, FilePlus2, ArrowDownUp, Plus, Tag } from 'lucide-vue-next'
 
 const store = useChecklistsStore()
-const router = useRouter()
 const toast = useUndoToast()
 
 const progressOf = (list) => {
@@ -17,23 +15,46 @@ const progressOf = (list) => {
   const done = items.filter((i) => i.checked).length
   return Math.round((done / items.length) * 100)
 }
+const isActive = (list) => list.sections.some((s) => s.items.some((i) => !i.checked))
 
-const sortBy = ref('manual')
-const sortedLists = computed(() => {
-  if (sortBy.value === 'name') {
-    return [...store.lists].sort((a, b) => a.name.localeCompare(b.name, 'fr'))
-  }
-  if (sortBy.value === 'progress') {
-    return [...store.lists].sort((a, b) => progressOf(b) - progressOf(a))
-  }
-  return store.lists
-})
+const sortBy = ref('smart')
+const sortOptions = [
+  { id: 'smart', label: 'Smart' },
+  { id: 'name', label: 'A→Z' },
+  { id: 'progress', label: 'Prog.' }
+]
 function cycleSort() {
-  sortBy.value = sortBy.value === 'manual' ? 'name' : sortBy.value === 'name' ? 'progress' : 'manual'
+  const i = sortOptions.findIndex((o) => o.id === sortBy.value)
+  sortBy.value = sortOptions[(i + 1) % sortOptions.length].id
 }
-const sortLabel = computed(
-  () => ({ manual: 'Ordre perso', name: 'A→Z', progress: 'Progression' }[sortBy.value])
-)
+const sortLabel = computed(() => sortOptions.find((o) => o.id === sortBy.value)?.label ?? '')
+
+const labelFilter = ref(null)
+const filteredLists = computed(() => {
+  let lists = labelFilter.value
+    ? store.lists.filter((l) => l.labelIds?.includes(labelFilter.value))
+    : store.lists
+  if (sortBy.value === 'name') {
+    lists = [...lists].sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+  } else if (sortBy.value === 'progress') {
+    lists = [...lists].sort((a, b) => progressOf(b) - progressOf(a))
+  } else {
+    lists = [...lists].sort((a, b) => Number(isActive(b)) - Number(isActive(a)))
+  }
+  return lists
+})
+
+const spaceFilter = ref(null)
+const listsBySpace = computed(() => {
+  const groups = []
+  for (const space of store.spaces) {
+    const lists = filteredLists.value.filter((l) => l.spaceId === space.id)
+    if (lists.length) groups.push({ space, lists })
+  }
+  const orphans = filteredLists.value.filter((l) => !l.spaceId || !store.spaceById(l.spaceId))
+  if (orphans.length) groups.push({ space: { id: '__none', name: 'Sans espace', emoji: '📂' }, lists: orphans })
+  return groups
+})
 
 function removeList(list) {
   const payload = store.removeList(list.id)
@@ -45,6 +66,10 @@ const showForm = ref(false)
 const pickedTemplateId = ref(null)
 const newName = ref('')
 const newEmoji = ref('📋')
+const newSpaceId = ref('')
+const newLabelIds = ref([])
+const newStartDate = ref('')
+const newEndDate = ref('')
 
 const EMOJIS = ['📋', '🛒', '🧳', '🏠', '✈️', '🎒', '🎁', '📝', '🌟', '🧹', '🔧', '💊']
 
@@ -60,19 +85,31 @@ function pick(id) {
   const tpl = id === 'blank' ? null : store.templateById(id)
   newName.value = tpl ? tpl.name : ''
   newEmoji.value = tpl ? tpl.emoji : '📋'
+  newSpaceId.value = store.spaces[0]?.id ?? ''
+  newLabelIds.value = []
+  newStartDate.value = ''
+  newEndDate.value = ''
+}
+
+function toggleNewLabel(id) {
+  const i = newLabelIds.value.indexOf(id)
+  if (i === -1) newLabelIds.value.push(id)
+  else newLabelIds.value.splice(i, 1)
 }
 
 function create() {
   const name = newName.value.trim()
   if (!name) return
-  if (pickedTemplateId.value === 'blank') {
-    store.createEmptyList(name, newEmoji.value)
-  } else {
-    store.createListFromTemplate(pickedTemplateId.value, name, newEmoji.value)
+  const created =
+    pickedTemplateId.value === 'blank'
+      ? store.createEmptyList(name, newEmoji.value, newSpaceId.value, newLabelIds.value, newStartDate.value || null, newEndDate.value || null)
+      : store.createListFromTemplate(pickedTemplateId.value, name, newEmoji.value, newSpaceId.value)
+  if (pickedTemplateId.value !== 'blank') {
+    for (const id of newLabelIds.value) store.toggleListLabel(created.id, id)
+    if (newStartDate.value) store.setListDates(created.id, newStartDate.value, newEndDate.value || null)
   }
   showForm.value = false
   pickedTemplateId.value = null
-  newName.value = ''
   toast.show('Liste créée')
 }
 
@@ -81,6 +118,19 @@ function closeAll() {
   showForm.value = false
   pickedTemplateId.value = null
   newName.value = ''
+}
+
+const showNewLabelForm = ref(false)
+const newLabelName = ref('')
+const newLabelColor = ref('#4d8dff')
+const LABEL_COLORS = ['#4d8dff', '#f5a524', '#e5484d', '#3fb950', '#a371f7', '#ea4aaa']
+
+function createLabel() {
+  const name = newLabelName.value.trim()
+  if (!name) return
+  store.addLabel(name, newLabelColor.value)
+  newLabelName.value = ''
+  showNewLabelForm.value = false
 }
 </script>
 
@@ -93,18 +143,75 @@ function closeAll() {
       </button>
     </div>
 
+    <div class="label-bar">
+      <button
+        class="label-chip all"
+        :class="{ active: !labelFilter }"
+        @click="labelFilter = null"
+      >
+        <Tag :size="13" /> Tout
+      </button>
+      <button
+        v-for="label in store.labels"
+        :key="label.id"
+        class="label-chip"
+        :class="{ active: labelFilter === label.id }"
+        :style="{ '--chip-color': label.color }"
+        @click="labelFilter = labelFilter === label.id ? null : label.id"
+      >
+        {{ label.name }}
+      </button>
+      <button class="label-chip add" @click="showNewLabelForm = true">
+        <Plus :size="13" />
+      </button>
+    </div>
+
+    <section v-for="group in listsBySpace" :key="group.space.id" class="space-group">
+      <h2 class="space-title">
+        <span class="space-emoji">{{ group.space.emoji }}</span>
+        {{ group.space.name }}
+        <span class="space-count font-mono">{{ group.lists.length }}</span>
+      </h2>
+      <ul class="lists">
+        <li v-for="list in group.lists" :key="list.id">
+          <ItemCard
+            :to="`/list/${list.id}`"
+            :emoji="list.emoji"
+            :name="list.name"
+            :meta="`${progressOf(list)}%`"
+            @delete="removeList(list)"
+          />
+        </li>
+      </ul>
+    </section>
+
     <ul class="lists">
-      <li v-for="list in sortedLists" :key="list.id">
-        <ItemCard
-          :to="`/list/${list.id}`"
-          :emoji="list.emoji"
-          :name="list.name"
-          :meta="`${list.sections.length} rubriques · ${progressOf(list)}%`"
-          @delete="removeList(list)"
-        />
-      </li>
       <li><AddCard label="Ajouter une liste" @click="showTemplatePicker = true" /></li>
     </ul>
+
+    <div v-if="showNewLabelForm" class="overlay" @click.self="showNewLabelForm = false">
+      <div class="dialog">
+        <div class="dialog-head">
+          <span class="font-mono dialog-title">Nouvelle étiquette</span>
+          <button class="icon-btn" aria-label="Fermer" @click="showNewLabelForm = false"><X :size="18" /></button>
+        </div>
+        <form @submit.prevent="createLabel">
+          <input v-model="newLabelName" class="input" type="text" placeholder="Nom de l'étiquette" autofocus />
+          <div class="color-row">
+            <button
+              v-for="c in LABEL_COLORS"
+              :key="c"
+              type="button"
+              class="color-dot"
+              :class="{ active: newLabelColor === c }"
+              :style="{ background: c }"
+              @click="newLabelColor = c"
+            />
+          </div>
+          <button type="submit" class="submit">Créer</button>
+        </form>
+      </div>
+    </div>
 
     <div v-if="showTemplatePicker" class="overlay" @click.self="closeAll">
       <div class="dialog">
@@ -161,6 +268,32 @@ function closeAll() {
             </button>
           </div>
           <input v-model="newName" class="input" type="text" placeholder="Nom de la liste" autofocus />
+
+          <select v-model="newSpaceId" class="input select">
+            <option value="" disabled>Espace…</option>
+            <option v-for="s in store.spaces" :key="s.id" :value="s.id">{{ s.emoji }} {{ s.name }}</option>
+          </select>
+
+          <div class="labels-row">
+            <button
+              v-for="label in store.labels"
+              :key="label.id"
+              type="button"
+              class="label-chip"
+              :class="{ active: newLabelIds.includes(label.id) }"
+              :style="{ '--chip-color': label.color }"
+              @click="toggleNewLabel(label.id)"
+            >
+              {{ label.name }}
+            </button>
+          </div>
+
+          <div class="dates-row">
+            <input v-model="newStartDate" class="input date" type="date" />
+            <span class="date-sep">→</span>
+            <input v-model="newEndDate" class="input date" type="date" />
+          </div>
+
           <button type="submit" class="submit">Créer</button>
         </form>
       </div>
@@ -182,11 +315,58 @@ function closeAll() {
   border: 1px solid var(--line);
   border-radius: 0.6rem;
   color: var(--ink-muted);
-  transition: border-color 0.15s, color 0.15s;
 }
 .sort-btn:active {
   border-color: var(--accent-dim);
   color: var(--accent);
+}
+.label-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+.label-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.32rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-muted);
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.label-chip.active {
+  border-color: var(--chip-color, var(--accent));
+  color: var(--chip-color, var(--accent));
+  background: color-mix(in srgb, var(--chip-color, var(--accent)) 12%, transparent);
+}
+.label-chip.add {
+  border-style: dashed;
+  color: var(--ink-faint);
+}
+.space-group {
+  margin-bottom: 1.5rem;
+}
+.space-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.space-emoji {
+  font-size: 1.1rem;
+}
+.space-count {
+  font-size: 0.65rem;
+  color: var(--ink-faint);
+  background: var(--bg-2);
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
 }
 .lists {
   list-style: none;
@@ -209,6 +389,8 @@ function closeAll() {
 }
 .dialog {
   width: min(22rem, 100%);
+  max-height: calc(100dvh - 3rem);
+  overflow-y: auto;
   border: 1px solid var(--line);
   border-radius: 1rem;
   background: var(--bg-1);
@@ -236,6 +418,22 @@ function closeAll() {
   border-radius: 0.5rem;
   color: var(--ink-muted);
 }
+.color-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.color-dot {
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.color-dot.active {
+  border-color: var(--ink);
+  transform: scale(1.12);
+}
 .picker-list {
   display: flex;
   flex-direction: column;
@@ -250,7 +448,6 @@ function closeAll() {
   border: 1px solid var(--line);
   border-radius: 0.75rem;
   text-align: left;
-  transition: border-color 0.15s;
 }
 .picker-item:active {
   border-color: var(--accent-dim);
@@ -301,7 +498,6 @@ function closeAll() {
   font-size: 1.2rem;
   border: 1px solid var(--line);
   border-radius: 0.6rem;
-  transition: border-color 0.15s;
 }
 .emoji-choice.active {
   border-color: var(--accent);
@@ -316,9 +512,34 @@ function closeAll() {
   color: var(--ink);
   outline: none;
   margin-bottom: 0.6rem;
+  color-scheme: dark;
+}
+html[data-theme='light'] .input {
+  color-scheme: light;
 }
 .input:focus {
   border-color: var(--accent-dim);
+}
+.select {
+  appearance: none;
+}
+.labels-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+.dates-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+.dates-row .input {
+  margin-bottom: 0;
+}
+.date-sep {
+  color: var(--ink-faint);
 }
 .submit {
   width: 100%;
