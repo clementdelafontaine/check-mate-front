@@ -8,8 +8,9 @@ const route = useRoute()
 const store = useChecklistsStore()
 
 const items = [
+  { name: 'home', label: 'Accueil', to: '/', icon: House },
   { name: 'today', label: 'Aujourd\'hui', to: '/today', icon: Sun },
-  { name: 'home', label: 'Mes listes', to: '/', icon: House },
+  { name: 'lists', label: 'Mes listes', to: '/lists', icon: ClipboardList },
   { name: 'calendar', label: 'Calendrier', to: '/calendar', icon: CalendarRange },
   { name: 'templates', label: 'Templates', to: '/templates', icon: LayoutGrid }
 ]
@@ -26,7 +27,7 @@ const todayCount = computed(() => {
 })
 
 const isActive = (item) => {
-  if (item.name === 'home') return route.name === 'home' || route.name === 'list'
+  if (item.name === 'lists') return route.name === 'lists' || route.name === 'list'
   if (item.name === 'templates') return route.name === 'templates' || route.name === 'template'
   return route.name === item.name
 }

@@ -1,13 +1,29 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useChecklistsStore } from '../stores/checklists'
-import { useUndoToast } from '../composables/useUndoToast'
-import ItemCard from '../components/ItemCard.vue'
-import AddCard from '../components/AddCard.vue'
-import { X, LayoutGrid, FilePlus2, ArrowDownUp, Plus, Tag } from 'lucide-vue-next'
+import {
+  Sun,
+  ClipboardList,
+  CalendarRange,
+  Sparkles,
+  CheckCircle2,
+  AlertTriangle,
+  ArrowRight,
+  Clock
+} from 'lucide-vue-next'
 
 const store = useChecklistsStore()
-const toast = useUndoToast()
+const router = useRouter()
+
+const today = new Date().toISOString().slice(0, 10)
+const todayLong = new Date().toLocaleDateString('fr-FR', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long'
+})
+
+const isActive = (list) => list.sections.some((s) => s.items.some((i) => !i.checked))
 
 const progressOf = (list) => {
   const items = list.sections.flatMap((s) => s.items)
@@ -15,539 +31,393 @@ const progressOf = (list) => {
   const done = items.filter((i) => i.checked).length
   return Math.round((done / items.length) * 100)
 }
-const isActive = (list) => list.sections.some((s) => s.items.some((i) => !i.checked))
 
-const sortBy = ref('smart')
-const sortOptions = [
-  { id: 'smart', label: 'Smart' },
-  { id: 'name', label: 'A→Z' },
-  { id: 'progress', label: 'Prog.' }
-]
-function cycleSort() {
-  const i = sortOptions.findIndex((o) => o.id === sortBy.value)
-  sortBy.value = sortOptions[(i + 1) % sortOptions.length].id
-}
-const sortLabel = computed(() => sortOptions.find((o) => o.id === sortBy.value)?.label ?? '')
-
-const labelFilter = ref(null)
-const filteredLists = computed(() => {
-  let lists = labelFilter.value
-    ? store.lists.filter((l) => l.labelIds?.includes(labelFilter.value))
-    : store.lists
-  if (sortBy.value === 'name') {
-    lists = [...lists].sort((a, b) => a.name.localeCompare(b.name, 'fr'))
-  } else if (sortBy.value === 'progress') {
-    lists = [...lists].sort((a, b) => progressOf(b) - progressOf(a))
-  } else {
-    lists = [...lists].sort((a, b) => Number(isActive(b)) - Number(isActive(a)))
-  }
-  return lists
+const dueToday = computed(() =>
+  store.lists.filter(
+    (l) => l.startDate && l.startDate <= today && (!l.endDate || l.endDate >= today) && isActive(l)
+  )
+)
+const overdue = computed(() =>
+  store.lists.filter((l) => l.endDate && l.endDate < today && isActive(l))
+)
+const activeCount = computed(() => store.lists.filter(isActive).length)
+const doneCount = computed(() => store.lists.filter((l) => !isActive(l) && l.sections.some((s) => s.items.length)).length)
+const upcomingCount = computed(
+  () => store.lists.filter((l) => l.startDate && l.startDate > today).length
+)
+const upcomingFirst = computed(() => {
+  const items = store.lists
+    .filter((l) => l.startDate && l.startDate > today)
+    .sort((a, b) => a.startDate.localeCompare(b.startDate))
+  return items[0] ?? null
 })
-
-const spaceFilter = ref(null)
-const listsBySpace = computed(() => {
+const totalOpenItems = computed(() =>
+  store.lists.reduce(
+    (n, l) => n + l.sections.reduce((m, s) => m + s.items.filter((i) => !i.checked).length, 0),
+    0
+  )
+)
+const spacesWithActive = computed(() => {
   const groups = []
   for (const space of store.spaces) {
-    const lists = filteredLists.value.filter((l) => l.spaceId === space.id)
-    if (lists.length) groups.push({ space, lists })
+    const active = store.lists.filter((l) => l.spaceId === space.id && isActive(l)).length
+    if (active > 0) groups.push({ space, active })
   }
-  const orphans = filteredLists.value.filter((l) => !l.spaceId || !store.spaceById(l.spaceId))
-  if (orphans.length) groups.push({ space: { id: '__none', name: 'Sans espace', emoji: '📂' }, lists: orphans })
   return groups
 })
 
-function removeList(list) {
-  const payload = store.removeList(list.id)
-  toast.show(`« ${list.name} » supprimée`, () => store.restoreList(payload))
+const fmtDate = (isoStr) => {
+  const [y, m, d] = isoStr.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
 }
 
-const showTemplatePicker = ref(false)
-const showForm = ref(false)
-const pickedTemplateId = ref(null)
-const newName = ref('')
-const newEmoji = ref('📋')
-const newSpaceId = ref('')
-const newLabelIds = ref([])
-const newStartDate = ref('')
-const newEndDate = ref('')
+const greeting = computed(() => {
+  const h = new Date().getHours()
+  if (h < 6) return 'Bonne nuit'
+  if (h < 12) return 'Bonjour'
+  if (h < 18) return 'Bon après-midi'
+  return 'Bonsoir'
+})
 
-const EMOJIS = ['📋', '🛒', '🧳', '🏠', '✈️', '🎒', '🎁', '📝', '🌟', '🧹', '🔧', '💊']
-
-const pickedTemplate = () =>
-  pickedTemplateId.value === 'blank'
-    ? { id: 'blank', name: 'Liste vide', emoji: '📋' }
-    : store.templateById(pickedTemplateId.value)
-
-function pick(id) {
-  pickedTemplateId.value = id
-  showTemplatePicker.value = false
-  showForm.value = true
-  const tpl = id === 'blank' ? null : store.templateById(id)
-  newName.value = tpl ? tpl.name : ''
-  newEmoji.value = tpl ? tpl.emoji : '📋'
-  newSpaceId.value = store.spaces[0]?.id ?? ''
-  newLabelIds.value = []
-  newStartDate.value = ''
-  newEndDate.value = ''
-}
-
-function toggleNewLabel(id) {
-  const i = newLabelIds.value.indexOf(id)
-  if (i === -1) newLabelIds.value.push(id)
-  else newLabelIds.value.splice(i, 1)
-}
-
-function create() {
-  const name = newName.value.trim()
-  if (!name) return
-  const created =
-    pickedTemplateId.value === 'blank'
-      ? store.createEmptyList(name, newEmoji.value, newSpaceId.value, newLabelIds.value, newStartDate.value || null, newEndDate.value || null)
-      : store.createListFromTemplate(pickedTemplateId.value, name, newEmoji.value, newSpaceId.value)
-  if (pickedTemplateId.value !== 'blank') {
-    for (const id of newLabelIds.value) store.toggleListLabel(created.id, id)
-    if (newStartDate.value) store.setListDates(created.id, newStartDate.value, newEndDate.value || null)
-  }
-  showForm.value = false
-  pickedTemplateId.value = null
-  toast.show('Liste créée')
-}
-
-function closeAll() {
-  showTemplatePicker.value = false
-  showForm.value = false
-  pickedTemplateId.value = null
-  newName.value = ''
-}
-
-const showNewLabelForm = ref(false)
-const newLabelName = ref('')
-const newLabelColor = ref('#4d8dff')
-const LABEL_COLORS = ['#4d8dff', '#f5a524', '#e5484d', '#3fb950', '#a371f7', '#ea4aaa']
-
-function createLabel() {
-  const name = newLabelName.value.trim()
-  if (!name) return
-  store.addLabel(name, newLabelColor.value)
-  newLabelName.value = ''
-  showNewLabelForm.value = false
-}
+function goToday() { router.push('/today') }
+function goLists() { router.push('/lists') }
+function goCalendar() { router.push('/calendar') }
+function goTemplates() { router.push('/templates') }
 </script>
 
 <template>
   <div class="view">
-    <div class="view-header">
-      <h1 class="view-title font-display">Mes listes</h1>
-      <button class="sort-btn" @click="cycleSort">
-        <ArrowDownUp :size="14" /> {{ sortLabel }}
+    <div class="hero">
+      <div>
+        <h1 class="hero-title font-display">{{ greeting }}</h1>
+        <span class="hero-date font-mono">{{ todayLong }}</span>
+      </div>
+      <router-link to="/lists" class="hero-add" aria-label="Mes listes">
+        <ClipboardList :size="20" />
+      </router-link>
+    </div>
+
+    <div class="grid">
+      <button
+        class="tile tile-primary"
+        :class="{ urgent: overdue.length > 0 }"
+        @click="goToday"
+      >
+        <span class="tile-icon-wrap"><Sun :size="22" class="tile-icon" /></span>
+        <span class="tile-label">Aujourd'hui</span>
+        <span class="tile-value">{{ dueToday.length + overdue.length }}</span>
+        <span class="tile-hint">
+          {{ overdue.length > 0 ? `${overdue.length} en retard` : dueToday.length > 0 ? 'liste(s) à traiter' : 'rien de prévu' }}
+        </span>
+      </button>
+
+      <button class="tile" @click="goLists">
+        <span class="tile-icon-wrap"><ClipboardList :size="20" class="tile-icon" /></span>
+        <span class="tile-label">Mes listes</span>
+        <span class="tile-value">{{ activeCount }}</span>
+        <span class="tile-hint">{{ totalOpenItems }} items à cocher</span>
+      </button>
+
+      <button class="tile" @click="goCalendar">
+        <span class="tile-icon-wrap"><CalendarRange :size="20" class="tile-icon" /></span>
+        <span class="tile-label">Calendrier</span>
+        <span v-if="upcomingFirst" class="tile-value">{{ fmtDate(upcomingFirst.startDate) }}</span>
+        <span v-else class="tile-value">—</span>
+        <span class="tile-hint">{{ upcomingCount }} à venir</span>
+      </button>
+
+      <button class="tile tile-done" @click="goLists">
+        <span class="tile-icon-wrap"><CheckCircle2 :size="20" class="tile-icon" /></span>
+        <span class="tile-label">Terminées</span>
+        <span class="tile-value">{{ doneCount }}</span>
+        <span class="tile-hint">bel avancement</span>
       </button>
     </div>
 
-    <div class="label-bar">
-      <button
-        class="label-chip all"
-        :class="{ active: !labelFilter }"
-        @click="labelFilter = null"
-      >
-        <Tag :size="13" /> Tout
-      </button>
-      <button
-        v-for="label in store.labels"
-        :key="label.id"
-        class="label-chip"
-        :class="{ active: labelFilter === label.id }"
-        :style="{ '--chip-color': label.color }"
-        @click="labelFilter = labelFilter === label.id ? null : label.id"
-      >
-        {{ label.name }}
-      </button>
-      <button class="label-chip add" @click="showNewLabelForm = true">
-        <Plus :size="13" />
-      </button>
-    </div>
-
-    <section v-for="group in listsBySpace" :key="group.space.id" class="space-group">
-      <h2 class="space-title">
-        <span class="space-emoji">{{ group.space.emoji }}</span>
-        {{ group.space.name }}
-        <span class="space-count font-mono">{{ group.lists.length }}</span>
+    <section v-if="overdue.length" class="section">
+      <h2 class="section-label">
+        <AlertTriangle :size="13" class="warn" /> En retard
       </h2>
-      <ul class="lists">
-        <li v-for="list in group.lists" :key="list.id">
-          <ItemCard
-            :to="`/list/${list.id}`"
-            :emoji="list.emoji"
-            :name="list.name"
-            :meta="`${progressOf(list)}%`"
-            @delete="removeList(list)"
-          />
+      <ul class="mini-lists">
+        <li v-for="list in overdue.slice(0, 3)" :key="list.id">
+          <router-link class="mini-row" :to="`/list/${list.id}`">
+            <span class="mini-emoji">{{ list.emoji }}</span>
+            <span class="mini-name">{{ list.name }}</span>
+            <span class="mini-meta font-mono">prévu avant le {{ fmtDate(list.endDate) }}</span>
+            <ArrowRight :size="14" class="mini-chevron" />
+          </router-link>
+        </li>
+        <li v-if="overdue.length > 3">
+          <button class="mini-more" @click="goToday">+ {{ overdue.length - 3 }} autre(s)</button>
         </li>
       </ul>
     </section>
 
-    <ul class="lists">
-      <li><AddCard label="Ajouter une liste" @click="showTemplatePicker = true" /></li>
-    </ul>
+    <section v-if="dueToday.length" class="section">
+      <h2 class="section-label">
+        <Sun :size="13" /> À traiter aujourd'hui
+      </h2>
+      <ul class="mini-lists">
+        <li v-for="list in dueToday.slice(0, 4)" :key="list.id">
+          <router-link class="mini-row" :to="`/list/${list.id}`">
+            <span class="mini-emoji">{{ list.emoji }}</span>
+            <span class="mini-name">{{ list.name }}</span>
+            <span class="mini-meta font-mono">{{ progressOf(list) }}%</span>
+            <ArrowRight :size="14" class="mini-chevron" />
+          </router-link>
+        </li>
+        <li v-if="dueToday.length > 4">
+          <button class="mini-more" @click="goToday">+ {{ dueToday.length - 4 }} autre(s)</button>
+        </li>
+      </ul>
+    </section>
 
-    <div v-if="showNewLabelForm" class="overlay" @click.self="showNewLabelForm = false">
-      <div class="dialog">
-        <div class="dialog-head">
-          <span class="font-mono dialog-title">Nouvelle étiquette</span>
-          <button class="icon-btn" aria-label="Fermer" @click="showNewLabelForm = false"><X :size="18" /></button>
-        </div>
-        <form @submit.prevent="createLabel">
-          <input v-model="newLabelName" class="input" type="text" placeholder="Nom de l'étiquette" autofocus />
-          <div class="color-row">
-            <button
-              v-for="c in LABEL_COLORS"
-              :key="c"
-              type="button"
-              class="color-dot"
-              :class="{ active: newLabelColor === c }"
-              :style="{ background: c }"
-              @click="newLabelColor = c"
-            />
-          </div>
-          <button type="submit" class="submit">Créer</button>
-        </form>
+    <section v-if="upcomingFirst" class="section">
+      <h2 class="section-label">
+        <Clock :size="13" /> Prochainement
+      </h2>
+      <ul class="mini-lists">
+        <li>
+          <router-link class="mini-row" :to="`/list/${upcomingFirst.id}`">
+            <span class="mini-emoji">{{ upcomingFirst.emoji }}</span>
+            <span class="mini-name">{{ upcomingFirst.name }}</span>
+            <span class="mini-meta font-mono">{{ fmtDate(upcomingFirst.startDate) }}</span>
+            <ArrowRight :size="14" class="mini-chevron" />
+          </router-link>
+        </li>
+      </ul>
+    </section>
+
+    <section v-if="spacesWithActive.length" class="section">
+      <h2 class="section-label">
+        <Sparkles :size="13" /> Vue d'ensemble
+      </h2>
+      <div class="space-chips">
+        <router-link
+          v-for="g in spacesWithActive"
+          :key="g.space.id"
+          to="/lists"
+          class="space-chip"
+        >
+          <span class="space-chip-emoji">{{ g.space.emoji }}</span>
+          <span class="space-chip-name">{{ g.space.name }}</span>
+          <span class="space-chip-count font-mono">{{ g.active }}</span>
+        </router-link>
       </div>
-    </div>
-
-    <div v-if="showTemplatePicker" class="overlay" @click.self="closeAll">
-      <div class="dialog">
-        <div class="dialog-head">
-          <span class="font-mono dialog-title">Partir d'un template</span>
-          <button class="icon-btn" aria-label="Fermer" @click="closeAll"><X :size="18" /></button>
-        </div>
-        <div class="picker-list">
-          <button
-            v-for="tpl in store.templates"
-            :key="tpl.id"
-            class="picker-item"
-            @click="pick(tpl.id)"
-          >
-            <span class="emoji">{{ tpl.emoji }}</span>
-            <span class="picker-info">
-              <span class="picker-name">{{ tpl.name }}</span>
-              <span class="picker-desc">{{ tpl.description }}</span>
-            </span>
-            <LayoutGrid :size="16" class="picker-icon" />
-          </button>
-          <button class="picker-item" @click="pick('blank')">
-            <span class="emoji">📄</span>
-            <span class="picker-info">
-              <span class="picker-name">Créer une liste vide</span>
-              <span class="picker-desc">Partir d'une page blanche</span>
-            </span>
-            <FilePlus2 :size="16" class="picker-icon" />
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showForm" class="overlay" @click.self="closeAll">
-      <div class="dialog">
-        <div class="dialog-head">
-          <span class="font-mono dialog-title">Nouvelle liste</span>
-          <button class="icon-btn" aria-label="Fermer" @click="closeAll"><X :size="18" /></button>
-        </div>
-        <form @submit.prevent="create">
-          <div class="picked-from font-mono">
-            {{ pickedTemplate()?.emoji }} {{ pickedTemplate()?.name }}
-          </div>
-          <div class="emoji-row">
-            <button
-              v-for="e in EMOJIS"
-              :key="e"
-              type="button"
-              class="emoji-choice"
-              :class="{ active: newEmoji === e }"
-              @click="newEmoji = e"
-            >
-              {{ e }}
-            </button>
-          </div>
-          <input v-model="newName" class="input" type="text" placeholder="Nom de la liste" autofocus />
-
-          <select v-model="newSpaceId" class="input select">
-            <option value="" disabled>Espace…</option>
-            <option v-for="s in store.spaces" :key="s.id" :value="s.id">{{ s.emoji }} {{ s.name }}</option>
-          </select>
-
-          <div class="labels-row">
-            <button
-              v-for="label in store.labels"
-              :key="label.id"
-              type="button"
-              class="label-chip"
-              :class="{ active: newLabelIds.includes(label.id) }"
-              :style="{ '--chip-color': label.color }"
-              @click="toggleNewLabel(label.id)"
-            >
-              {{ label.name }}
-            </button>
-          </div>
-
-          <div class="dates-row">
-            <input v-model="newStartDate" class="input date" type="date" />
-            <span class="date-sep">→</span>
-            <input v-model="newEndDate" class="input date" type="date" />
-          </div>
-
-          <button type="submit" class="submit">Créer</button>
-        </form>
-      </div>
-    </div>
+    </section>
   </div>
 </template>
 
 <style scoped>
-.view-header {
+.hero {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
-}
-.sort-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.4rem 0.7rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border: 1px solid var(--line);
-  border-radius: 0.6rem;
-  color: var(--ink-muted);
-}
-.sort-btn:active {
-  border-color: var(--accent-dim);
-  color: var(--accent);
-}
-.label-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-bottom: 1.25rem;
-}
-.label-chip {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.32rem 0.7rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  color: var(--ink-muted);
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
-}
-.label-chip.active {
-  border-color: var(--chip-color, var(--accent));
-  color: var(--chip-color, var(--accent));
-  background: color-mix(in srgb, var(--chip-color, var(--accent)) 12%, transparent);
-}
-.label-chip.add {
-  border-style: dashed;
-  color: var(--ink-faint);
-}
-.space-group {
   margin-bottom: 1.5rem;
 }
-.space-title {
+.hero-title {
+  margin: 0;
+  font-size: 1.45rem;
+}
+.hero-date {
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.hero-add {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin: 0 0 0.6rem;
-  font-size: 0.95rem;
-  font-weight: 700;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.85rem;
+  color: var(--ink-muted);
 }
-.space-emoji {
-  font-size: 1.1rem;
-}
-.space-count {
-  font-size: 0.65rem;
-  color: var(--ink-faint);
+.hero-add:active {
   background: var(--bg-2);
-  padding: 0.1rem 0.45rem;
-  border-radius: 999px;
 }
-.lists {
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+  margin-bottom: 1.75rem;
+}
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1.1rem;
+  background: var(--bg-1);
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.tile:active {
+  background: var(--bg-2);
+}
+.tile-primary {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+.tile-primary .tile-icon-wrap {
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 0.9rem;
+}
+.tile-primary .tile-icon {
+  width: 22px;
+  height: 22px;
+}
+.tile-primary .tile-label {
+  font-size: 1.05rem;
+}
+.tile-primary .tile-value {
+  margin-left: auto;
+  font-size: 1.6rem;
+}
+.tile-primary .tile-hint {
+  flex-basis: 100%;
+  margin-left: 3.7rem;
+  margin-top: -0.4rem;
+}
+.tile.urgent {
+  border-color: color-mix(in srgb, #e5484d 55%, var(--line));
+}
+.tile.urgent .tile-icon {
+  color: #ff6b6b;
+}
+.tile.urgent .tile-value {
+  color: #ff6b6b;
+}
+.tile-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.3rem;
+  height: 2.3rem;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: var(--bg-2);
+}
+.tile-icon {
+  color: var(--accent);
+}
+.tile-label {
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+.tile-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin-top: 0.15rem;
+}
+.tile-hint {
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+}
+.tile-done .tile-icon {
+  color: #3fb950;
+}
+.section {
+  margin-bottom: 1.5rem;
+}
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.warn {
+  color: #ff6b6b;
+}
+.mini-lists {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.45rem;
 }
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(2px);
-}
-.dialog {
-  width: min(22rem, 100%);
-  max-height: calc(100dvh - 3rem);
-  overflow-y: auto;
-  border: 1px solid var(--line);
-  border-radius: 1rem;
-  background: var(--bg-1);
-  padding: 1.1rem;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
-}
-.dialog-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-}
-.dialog-title {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: var(--ink-faint);
-}
-.icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.5rem;
-  color: var(--ink-muted);
-}
-.color-row {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-.color-dot {
-  width: 1.9rem;
-  height: 1.9rem;
-  border-radius: 999px;
-  border: 2px solid transparent;
-  transition: border-color 0.15s, transform 0.1s;
-}
-.color-dot.active {
-  border-color: var(--ink);
-  transform: scale(1.12);
-}
-.picker-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.picker-item {
+.mini-row {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  width: 100%;
-  padding: 0.65rem 0.7rem;
+  padding: 0.65rem 0.85rem;
   border: 1px solid var(--line);
-  border-radius: 0.75rem;
-  text-align: left;
+  border-radius: 0.85rem;
+  background: var(--bg-1);
 }
-.picker-item:active {
-  border-color: var(--accent-dim);
+.mini-row:active {
+  background: var(--bg-2);
 }
-.emoji {
-  font-size: 1.25rem;
+.mini-emoji {
+  font-size: 1.15rem;
 }
-.picker-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-.picker-name {
+.mini-name {
   font-weight: 600;
   font-size: 0.9rem;
-}
-.picker-desc {
-  font-size: 0.72rem;
-  color: var(--ink-faint);
+  flex: 1;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.picker-icon {
+.mini-meta {
+  font-size: 0.68rem;
   color: var(--ink-faint);
   flex-shrink: 0;
 }
-.picked-from {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
+.mini-chevron {
   color: var(--ink-faint);
-  margin-bottom: 0.6rem;
+  flex-shrink: 0;
 }
-.emoji-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-bottom: 0.75rem;
+.mini-more {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
 }
-.emoji-choice {
-  width: 2.4rem;
-  height: 2.4rem;
+.space-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.6rem;
+}
+.space-chip {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
+  gap: 0.55rem;
+  padding: 0.75rem 0.85rem;
   border: 1px solid var(--line);
-  border-radius: 0.6rem;
+  border-radius: 0.9rem;
+  background: var(--bg-1);
 }
-.emoji-choice.active {
-  border-color: var(--accent);
-  background: var(--accent-deep);
-}
-.input {
-  width: 100%;
-  padding: 0.6rem 0.75rem;
-  border: 1px solid var(--line);
-  border-radius: 0.7rem;
+.space-chip:active {
   background: var(--bg-2);
-  color: var(--ink);
-  outline: none;
-  margin-bottom: 0.6rem;
-  color-scheme: dark;
 }
-html[data-theme='light'] .input {
-  color-scheme: light;
+.space-chip-emoji {
+  font-size: 1.1rem;
 }
-.input:focus {
-  border-color: var(--accent-dim);
+.space-chip-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.select {
-  appearance: none;
-}
-.labels-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-bottom: 0.75rem;
-}
-.dates-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.6rem;
-}
-.dates-row .input {
-  margin-bottom: 0;
-}
-.date-sep {
-  color: var(--ink-faint);
-}
-.submit {
-  width: 100%;
-  padding: 0.65rem;
-  border-radius: 0.7rem;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.9rem;
+.space-chip-count {
+  font-size: 0.72rem;
+  color: var(--accent);
+  background: var(--accent-deep);
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
 }
 </style>
