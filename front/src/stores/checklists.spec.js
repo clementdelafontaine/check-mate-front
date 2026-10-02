@@ -131,7 +131,7 @@ describe('checklists store', () => {
     const list = firstList(store)
     store.toggleItem(list.id, list.sections[0].id, list.sections[0].items[0].id)
     store.persist()
-    const raw = localStorage.getItem('checkmate-state-v1')
+    const raw = localStorage.getItem('checkmate-state-v2')
     expect(raw).toBeTruthy()
     const parsed = JSON.parse(raw)
     expect(parsed.lists.length).toBe(store.lists.length)
