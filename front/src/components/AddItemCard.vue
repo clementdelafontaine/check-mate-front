@@ -12,9 +12,23 @@ const store = useChecklistsStore()
 const open = ref(false)
 const label = ref('')
 const kind = ref('task')
-const quantity = ref('')
+const quantity = ref('1')
 const sectionChoice = ref('')
 const newSectionName = ref('')
+
+const quantityNum = computed(() => {
+  const n = Number(quantity.value)
+  return Number.isFinite(n) && n > 0 ? n : null
+})
+
+function incQuantity() {
+  quantity.value = String((quantityNum.value ?? 0) + 1)
+}
+
+function decQuantity() {
+  const n = quantityNum.value
+  if (n !== null && n > 1) quantity.value = String(n - 1)
+}
 
 const KINDS = [
   { id: 'task', label: 'Tâche' },
@@ -60,7 +74,7 @@ function close() {
   open.value = false
   label.value = ''
   kind.value = 'task'
-  quantity.value = ''
+  quantity.value = '1'
   sectionChoice.value = ''
   newSectionName.value = ''
   suggestionsDismissed.value = false
@@ -69,7 +83,7 @@ function close() {
 function submit() {
   const value = label.value.trim()
   if (!value) return
-  const qty = kind.value === 'product' && quantity.value.trim() !== '' ? quantity.value.trim() : null
+  const qty = kind.value === 'product' ? (quantityNum.value ?? 1) : null
 
   let sectionId = sectionChoice.value
   if (isNewSection.value) {
@@ -121,7 +135,11 @@ function submit() {
             {{ s }}
           </button>
         </div>
-        <input v-if="kind === 'product'" v-model="quantity" class="input" type="text" inputmode="numeric" placeholder="Nombre (optionnel)" />
+        <div v-if="kind === 'product'" class="qty-row">
+          <button type="button" class="step" :disabled="!quantityNum || quantityNum <= 1" @click="decQuantity">−</button>
+          <span class="step-value font-mono">{{ quantityNum ?? 1 }}</span>
+          <button type="button" class="step" @click="incQuantity">+</button>
+        </div>
         <select v-model="sectionChoice" class="input select">
           <option value="" disabled>Catégorie… ({{ GENERIC_SECTION }} si vide)</option>
           <option v-for="s in sections" :key="s.id" :value="s.id">{{ s.name }}</option>
@@ -156,6 +174,38 @@ function submit() {
 </template>
 
 <style scoped>
+.qty-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+.step {
+  width: 2.2rem;
+  height: 2.2rem;
+  flex-shrink: 0;
+  border: 1px solid var(--line-bright);
+  border-radius: 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.step:active {
+  background: var(--bg-2);
+}
+.step:disabled {
+  opacity: 0.35;
+}
+.step-value {
+  min-width: 2rem;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+}
 .kind-row {
   display: flex;
   gap: 0.4rem;
