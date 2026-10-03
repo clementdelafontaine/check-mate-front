@@ -1,7 +1,11 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useChecklistsStore } from '../stores/checklists'
-import { ChevronLeft, ChevronRight, CalendarX2 } from 'lucide-vue-next'
+import { useUndoToast } from '../composables/useUndoToast'
+import AddListForDayDialog from '../components/AddListForDayDialog.vue'
+import { ChevronLeft, ChevronRight, CalendarX2, Plus } from 'lucide-vue-next'
+
+const toast = useUndoToast()
 
 const store = useChecklistsStore()
 
@@ -60,6 +64,8 @@ const selectedLists = computed(() => {
     (l) => l.startDate && l.startDate <= selected.value && (!l.endDate || l.endDate >= selected.value)
   )
 })
+
+const showAdd = ref(false)
 
 const fmtDate = (isoStr) => {
   const [y, m, d] = isoStr.split('-').map(Number)
@@ -121,7 +127,17 @@ const fmtDate = (isoStr) => {
         <CalendarX2 :size="22" class="day-empty-icon" />
         Aucune liste prévue ce jour-là
       </div>
+      <button class="add-day-btn" @click="showAdd = true">
+        <Plus :size="15" /> Ajouter une liste ce jour
+      </button>
     </div>
+
+    <AddListForDayDialog
+      v-if="showAdd && selected"
+      :date="selected"
+      @close="showAdd = false"
+      @created="(l) => toast.show(`« ${l.name} » créée le ${selected.split('-').reverse().join('/')}`)"
+    />
   </div>
 </template>
 
@@ -244,6 +260,24 @@ const fmtDate = (isoStr) => {
 .list-dates {
   font-size: 0.7rem;
   color: var(--ink-faint);
+}
+.add-day-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.55rem;
+  margin-top: 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px dashed var(--line);
+  border-radius: 0.75rem;
+  color: var(--ink-muted);
+}
+.add-day-btn:active {
+  border-color: var(--accent-dim);
+  color: var(--accent);
 }
 .day-empty {
   display: flex;
