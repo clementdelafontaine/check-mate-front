@@ -9,9 +9,9 @@ import { X } from 'lucide-vue-next'
 const store = useChecklistsStore()
 const toast = useUndoToast()
 
-function removeTemplate(tpl) {
-  const payload = store.removeTemplate(tpl.id)
-  toast.show(`Template « ${tpl.name} » supprimé`, () => store.restoreTemplate(payload))
+async function removeTemplate(tpl) {
+  const payload = await store.removeTemplate(tpl.id)
+  if (payload) toast.show(`Template « ${tpl.name} » supprimé`, () => store.restoreTemplate(payload))
 }
 
 const showForm = ref(false)

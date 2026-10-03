@@ -57,9 +57,9 @@ const listsBySpace = computed(() => {
   return groups
 })
 
-function removeList(list) {
-  const payload = store.removeList(list.id)
-  toast.show(`« ${list.name} » supprimée`, () => store.restoreList(payload))
+async function removeList(list) {
+  const payload = await store.removeList(list.id)
+  if (payload) toast.show(`« ${list.name} » supprimée`, () => store.restoreList(payload))
 }
 
 const editingList = ref(null)

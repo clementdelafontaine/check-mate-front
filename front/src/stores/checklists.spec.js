@@ -10,13 +10,13 @@ describe('checklists store', () => {
     setActivePinia(createPinia())
   })
 
-  it('starts with mock lists and templates', () => {
+  it('starts with mock lists and templates', async () => {
     const store = useChecklistsStore()
     expect(store.lists.length).toBeGreaterThan(0)
     expect(store.templates.length).toBeGreaterThan(0)
   })
 
-  it('toggles items', () => {
+  it('toggles items', async () => {
     const store = useChecklistsStore()
     const list = firstList(store)
     const section = list.sections[0]
@@ -27,7 +27,7 @@ describe('checklists store', () => {
     expect(item.checked).toBe(false)
   })
 
-  it('adds items to the generic section when none provided', () => {
+  it('adds items to the generic section when none provided', async () => {
     const store = useChecklistsStore()
     const list = firstList(store)
     const before = list.sections.length
@@ -40,32 +40,32 @@ describe('checklists store', () => {
     expect(divers.items.some((i) => i.label === 'Nouveau')).toBe(true)
   })
 
-  it('removes an item and can restore it', () => {
+  it('removes an item and can restore it', async () => {
     const store = useChecklistsStore()
     const list = firstList(store)
     const section = list.sections[0]
     const item = section.items[0]
-    const payload = store.removeItem(list.id, section.id, item.id)
+    const payload = await store.removeItem(list.id, section.id, item.id)
     expect(section.items.some((i) => i.id === item.id)).toBe(false)
     store.restoreItem(list.id, section.id, payload)
     expect(section.items.some((i) => i.id === item.id)).toBe(true)
   })
 
-  it('clears checked items and restores them', () => {
+  it('clears checked items and restores them', async () => {
     const store = useChecklistsStore()
     const list = firstList(store)
     const section = list.sections[0]
     const item = section.items.find((i) => !i.checked)
     store.toggleItem(list.id, section.id, item.id)
     const checkedBefore = list.sections.flatMap((s) => s.items).filter((i) => i.checked).length
-    const removed = store.clearChecked(list.id)
+    const removed = await store.clearChecked(list.id)
     expect(removed.length).toBe(checkedBefore)
     expect(section.items.length).toBe(section.items.filter((i) => !i.checked).length)
     store.restoreCleared(list.id, removed)
     expect(section.items.some((i) => i.id === item.id)).toBe(true)
   })
 
-  it('resets all checked states', () => {
+  it('resets all checked states', async () => {
     const store = useChecklistsStore()
     const list = firstList(store)
     const section = list.sections[0]
@@ -75,10 +75,10 @@ describe('checklists store', () => {
     expect(anyChecked).toBe(false)
   })
 
-  it('creates a list from a template with unchecked items', () => {
+  it('creates a list from a template with unchecked items', async () => {
     const store = useChecklistsStore()
     const tpl = store.templates[0]
-    const created = store.createListFromTemplate(tpl.id, 'Ma liste')
+    const created = await store.createListFromTemplate(tpl.id, 'Ma liste')
     expect(created.name).toBe('Ma liste')
     const anyChecked = created.sections.some((s) => s.items.some((i) => i.checked))
     expect(anyChecked).toBe(false)
@@ -87,25 +87,25 @@ describe('checklists store', () => {
     expect(createdItemCount).toBe(templateItemCount)
   })
 
-  it('duplicates a list', () => {
+  it('duplicates a list', async () => {
     const store = useChecklistsStore()
     const list = firstList(store)
     const before = store.lists.length
-    const copy = store.duplicateList(list.id)
+    const copy = await store.duplicateList(list.id)
     expect(store.lists.length).toBe(before + 1)
     expect(copy.name).toContain('copie')
   })
 
-  it('saves a list as template', () => {
+  it('saves a list as template', async () => {
     const store = useChecklistsStore()
     const list = firstList(store)
     const before = store.templates.length
-    const tpl = store.saveListAsTemplate(list.id)
+    const tpl = await store.saveListAsTemplate(list.id)
     expect(store.templates.length).toBe(before + 1)
     expect(tpl.isTemplate).toBe(true)
   })
 
-  it('moves an item between sections', () => {
+  it('moves an item between sections', async () => {
     const store = useChecklistsStore()
     const list = firstList(store)
     const [from, to] = list.sections
@@ -116,17 +116,17 @@ describe('checklists store', () => {
     expect(to.items.length).toBe(toCount + 1)
   })
 
-  it('tracks item frequency and suggests completions', () => {
+  it('tracks item frequency and suggests completions', async () => {
     const store = useChecklistsStore()
     store.addItem(firstList(store).id, '', 'Pâtes')
     store.addItem(firstList(store).id, '', 'Pâtes')
     store.addItem(firstList(store).id, '', 'Pain')
-    expect(store.suggestionsFor('pâ')).toContain('pâtes')
-    expect(store.suggestionsFor('pâ')[0]).toBe('pâtes')
-    expect(store.suggestionsFor('x')).toEqual([])
+    expect(await store.suggestionsFor('pâ')).toContain('pâtes')
+    expect((await store.suggestionsFor('pâ'))[0]).toBe('pâtes')
+    expect(await store.suggestionsFor('x')).toEqual([])
   })
 
-  it('ignores persisted state from an older version (no version field)', () => {
+  it('ignores persisted state from an older version (no version field)', async () => {
     const stale = JSON.stringify({
       lists: [{ id: 'old', name: 'Ancienne liste', sections: [{ id: 's', name: 'Divers', items: [] }] }],
       templates: []
@@ -137,7 +137,7 @@ describe('checklists store', () => {
     expect(store.lists.length).toBeGreaterThan(0)
   })
 
-  it('persists to localStorage', () => {
+  it('persists to localStorage', async () => {
     const store = useChecklistsStore()
     const list = firstList(store)
     store.toggleItem(list.id, list.sections[0].id, list.sections[0].items[0].id)
@@ -148,18 +148,18 @@ describe('checklists store', () => {
     expect(parsed.lists.length).toBe(store.lists.length)
   })
 
-  it('removes and restores a list', () => {
+  it('removes and restores a list', async () => {
     const store = useChecklistsStore()
     const list = firstList(store)
     const count = store.lists.length
-    const payload = store.removeList(list.id)
+    const payload = await store.removeList(list.id)
     expect(store.lists.length).toBe(count - 1)
     store.restoreList(payload)
     expect(store.lists.length).toBe(count)
     expect(store.lists.some((l) => l.id === list.id)).toBe(true)
   })
 
-  it('removes and restores a template', () => {
+  it('removes and restores a template', async () => {
     const store = useChecklistsStore()
     const tpl = store.templates[0]
     const count = store.templates.length
@@ -169,7 +169,7 @@ describe('checklists store', () => {
     expect(store.templates.length).toBe(count)
   })
 
-  it('sets item quantity', () => {
+  it('sets item quantity', async () => {
     const store = useChecklistsStore()
     const list = firstList(store)
     const section = list.sections[0]
@@ -180,9 +180,9 @@ describe('checklists store', () => {
     expect(item.quantity).toBe(null)
   })
 
-  it('manages spaces', () => {
+  it('manages spaces', async () => {
     const store = useChecklistsStore()
-    const space = store.addSpace('Jardin', '🌿')
+    const space = await store.addSpace('Jardin', '🌿')
     expect(store.spaces.some((s) => s.id === space.id)).toBe(true)
     const list = firstList(store)
     store.setListSpace(list.id, space.id)
@@ -194,7 +194,7 @@ describe('checklists store', () => {
     expect(list.spaceId).toBe(null)
   })
 
-  it('manages labels and list-label assignment', () => {
+  it('manages labels and list-label assignment', async () => {
     const store = useChecklistsStore()
     const label = store.addLabel('Test', '#123456')
     const list = firstList(store)
@@ -208,20 +208,20 @@ describe('checklists store', () => {
     expect(list.labelIds).not.toContain(label.id)
   })
 
-  it('sets list date ranges and feeds today view', () => {
+  it('sets list date ranges and feeds today view', async () => {
     const store = useChecklistsStore()
     const today = new Date().toISOString().slice(0, 10)
-    const list = store.createEmptyList('Du jour')
-    store.setListDates(list.id, today, today)
+    const list = await store.createEmptyList('Du jour')
+    await store.setListDates(list.id, today, today)
     expect(list.startDate).toBe(today)
     expect(store.todayLists.some((l) => l.id === list.id)).toBe(true)
     const future = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10)
-    store.setListDates(list.id, future, future)
+    await store.setListDates(list.id, future, future)
     expect(store.todayLists.some((l) => l.id === list.id)).toBe(false)
     expect(store.upcomingLists.some((l) => l.id === list.id)).toBe(true)
   })
 
-  it('distinguishes active and done lists', () => {
+  it('distinguishes active and done lists', async () => {
     const store = useChecklistsStore()
     const list = firstList(store)
     expect(store.activeLists.some((l) => l.id === list.id)).toBe(true)

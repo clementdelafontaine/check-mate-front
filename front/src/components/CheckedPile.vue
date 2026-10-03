@@ -35,10 +35,10 @@ function decrement(item) {
   }
 }
 
-function deleteItem(item) {
+async function deleteItem(item) {
   const sectionId = sectionIdOf(item.id)
   if (!sectionId) return
-  const payload = store.removeItem(props.listId, sectionId, item.id)
+  const payload = await store.removeItem(props.listId, sectionId, item.id)
   toast.show(`« ${item.label} » supprimé`, () => store.restoreItem(props.listId, sectionId, payload))
 }
 </script>

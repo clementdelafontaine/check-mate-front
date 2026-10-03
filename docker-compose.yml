@@ -26,5 +26,16 @@ services:
     ports:
       - '127.0.0.1:3000:3000'
 
+  front:
+    build:
+      context: ./front
+      args:
+        VITE_USE_API: 'true'
+        VITE_API_BASE: /api
+    depends_on:
+      - api
+    ports:
+      - '127.0.0.1:8080:80'
+
 volumes:
   pgdata:

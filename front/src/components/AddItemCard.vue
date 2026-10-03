@@ -49,7 +49,18 @@ const newSectionPlaceholder = computed(
 )
 
 const suggestionsDismissed = ref(false)
-const suggestions = computed(() => store.suggestionsFor(label.value))
+const suggestions = ref([])
+watch(
+  label,
+  async (v) => {
+    if (!v.trim() || suggestionsDismissed.value) {
+      suggestions.value = []
+      return
+    }
+    suggestions.value = await store.suggestionsFor(v)
+  },
+  { immediate: true }
+)
 const showSuggestions = computed(
   () => suggestions.value.length > 0 && label.value.trim() !== '' && !suggestionsDismissed.value
 )
@@ -80,7 +91,7 @@ function close() {
   suggestionsDismissed.value = false
 }
 
-function submit() {
+async function submit() {
   const value = label.value.trim()
   if (!value) return
   const qty = kind.value === 'product' ? (quantityNum.value ?? 1) : null
@@ -88,16 +99,16 @@ function submit() {
   let sectionId = sectionChoice.value
   if (isNewSection.value) {
     const name = newSectionName.value.trim() || GENERIC_SECTION
-    const created = props.listId
+    const created = await (props.listId
       ? store.addSection(props.listId, name)
-      : store.addTemplateSection(props.templateId, name)
+      : store.addTemplateSection(props.templateId, name))
     sectionId = created?.id ?? ''
   }
 
   if (props.listId) {
-    store.addItem(props.listId, sectionId, value, qty, kind.value)
+    await store.addItem(props.listId, sectionId, value, qty, kind.value)
   } else if (props.templateId) {
-    store.addTemplateItem(props.templateId, sectionId, value, qty, kind.value)
+    await store.addTemplateItem(props.templateId, sectionId, value, qty, kind.value)
   }
   close()
 }

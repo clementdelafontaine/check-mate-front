@@ -34,8 +34,8 @@ const checkedItems = computed(() =>
 const confirmClear = ref(false)
 const showEdit = ref(false)
 
-function clearChecked() {
-  const removed = store.clearChecked(list.value.id)
+async function clearChecked() {
+  const removed = await store.clearChecked(list.value.id)
   confirmClear.value = false
   toast.show(`${removed.length} item(s) retiré(s)`, () => store.restoreCleared(list.value.id, removed))
 }
@@ -50,8 +50,8 @@ function saveAsTemplate() {
   toast.show('Liste enregistrée comme template')
 }
 
-function duplicate() {
-  const copy = store.duplicateList(list.value.id)
+async function duplicate() {
+  const copy = await store.duplicateList(list.value.id)
   toast.show('Liste dupliquée', () => {
     store.removeList(copy.id)
   })

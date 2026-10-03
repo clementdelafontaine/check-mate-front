@@ -16,8 +16,8 @@ const toast = useUndoToast()
 
 const unchecked = computed(() => props.section.items.filter((i) => !i.checked))
 
-function deleteItem(item) {
-  const payload = store.removeItem(props.listId, props.section.id, item.id)
+async function deleteItem(item) {
+  const payload = await store.removeItem(props.listId, props.section.id, item.id)
   toast.show(`« ${item.label} » supprimé`, () => store.restoreItem(props.listId, props.section.id, payload))
 }
 
