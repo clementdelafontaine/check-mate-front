@@ -18,8 +18,7 @@ const newSectionName = ref('')
 
 const KINDS = [
   { id: 'task', label: 'Tâche' },
-  { id: 'product', label: 'Produit' },
-  { id: 'note', label: 'Note' }
+  { id: 'product', label: 'Produit' }
 ]
 
 const target = computed(() =>

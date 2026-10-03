@@ -13,8 +13,7 @@ const quantity = ref('')
 
 const KINDS = [
   { id: 'task', label: 'Tâche' },
-  { id: 'product', label: 'Produit' },
-  { id: 'note', label: 'Note' }
+  { id: 'product', label: 'Produit' }
 ]
 
 watch(

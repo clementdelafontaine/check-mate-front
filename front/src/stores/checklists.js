@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { templates, initialLists, itemFrequencySeed, uid } from '../mocks/data'
 
 export const GENERIC_SECTION = 'Divers'
-export const ITEM_KINDS = ['task', 'product', 'note']
+export const ITEM_KINDS = ['task', 'product']
 export const LIST_TYPES = [
   { id: 'checklist', label: 'Checklist', emoji: '✅', defaultItemKind: 'task' },
   { id: 'grocery', label: 'Courses', emoji: '🛒', defaultItemKind: 'product' },
@@ -34,6 +34,13 @@ function loadState() {
     parsed.spaces = parsed.spaces ?? DEFAULT_SPACES
     parsed.labels = parsed.labels ?? DEFAULT_LABELS
     parsed.itemFrequency = parsed.itemFrequency ?? {}
+    for (const l of parsed.lists) {
+      for (const s of l.sections) {
+        for (const i of s.items) {
+          if (i.kind && !ITEM_KINDS.includes(i.kind)) i.kind = 'task'
+        }
+      }
+    }
     return parsed
   } catch {
     return null

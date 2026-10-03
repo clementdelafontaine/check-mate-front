@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useSwipe } from '../composables/useSwipe'
+import { useExclusiveMenu } from '../composables/useExclusiveMenu'
 import { MoreVertical, Trash2, ArrowRightLeft, Pencil } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -11,10 +12,10 @@ const props = defineProps({
   sections: { type: Array, default: () => [] },
   showMove: { type: Boolean, default: false },
   swipeable: { type: Boolean, default: true },
-  stepper: { type: Boolean, default: false }
+
 })
 
-const isNote = computed(() => props.kind === 'note')
+const isProduct = computed(() => props.kind === 'product')
 
 const quantityNum = computed(() => {
   const n = Number(props.quantity)
@@ -23,14 +24,14 @@ const quantityNum = computed(() => {
 
 const emit = defineEmits(['toggle', 'delete', 'move', 'increment', 'decrement', 'edit'])
 
-const openMenu = ref(false)
+const menu = useExclusiveMenu()
 const openMove = ref(false)
 const root = ref(null)
 
 const { deltaX, swipeHandlers } = useSwipe(() => emit('delete'))
 
 function onDocClick(e) {
-  if (openMenu.value && root.value && !root.value.contains(e.target)) openMenu.value = false
+  if (menu.isOpen.value && root.value && !root.value.contains(e.target)) menu.close()
   if (openMove.value && root.value && !root.value.contains(e.target)) openMove.value = false
 }
 onMounted(() => document.addEventListener('click', onDocClick))
@@ -38,65 +39,63 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 </script>
 
 <template>
-  <li ref="root" class="item-row">
+  <li ref="root" class="item-row" :class="{ 'menu-open': menu.isOpen.value }">
     <div v-if="swipeable" class="swipe-wrap" v-bind="swipeHandlers">
       <span class="swipe-bg"><Trash2 :size="16" /></span>
       <div
         class="item"
-        :class="{ checked, note: isNote }"
+        :class="{ checked }"
         :style="{ transform: `translateX(${deltaX}px)` }"
         @click="emit('toggle')"
       >
-        <span v-if="isNote" class="note-dot" />
-        <span v-else class="checkbox" :class="{ done: checked }">
+        <span class="checkbox" :class="{ done: checked }">
           <svg v-if="checked" viewBox="0 0 24 24" width="13" height="13"><path d="M5 12.5l4 4L19 7" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </span>
         <span class="label">{{ label }}</span>
-        <span v-if="!stepper && quantity" class="qty font-mono">×{{ quantity }}</span>
-        <span v-if="stepper" class="stepper">
+        <span v-if="!isProduct && quantity" class="qty font-mono">×{{ quantity }}</span>
+        <span v-if="isProduct" class="stepper">
           <button class="step" :disabled="!quantityNum || quantityNum <= 1" @click.stop="emit('decrement')">−</button>
           <span class="step-value font-mono">{{ quantityNum ?? 1 }}</span>
           <button class="step" @click.stop="emit('increment')">+</button>
         </span>
         <div class="menu-wrap" @click.stop>
-          <button class="icon-btn" aria-label="Options" @click="openMenu = !openMenu">
+          <button class="icon-btn" aria-label="Options" @click="menu.toggle()">
             <MoreVertical :size="16" />
           </button>
-          <div v-if="openMenu" class="menu" @click.stop>
-            <button v-if="showMove" class="menu-item" @click="openMenu = false; openMove = true">
+          <div v-if="menu.isOpen.value" class="menu" @click.stop>
+            <button v-if="showMove" class="menu-item" @click="menu.close(); openMove = true">
               <ArrowRightLeft :size="14" /> Déplacer
             </button>
-            <button class="menu-item" @click="openMenu = false; emit('edit')">
+            <button class="menu-item" @click="menu.close(); emit('edit')">
               <Pencil :size="14" /> Modifier
             </button>
-            <button class="menu-item danger" @click="openMenu = false; emit('delete')">
+            <button class="menu-item danger" @click="menu.close(); emit('delete')">
               <Trash2 :size="14" /> Supprimer
             </button>
           </div>
         </div>
       </div>
     </div>
-    <div v-else class="item" :class="{ checked, note: isNote }" @click="emit('toggle')">
-      <span v-if="isNote" class="note-dot" />
-      <span v-else class="checkbox" :class="{ done: checked }">
+    <div v-else class="item" :class="{ checked }" @click="emit('toggle')">
+      <span class="checkbox" :class="{ done: checked }">
         <svg v-if="checked" viewBox="0 0 24 24" width="13" height="13"><path d="M5 12.5l4 4L19 7" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </span>
       <span class="label">{{ label }}</span>
-      <span v-if="!stepper && quantity" class="qty font-mono">×{{ quantity }}</span>
-      <span v-if="stepper" class="stepper">
+      <span v-if="!isProduct && quantity" class="qty font-mono">×{{ quantity }}</span>
+      <span v-if="isProduct" class="stepper">
         <button class="step" :disabled="!quantityNum || quantityNum <= 1" @click.stop="emit('decrement')">−</button>
         <span class="step-value font-mono">{{ quantityNum ?? 1 }}</span>
         <button class="step" @click.stop="emit('increment')">+</button>
       </span>
       <div class="menu-wrap" @click.stop>
-        <button class="icon-btn" aria-label="Options" @click="openMenu = !openMenu">
+        <button class="icon-btn" aria-label="Options" @click="menu.toggle()">
           <MoreVertical :size="16" />
         </button>
-        <div v-if="openMenu" class="menu" @click.stop>
-          <button class="menu-item" @click="openMenu = false; emit('edit')">
+        <div v-if="menu.isOpen.value" class="menu" @click.stop>
+          <button class="menu-item" @click="menu.close(); emit('edit')">
             <Pencil :size="14" /> Modifier
           </button>
-          <button class="menu-item danger" @click="openMenu = false; emit('delete')">
+          <button class="menu-item danger" @click="menu.close(); emit('delete')">
             <Trash2 :size="14" /> Supprimer
           </button>
         </div>
@@ -170,17 +169,9 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   text-decoration: line-through;
   color: var(--ink-muted);
 }
-.item.note .label {
-  font-style: italic;
-  color: var(--ink-muted);
-}
-.note-dot {
-  flex-shrink: 0;
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 999px;
-  background: var(--ink-faint);
-  margin: 0 0.4rem;
+.item-row.menu-open {
+  position: relative;
+  z-index: 55;
 }
 .checkbox {
   flex-shrink: 0;
@@ -198,6 +189,8 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   background: var(--accent-deep);
 }
 .label {
+  flex: 1;
+  min-width: 0;
   font-size: 0.95rem;
 }
 .qty {

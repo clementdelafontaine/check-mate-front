@@ -83,7 +83,7 @@ export const tripList = {
         { id: 'i-15', label: 'Brosse à dents', quantity: null, checked: false, kind: 'product' },
         { id: 'i-16', label: 'Chargeur', quantity: null, checked: false, kind: 'product' },
         { id: 'i-17', label: 'Adaptateur prise', quantity: null, checked: false, kind: 'product' },
-        { id: 'i-17b', label: 'Pense-bête : couper l\u2019eau avant de partir', quantity: null, checked: false, kind: 'note' }
+        { id: 'i-17b', label: 'Pense-bête : couper l\u2019eau avant de partir', quantity: null, checked: false }
       ]
     },
     {
@@ -114,7 +114,7 @@ export const taxesList = {
       items: [
         { id: 'i-20', label: 'Récupérer le revenu fiscal de référence', quantity: null, checked: true },
         { id: 'i-21', label: 'Remplir la déclaration en ligne', quantity: null, checked: false },
-        { id: 'i-21b', label: 'Disponible jusqu\u2019au 31 mai sur impots.gouv.fr', quantity: null, checked: false, kind: 'note' }
+        { id: 'i-21b', label: 'Disponible jusqu\u2019au 31 mai sur impots.gouv.fr', quantity: null, checked: false }
       ]
     }
   ]

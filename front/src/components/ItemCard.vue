@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useExclusiveMenu } from '../composables/useExclusiveMenu'
 import { MoreVertical, Trash2, Pencil } from 'lucide-vue-next'
 
 defineProps({
@@ -12,13 +13,13 @@ defineProps({
 })
 const emit = defineEmits(['delete', 'edit'])
 
-const open = ref(false)
+const menu = useExclusiveMenu()
 const confirm = ref(false)
 const root = ref(null)
 const menuBtn = ref(null)
 
 function onDocClick(e) {
-  if (open.value && menuBtn.value && !menuBtn.value.contains(e.target)) open.value = false
+  if (menu.isOpen.value && menuBtn.value && !menuBtn.value.contains(e.target)) menu.close()
   if (confirm.value && root.value && !root.value.contains(e.target)) confirm.value = false
 }
 onMounted(() => document.addEventListener('click', onDocClick))
@@ -39,14 +40,14 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         <span v-if="meta" class="card-meta">{{ meta }}</span>
       </span>
       <div ref="menuBtn" class="menu-wrap" @click.stop @click.prevent>
-        <button class="icon-btn" aria-label="Options" @click="open = !open">
+        <button class="icon-btn" aria-label="Options" @click="menu.toggle()">
           <MoreVertical :size="18" />
         </button>
-        <div v-if="open" class="menu" @click.stop @click.prevent>
-          <button v-if="editable" class="menu-item" @click="open = false; emit('edit')">
+        <div v-if="menu.isOpen.value" class="menu" @click.stop @click.prevent>
+          <button v-if="editable" class="menu-item" @click="menu.close(); emit('edit')">
             <Pencil :size="15" /> Modifier
           </button>
-          <button class="menu-item danger" @click="open = false; confirm = true">
+          <button class="menu-item danger" @click="menu.close(); confirm = true">
             <Trash2 :size="15" /> Supprimer
           </button>
         </div>

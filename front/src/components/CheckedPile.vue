@@ -19,6 +19,22 @@ function sectionIdOf(itemId) {
   return null
 }
 
+function increment(item) {
+  const sectionId = sectionIdOf(item.id)
+  if (!sectionId) return
+  const n = Number(item.quantity)
+  store.setQuantity(props.listId, sectionId, item.id, (Number.isFinite(n) && n > 0 ? n : 1) + 1)
+}
+
+function decrement(item) {
+  const sectionId = sectionIdOf(item.id)
+  if (!sectionId) return
+  const n = Number(item.quantity)
+  if (Number.isFinite(n) && n > 1) {
+    store.setQuantity(props.listId, sectionId, item.id, n - 1)
+  }
+}
+
 function deleteItem(item) {
   const sectionId = sectionIdOf(item.id)
   if (!sectionId) return
@@ -41,6 +57,8 @@ function deleteItem(item) {
         :swipeable="false"
         @toggle="store.toggleItem(listId, sectionIdOf(item.id), item.id)"
         @delete="deleteItem(item)"
+        @increment="increment(item)"
+        @decrement="decrement(item)"
       />
     </ul>
   </section>
