@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: checkmate
+      POSTGRES_PASSWORD: checkmate
+      POSTGRES_DB: checkmate
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U checkmate']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - '127.0.0.1:5432:5432'
+
+  api:
+    build: ./api
+    environment:
+      DATABASE_URL: postgres://checkmate:checkmate@postgres:5432/checkmate
+      PORT: 3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - '127.0.0.1:3000:3000'
+
+volumes:
+  pgdata:
