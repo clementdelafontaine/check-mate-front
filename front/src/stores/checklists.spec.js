@@ -126,6 +126,17 @@ describe('checklists store', () => {
     expect(store.suggestionsFor('x')).toEqual([])
   })
 
+  it('ignores persisted state from an older version (no version field)', () => {
+    const stale = JSON.stringify({
+      lists: [{ id: 'old', name: 'Ancienne liste', sections: [{ id: 's', name: 'Divers', items: [] }] }],
+      templates: []
+    })
+    localStorage.setItem('checkmate-state-v2', stale)
+    const store = useChecklistsStore()
+    expect(store.lists.some((l) => l.id === 'old')).toBe(false)
+    expect(store.lists.length).toBeGreaterThan(0)
+  })
+
   it('persists to localStorage', () => {
     const store = useChecklistsStore()
     const list = firstList(store)

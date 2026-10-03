@@ -9,6 +9,7 @@ export const LIST_TYPES = [
   { id: 'todo', label: 'To-do', emoji: '📝', defaultItemKind: 'task' }
 ]
 const STORAGE_KEY = 'checkmate-state-v2'
+const STATE_VERSION = 1
 
 export const DEFAULT_SPACES = [
   { id: 'sp-maison', name: 'Maison', emoji: '🏠' },
@@ -31,6 +32,7 @@ function loadState() {
     if (!raw) return null
     const parsed = JSON.parse(raw)
     if (!parsed || !Array.isArray(parsed.lists) || !Array.isArray(parsed.templates)) return null
+    if (parsed.version !== STATE_VERSION) return null
     parsed.spaces = parsed.spaces ?? DEFAULT_SPACES
     parsed.labels = parsed.labels ?? DEFAULT_LABELS
     parsed.itemFrequency = parsed.itemFrequency ?? {}
@@ -101,6 +103,7 @@ export const useChecklistsStore = defineStore('checklists', {
         localStorage.setItem(
           STORAGE_KEY,
           JSON.stringify({
+            version: STATE_VERSION,
             lists: this.lists,
             templates: this.templates,
             spaces: this.spaces,
