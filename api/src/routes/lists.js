@@ -19,7 +19,27 @@ export async function listsRoutes(app) {
     return list
   })
 
-  app.post('/lists', async (req, reply) => {
+  app.post(
+    '/lists',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['name'],
+          properties: {
+            name: { type: 'string' },
+            emoji: { type: 'string' },
+            type: { type: 'string', enum: ['checklist', 'grocery', 'todo'] },
+            spaceId: { type: 'string', nullable: true },
+            labelIds: { type: 'array', items: { type: 'string' } },
+            startDate: { type: 'string', format: 'date', nullable: true },
+            endDate: { type: 'string', format: 'date', nullable: true },
+            templateId: { type: 'string', nullable: true }
+          }
+        }
+      }
+    },
+    async (req, reply) => {
     const {
       name,
       emoji = '📋',

@@ -1,5 +1,7 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import swagger from '@fastify/swagger'
+import swaggerUi from '@fastify/swagger-ui'
 import { config } from './config.js'
 import { spacesRoutes } from './routes/spaces.js'
 import { labelsRoutes } from './routes/labels.js'
@@ -12,6 +14,20 @@ const app = Fastify({
 })
 
 await app.register(cors, { origin: config.corsOrigin })
+
+await app.register(swagger, {
+  openapi: {
+    info: {
+      title: 'CheckMate API',
+      description: 'REST API for CheckMate checklists',
+      version: '0.1.0'
+    }
+  }
+})
+
+await app.register(swaggerUi, {
+  routePrefix: '/docs'
+})
 
 await app.register(
   async (api) => {
