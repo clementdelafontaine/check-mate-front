@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Front — install & test & build
+        working-directory: front
+        run: |
+          npm ci
+          npx vitest run
+          npm run build
+
+      - name: API — install & check
+        working-directory: api
+        run: |
+          npm ci
+          node --check src/server.js
+          node --check src/db.js
+
