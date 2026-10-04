@@ -52,7 +52,6 @@ services:
     image: ghcr.io/clementdelafontaine/checkmate-api:latest
     restart: unless-stopped
     cpu_shares: 90
-    command: []
     privileged: false
     network_mode: bridge
     environment:
@@ -76,7 +75,6 @@ services:
     image: ghcr.io/clementdelafontaine/checkmate-front:latest
     restart: unless-stopped
     cpu_shares: 90
-    command: []
     privileged: false
     network_mode: bridge
     depends_on:
