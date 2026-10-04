@@ -10,7 +10,7 @@ x-casaos:
   icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/checkmate.png
   index: /
   is_uncontrolled: false
-  port_map: "8080"
+  port_map: "8181"
   scheme: http
   store_app_id: checkmate
   title:
@@ -86,7 +86,7 @@ services:
     ports:
       - host_ip: 127.0.0.1
         target: 80
-        published: "8080"
+        published: "8181"
         protocol: tcp
     devices: []
     cap_add: []
