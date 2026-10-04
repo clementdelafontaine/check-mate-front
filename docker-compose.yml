@@ -51,7 +51,7 @@ services:
 
   api:
     container_name: checkmate-api
-    build: ./api
+    image: ghcr.io/clementdelafontaine/checkmate-api:latest
     restart: unless-stopped
     cpu_shares: 90
     command: []
@@ -75,11 +75,7 @@ services:
 
   front:
     container_name: checkmate-front
-    build:
-      context: ./front
-      args:
-        VITE_USE_API: 'true'
-        VITE_API_BASE: /api
+    image: ghcr.io/clementdelafontaine/checkmate-front:latest
     restart: unless-stopped
     cpu_shares: 90
     command: []
