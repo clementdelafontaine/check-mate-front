@@ -24,7 +24,6 @@ services:
     restart: unless-stopped
     cpu_shares: 90
     privileged: false
-    network_mode: bridge
     environment:
       - POSTGRES_USER=checkmate
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-checkmate}
@@ -53,7 +52,6 @@ services:
     restart: unless-stopped
     cpu_shares: 90
     privileged: false
-    network_mode: bridge
     environment:
       - DATABASE_URL=postgres://checkmate:${POSTGRES_PASSWORD:-checkmate}@postgres:5432/checkmate
       - PORT=3000
@@ -76,7 +74,6 @@ services:
     restart: unless-stopped
     cpu_shares: 90
     privileged: false
-    network_mode: bridge
     depends_on:
       - api
     ports:
