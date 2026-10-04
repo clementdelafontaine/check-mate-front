@@ -35,6 +35,7 @@ export const listWithSections = async (listId) => {
        SELECT json_agg(ll.label_id) FROM list_labels ll WHERE ll.list_id = l.id
      ), '[]') AS label_ids
      FROM lists l
+     LEFT JOIN sections s ON s.list_id = l.id
      WHERE l.id = $1
      GROUP BY l.id`,
     [listId]
