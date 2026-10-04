@@ -1,0 +1,42 @@
+const BASE = import.meta.env.VITE_API_BASE ?? '/api'
+
+async function request(path, options = {}) {
+  const res = await fetch(`${BASE}${path}`, {
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+    body: options.body !== undefined ? JSON.stringify(options.body) : undefined
+  })
+  if (res.status === 204) return null
+  const data = await res.json().catch(() => null)
+  if (!res.ok) {
+    const err = new Error(data?.error ?? `API error ${res.status}`)
+    err.status = res.status
+    throw err
+  }
+  return data
+}
+
+export const authApi = {
+  me() {
+    return request('/auth/me')
+  },
+  login(email, password) {
+    return request('/auth/login', { method: 'POST', body: { email, password } })
+  },
+  logout() {
+    return request('/auth/logout', { method: 'POST' })
+  },
+  listUsers() {
+    return request('/auth/users')
+  },
+  createUser(email, password, role) {
+    return request('/auth/users', { method: 'POST', body: { email, password, role } })
+  },
+  deleteUser(userId) {
+    return request(`/auth/users/${userId}`, { method: 'DELETE' })
+  },
+  setUserPassword(userId, password) {
+    return request(`/auth/users/${userId}/password`, { method: 'PATCH', body: { password } })
+  }
+}

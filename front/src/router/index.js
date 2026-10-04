@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import TodayView from '../views/TodayView.vue'
+import { useAuthStore } from '../stores/auth'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -31,8 +32,33 @@ const router = createRouter({
       path: '/template/:id',
       name: 'template',
       component: () => import('../views/TemplateView.vue')
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import('../views/LoginView.vue'),
+      meta: { public: true }
+    },
+    {
+      path: '/admin',
+      name: 'admin',
+      component: () => import('../views/AdminView.vue'),
+      meta: { admin: true }
     }
   ]
+})
+
+router.beforeEach(async (to) => {
+  const auth = useAuthStore()
+  if (!auth.initialized) {
+    await auth.init()
+  }
+  if (!to.meta.public && !auth.isAuthenticated) {
+    return { name: 'login', query: { redirect: to.fullPath } }
+  }
+  if (to.meta.admin && !auth.isAdmin) {
+    return { name: 'home' }
+  }
 })
 
 export default router

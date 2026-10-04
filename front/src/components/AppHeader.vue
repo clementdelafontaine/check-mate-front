@@ -19,16 +19,29 @@ function toggleTheme() {
 function applyTheme() {
   document.documentElement.dataset.theme = theme.value
 }
+
+async function logout() {
+  await auth.logout()
+  router.push({ name: 'login' })
+}
 </script>
 
 <template>
   <header class="header">
     <div class="header-inner">
       <router-link to="/" class="brand font-display">Check<span class="glow-text">Mate</span></router-link>
-      <button class="theme-btn" :aria-label="theme === 'dark' ? 'Thème clair' : 'Thème sombre'" @click="toggleTheme">
-        <Sun v-if="theme === 'dark'" :size="17" />
-        <Moon v-else :size="17" />
-      </button>
+      <div class="header-actions">
+        <router-link v-if="auth.isAdmin" to="/admin" class="theme-btn" aria-label="Administration">
+          <Shield :size="17" />
+        </router-link>
+        <button class="theme-btn" :aria-label="theme === 'dark' ? 'Thème clair' : 'Thème sombre'" @click="toggleTheme">
+          <Sun v-if="theme === 'dark'" :size="17" />
+          <Moon v-else :size="17" />
+        </button>
+        <button v-if="auth.isAuthenticated" class="theme-btn" aria-label="Déconnexion" @click="logout">
+          <LogOut :size="17" />
+        </button>
+      </div>
     </div>
   </header>
 </template>
@@ -49,6 +62,11 @@ function applyTheme() {
   align-items: center;
   justify-content: space-between;
   padding: 0 1rem;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 .brand {
   font-size: 1.15rem;

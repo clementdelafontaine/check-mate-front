@@ -2,6 +2,7 @@ const BASE = import.meta.env.VITE_API_BASE ?? '/api'
 
 async function request(path, options = {}) {
   const res = await fetch(`${BASE}${path}`, {
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     ...options,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined
@@ -9,6 +10,9 @@ async function request(path, options = {}) {
   if (res.status === 204) return null
   const data = await res.json().catch(() => null)
   if (!res.ok) {
+    if (res.status === 401 && typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+      window.location.href = '/login'
+    }
     throw new Error(data?.error ?? `API error ${res.status}`)
   }
   return data

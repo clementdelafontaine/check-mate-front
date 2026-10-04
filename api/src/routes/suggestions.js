@@ -7,10 +7,10 @@ export async function suggestionsRoutes(app) {
     const limit = Math.min(Number(req.query.limit ?? 5) || 5, 20)
     const { rows } = await query(
       `SELECT label FROM item_frequency
-       WHERE label LIKE $1 || '%'
+       WHERE user_id = $3 AND label LIKE $1 || '%'
        ORDER BY count DESC, label
        LIMIT $2`,
-      [prefix, limit]
+      [prefix, limit, req.user.id]
     )
     return rows.map((r) => r.label)
   })

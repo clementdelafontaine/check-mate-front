@@ -13,7 +13,7 @@ export const one = async (text, params) => {
 export const uid = (prefix) =>
   `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 
-export const listWithSections = async (listId) => {
+export const listWithSections = async (listId, userId = null) => {
   const list = await one(
     `SELECT l.*, COALESCE(
        json_agg(
@@ -36,9 +36,9 @@ export const listWithSections = async (listId) => {
      ), '[]') AS label_ids
      FROM lists l
      LEFT JOIN sections s ON s.list_id = l.id
-     WHERE l.id = $1
+     WHERE l.id = $1 AND ($2::text IS NULL OR l.user_id = $2)
      GROUP BY l.id`,
-    [listId]
+    [listId, userId]
   )
   if (!list) return null
   return {
@@ -48,7 +48,7 @@ export const listWithSections = async (listId) => {
   }
 }
 
-export const templateWithSections = async (templateId) => {
+export const templateWithSections = async (templateId, userId = null) => {
   const tpl = await one(
     `SELECT t.*, COALESCE(
        json_agg(
@@ -67,9 +67,9 @@ export const templateWithSections = async (templateId) => {
      ) AS sections
      FROM templates t
      LEFT JOIN template_sections s ON s.template_id = t.id
-     WHERE t.id = $1
+     WHERE t.id = $1 AND ($2::text IS NULL OR t.user_id = $2)
      GROUP BY t.id`,
-    [templateId]
+    [templateId, userId]
   )
   if (!tpl) return null
   return { ...tpl, sections: tpl.sections }
