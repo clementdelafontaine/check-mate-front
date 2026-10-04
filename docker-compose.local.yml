@@ -1,0 +1,65 @@
+# Local build stack — build images from the local source tree, no registry needed.
+# Usage: docker compose -f docker-compose.local.yml up -d --build
+# Data lands in ./local-data (gitignored) so it never touches prod volumes.
+
+services:
+  postgres:
+    container_name: checkmate-local-postgres
+    image: docker.io/postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=checkmate
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-checkmate}
+      - POSTGRES_DB=checkmate
+      - TZ=Europe/Paris
+    volumes:
+      - type: bind
+        source: ./local-data/postgres
+        target: /var/lib/postgresql/data
+    ports:
+      - host_ip: 127.0.0.1
+        target: 5432
+        published: "5432"
+        protocol: tcp
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U checkmate']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    container_name: checkmate-local-api
+    build:
+      context: ./api
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgres://checkmate:${POSTGRES_PASSWORD:-checkmate}@postgres:5432/checkmate
+      - PORT=3000
+      - TZ=Europe/Paris
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@test.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin1234}
+      - COOKIE_SECURE=false
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - host_ip: 127.0.0.1
+        target: 3000
+        published: "3100"
+        protocol: tcp
+
+  front:
+    container_name: checkmate-local-front
+    build:
+      context: ./front
+      args:
+        VITE_USE_API: 'true'
+        VITE_API_BASE: /api
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - host_ip: 127.0.0.1
+        target: 80
+        published: "8181"
+        protocol: tcp
