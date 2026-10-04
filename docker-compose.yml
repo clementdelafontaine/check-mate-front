@@ -1,58 +1,96 @@
 name: checkmate
 
-# Deployed as a CasaOS custom app.
-# Data lives under /DATA/AppData/checkmate (CasaOS backup-friendly bind mounts).
+# CasaOS-style compose, same pattern as npmplus.
+# Data under /DATA/AppData/checkmate (covered by CasaOS backups).
+
+x-casaos:
+  author: self
+  category: self
+  hostname: ""
+  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/checkmate.png
+  index: /
+  is_uncontrolled: false
+  port_map: "8080"
+  scheme: http
+  store_app_id: checkmate
+  title:
+    custom: ""
+    en_us: CheckMate
 
 services:
   postgres:
-    image: postgres:17-alpine
+    container_name: checkmate-postgres
+    image: docker.io/postgres:17-alpine
     restart: unless-stopped
+    cpu_shares: 90
+    command: []
+    entrypoint: []
+    privileged: false
+    network_mode: bridge
     environment:
-      POSTGRES_USER: checkmate
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-checkmate}
-      POSTGRES_DB: checkmate
+      - POSTGRES_USER=checkmate
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-checkmate}
+      - POSTGRES_DB=checkmate
+      - TZ=Europe/Paris
     volumes:
-      - ${CHECKMATE_DATA_DIR:-/DATA/AppData/checkmate}/postgres:/var/lib/postgresql/data
+      - type: bind
+        source: /DATA/AppData/checkmate/postgres
+        target: /var/lib/postgresql/data
+    ports:
+      - host_ip: 127.0.0.1
+        target: 5432
+        published: "5432"
+        protocol: tcp
+    devices: []
+    cap_add: []
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U checkmate']
       interval: 5s
       timeout: 3s
       retries: 10
-    networks:
-      - internal
 
   api:
+    container_name: checkmate-api
     build: ./api
     restart: unless-stopped
+    cpu_shares: 90
+    command: []
+    privileged: false
+    network_mode: bridge
     environment:
-      DATABASE_URL: postgres://checkmate:${POSTGRES_PASSWORD:-checkmate}@postgres:5432/checkmate
-      PORT: 3000
-      CORS_ORIGIN: ${CORS_ORIGIN:-}
+      - DATABASE_URL=postgres://checkmate:${POSTGRES_PASSWORD:-checkmate}@postgres:5432/checkmate
+      - PORT=3000
+      - TZ=Europe/Paris
     depends_on:
       postgres:
         condition: service_healthy
+        required: true
     ports:
-      - '127.0.0.1:3000:3000'
-    networks:
-      - internal
+      - host_ip: 127.0.0.1
+        target: 3000
+        published: "3000"
+        protocol: tcp
+    devices: []
+    cap_add: []
 
   front:
+    container_name: checkmate-front
     build:
       context: ./front
       args:
         VITE_USE_API: 'true'
         VITE_API_BASE: /api
     restart: unless-stopped
+    cpu_shares: 90
+    command: []
+    privileged: false
+    network_mode: bridge
     depends_on:
       - api
-    networks:
-      - default
-      - proxy
-
-networks:
-  default:
-    name: checkmate_internal
-  proxy:
-    # Network of your Nginx Proxy Manager instance (docker network ls).
-    name: ${NPM_NETWORK:-nginx-proxy-manager_default}
-    external: true
+    ports:
+      - host_ip: 127.0.0.1
+        target: 80
+        published: "8080"
+        protocol: tcp
+    devices: []
+    cap_add: []
