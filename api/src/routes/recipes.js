@@ -211,10 +211,14 @@ export async function recipesRoutes(app) {
     async (req, reply) => {
       const recipe = await recipeWithSections(req.params.id, req.user.id)
       if (!recipe) return reply.code(404).send({ error: 'recipe not found' })
-      const list = await one('SELECT id FROM lists WHERE id = $1 AND user_id = $2', [
-        req.body.listId,
-        req.user.id
-      ])
+      const list = await one(
+        `SELECT l.id FROM lists l
+         WHERE l.id = $1 AND (l.user_id = $2 OR EXISTS (
+           SELECT 1 FROM list_collaborators lc
+           WHERE lc.list_id = l.id AND lc.user_id = $2
+         ))`,
+        [req.body.listId, req.user.id]
+      )
       if (!list) return reply.code(404).send({ error: 'list not found' })
       let added = 0
       for (const section of recipe.sections) {

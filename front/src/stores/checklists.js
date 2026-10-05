@@ -111,8 +111,15 @@ export const useChecklistsStore = defineStore('checklists', {
 
     async refresh() {
       if (!api.useApi) return
-      const data = await api.fetchAll()
-      this.lists = data.lists
+      const [data, sharedLists] = await Promise.all([
+        api.fetchAll(),
+        api.fetchSharedLists().catch(() => [])
+      ])
+      const sharedIds = new Set(sharedLists.map((l) => l.id))
+      this.lists = [
+        ...data.lists.filter((l) => !sharedIds.has(l.id)),
+        ...sharedLists
+      ]
       this.templates = data.templates
       this.spaces = data.spaces
       this.labels = data.labels

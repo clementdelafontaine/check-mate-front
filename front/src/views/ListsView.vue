@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useChecklistsStore } from '../stores/checklists'
+import { useAuthStore } from '../stores/auth'
 import { api } from '../services/api'
 import { useUndoToast } from '../composables/useUndoToast'
 import ItemCard from '../components/ItemCard.vue'
@@ -12,6 +13,8 @@ import FriendPicker from '../components/FriendPicker.vue'
 import { X, LayoutGrid, FilePlus2, ArrowDownUp } from 'lucide-vue-next'
 
 const store = useChecklistsStore()
+const auth = useAuthStore()
+const isOwnList = (list) => list.ownerId === null || list.ownerId === auth.user?.id
 const router = useRouter()
 const toast = useUndoToast()
 
@@ -193,7 +196,7 @@ function closeAll() {
           :name="list.name"
           :meta="`${progressOf(list)}%`"
           :shared="list.isShared"
-          editable
+          :editable="isOwnList(list)"
           @delete="removeList(list)"
           @edit="editingList = list"
         />

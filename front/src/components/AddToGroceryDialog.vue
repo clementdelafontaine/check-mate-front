@@ -77,6 +77,7 @@ onMounted(() => checklists.init?.())
           <button class="option" :class="{ active: selected.has(list.id) }" @click="toggle(list.id)">
             <span class="emoji">{{ list.emoji }}</span>
             <span class="name">{{ list.name }}</span>
+            <span v-if="list.isShared" class="shared-tag">partagée</span>
             <span class="check">{{ selected.has(list.id) ? '✓' : '' }}</span>
           </button>
         </li>
@@ -157,6 +158,16 @@ onMounted(() => checklists.init?.())
 .check {
   color: var(--accent);
   font-weight: 800;
+}
+.shared-tag {
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--accent-dim);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 .empty {
   color: var(--ink-faint);
