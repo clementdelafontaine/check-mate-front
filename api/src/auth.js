@@ -10,11 +10,15 @@ const newSessionId = () => randomBytes(32).toString('hex')
 
 export async function ensureAdmin(email, password) {
   const normalizedEmail = String(email).trim().toLowerCase()
-  const existing = await one('SELECT * FROM users WHERE email = $1', [normalizedEmail])
+  const username = normalizedEmail.split('@')[0]
+  const existing = await one(
+    'SELECT * FROM users WHERE email = $1 OR username = $2',
+    [normalizedEmail, username]
+  )
   if (existing) return existing
   const user = await one(
     `INSERT INTO users (id, email, username, password_hash, role) VALUES ($1, $2, $3, $4, 'admin') RETURNING *`,
-    [uid('u'), normalizedEmail, normalizedEmail.split('@')[0], await hashPassword(password)]
+    [uid('u'), normalizedEmail, username, await hashPassword(password)]
   )
   return user
 }
