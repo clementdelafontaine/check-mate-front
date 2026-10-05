@@ -13,7 +13,7 @@ const props = defineProps({
   shared: { type: Boolean, default: false },
   canDelete: { type: Boolean, default: true }
 })
-const emit = defineEmits(['delete', 'edit', 'leave'])
+const emit = defineEmits(['delete', 'edit', 'leave', 'share'])
 
 const menu = useExclusiveMenu()
 const confirm = ref(false)
@@ -49,6 +49,9 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         <div v-if="menu.isOpen.value" class="menu" @click.stop @click.prevent>
           <button v-if="editable" class="menu-item" @click="menu.close(); emit('edit')">
             <Pencil :size="15" /> Modifier
+          </button>
+          <button v-if="editable" class="menu-item" @click="menu.close(); emit('share')">
+            <Share2 :size="15" /> Partager
           </button>
           <button v-if="canDelete" class="menu-item danger" @click="menu.close(); confirm = true">
             <Trash2 :size="15" /> Supprimer

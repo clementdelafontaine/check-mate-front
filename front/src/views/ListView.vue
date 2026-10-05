@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useChecklistsStore } from '../stores/checklists'
 import { api } from '../services/api'
@@ -60,6 +60,10 @@ const auth = useAuthStore()
 const shareBusy = ref(false)
 
 const isListShared = computed(() => !!list.value?.isShared)
+onMounted(() => {
+  if (route.query.share === '1' && isOwnList.value) openShare()
+})
+
 const isOwnList = computed(
   () => !list.value || list.value.ownerId === null || list.value.ownerId === auth.user?.id
 )

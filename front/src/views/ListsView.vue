@@ -201,6 +201,7 @@ function closeAll() {
           @delete="removeList(list)"
           @edit="editingList = list"
           @leave="leaveList(list)"
+          @share="router.push({ path: `/list/${list.id}`, query: { share: '1' } })"
         />
       </li>
     </ul>
