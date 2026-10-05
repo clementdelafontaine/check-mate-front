@@ -66,9 +66,12 @@ const spacesWithActive = computed(() => {
   return groups
 })
 
-const fmtDate = (isoStr) => {
+const fmtDate = (isoStr, placeholder = 'date à définir') => {
+  if (!isoStr || typeof isoStr !== 'string') return placeholder
   const [y, m, d] = isoStr.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+  const date = new Date(y, m - 1, d)
+  if (Number.isNaN(date.getTime())) return placeholder
+  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
 }
 
 const greeting = computed(() => {
