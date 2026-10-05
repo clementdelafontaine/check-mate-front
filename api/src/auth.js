@@ -9,11 +9,12 @@ const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000 // 30 days
 const newSessionId = () => randomBytes(32).toString('hex')
 
 export async function ensureAdmin(email, password) {
-  const existing = await one('SELECT * FROM users WHERE email = $1', [email])
+  const normalizedEmail = String(email).trim().toLowerCase()
+  const existing = await one('SELECT * FROM users WHERE email = $1', [normalizedEmail])
   if (existing) return existing
   const user = await one(
     `INSERT INTO users (id, email, password_hash, role) VALUES ($1, $2, $3, 'admin') RETURNING *`,
-    [uid('u'), email, await hashPassword(password)]
+    [uid('u'), normalizedEmail, await hashPassword(password)]
   )
   return user
 }
