@@ -13,6 +13,13 @@ export const one = async (text, params) => {
 export const uid = (prefix) =>
   `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 
+const normalizeDbDate = (d) => {
+  if (d === '' || d === null || d === undefined) return null
+  if (typeof d === 'string') return d.slice(0, 10)
+  if (d instanceof Date) return d.toISOString().slice(0, 10)
+  return d
+}
+
 export const listWithSections = async (listId, userId = null) => {
   const list = await one(
     `SELECT l.*, COALESCE(
@@ -43,8 +50,8 @@ export const listWithSections = async (listId, userId = null) => {
   if (!list) return null
   return {
     ...list,
-    startDate: list.start_date === '' ? null : list.start_date,
-    endDate: list.end_date === '' ? null : list.end_date,
+    startDate: normalizeDbDate(list.start_date),
+    endDate: normalizeDbDate(list.end_date),
     labelIds: list.label_ids,
     sections: list.sections
   }

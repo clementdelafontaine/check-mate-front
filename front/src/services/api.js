@@ -25,8 +25,8 @@ const mapList = (l) => ({
   type: l.type,
   spaceId: l.space_id ?? null,
   labelIds: (l.labelIds ?? []).map(String),
-  startDate: l.start_date ?? null,
-  endDate: l.end_date ?? null,
+  startDate: l.startDate ?? l.start_date ?? null,
+  endDate: l.endDate ?? l.end_date ?? null,
   sections: (l.sections ?? []).map(mapSection)
 })
 
