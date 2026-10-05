@@ -49,12 +49,33 @@ const sharedUserIds = ref(new Set())
 
 async function openShare() {
   showShare.value = true
+  if (!isOwnList.value) return
   await friends.refresh()
   try {
     const rows = await api.fetchCollaborators(route.params.id)
     sharedUserIds.value = new Set(rows.map((c) => c.userId))
   } catch {
     sharedUserIds.value = new Set()
+  }
+}
+
+const confirmLeave = ref(false)
+const leaveBusy = ref(false)
+
+async function leaveSharedList() {
+  if (leaveBusy.value) return
+  leaveBusy.value = true
+  try {
+    await api.unshareList(list.value.id, 'me')
+    showShare.value = false
+    confirmLeave.value = false
+    await store.refresh()
+    toast.show(`Vous avez quitté « ${list.value.name} »`)
+    router.push('/lists')
+  } catch {
+    toast.show('Impossible de quitter la liste')
+  } finally {
+    leaveBusy.value = false
   }
 }
 
@@ -164,6 +185,7 @@ async function duplicate() {
     />
     <div v-if="showShare" class="overlay" @click.self="showShare = false">
       <div class="dialog">
+        <template v-if="isOwnList">
         <p class="dialog-text">Partager <strong>{{ list.name }}</strong> avec un ami</p>
         <p v-if="!friends.accepted.length" class="dialog-text muted">
           Aucun ami pour le moment — ajoutez-en depuis la page Amis.
@@ -183,6 +205,36 @@ async function duplicate() {
         </ul>
         <div class="dialog-actions">
           <button class="btn ghost" @click="showShare = false">Fermer</button>
+        </div>
+        </template>
+        <template v-else>
+          <p class="dialog-text">
+            <strong>{{ list.name }}</strong> est une liste partagée par
+            <strong>{{ list.ownerUsername ?? 'un autre utilisateur' }}</strong>.
+          </p>
+          <p class="dialog-text muted">
+            Vous pouvez cocher les items, mais seul le propriétaire gère le partage.
+          </p>
+          <div class="dialog-actions">
+            <button class="btn danger" :disabled="leaveBusy" @click="confirmLeave = true">
+              Quitter la liste
+            </button>
+            <button class="btn ghost" @click="showShare = false">Fermer</button>
+          </div>
+        </template>
+      </div>
+    </div>
+    <div v-if="confirmLeave" class="overlay" @click.self="confirmLeave = false">
+      <div class="dialog">
+        <p class="dialog-text">
+          Quitter <strong>{{ list.name }}</strong> ?
+          Cette liste ne sera plus partagée avec vous et disparaîtra de vos listes.
+        </p>
+        <div class="dialog-actions">
+          <button class="btn ghost" @click="confirmLeave = false">Annuler</button>
+          <button class="btn danger" :disabled="leaveBusy" @click="leaveSharedList">
+            Quitter
+          </button>
         </div>
       </div>
     </div>
