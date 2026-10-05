@@ -439,6 +439,31 @@ async function seedTemplatesForUser(userId) {
 
 
 
+
+const SEED_SPACES = [
+  { id: 'sp-seed-divers', name: 'Divers', emoji: '📁' },
+  { id: 'sp-seed-courses', name: 'Courses', emoji: '🛒' },
+  { id: 'sp-seed-maison', name: 'Maison', emoji: '🏠' },
+  { id: 'sp-seed-sorties', name: 'Sorties', emoji: '✈️' }
+]
+
+async function seedSpacesForUser(userId) {
+  const { rowCount } = await query('SELECT 1 FROM spaces WHERE user_id = $1 LIMIT 1', [
+    userId
+  ])
+  if (rowCount) return false
+  for (const [idx, sp] of SEED_SPACES.entries()) {
+    await query(
+      `INSERT INTO spaces (id, name, emoji, user_id)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (id) DO NOTHING`,
+      [sp.id, sp.name, sp.emoji, userId]
+    )
+  }
+  return true
+}
+
+
 export async function seedRecipesForUser(userId) {
   const { rowCount } = await query('SELECT 1 FROM recipes WHERE user_id = $1 LIMIT 1', [
     userId
@@ -496,8 +521,9 @@ export async function seedRecipesForUser(userId) {
 }
 
 export async function seedDemoDataForUser(userId) {
+  const seededSpaces = await seedSpacesForUser(userId)
   const seededRecipes = await seedRecipesForUser(userId)
   const seededLists = await seedListsForUser(userId)
   const seededTemplates = await seedTemplatesForUser(userId)
-  return seededRecipes || seededLists || seededTemplates
+  return seededSpaces || seededRecipes || seededLists || seededTemplates
 }

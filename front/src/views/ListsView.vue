@@ -5,6 +5,7 @@ import { useUndoToast } from '../composables/useUndoToast'
 import ItemCard from '../components/ItemCard.vue'
 import AddCard from '../components/AddCard.vue'
 import ListEditDialog from '../components/ListEditDialog.vue'
+import SpacePicker from '../components/SpacePicker.vue'
 import { X, LayoutGrid, FilePlus2, ArrowDownUp, Plus, Tag } from 'lucide-vue-next'
 
 const store = useChecklistsStore()
@@ -304,10 +305,7 @@ function createLabel() {
           </div>
           <input v-model="newName" class="input" type="text" placeholder="Nom de la liste" autofocus />
 
-          <select v-model="newSpaceId" class="input select">
-            <option value="" disabled>Espace…</option>
-            <option v-for="s in store.spaces" :key="s.id" :value="s.id">{{ s.emoji }} {{ s.name }}</option>
-          </select>
+          <SpacePicker v-model="newSpaceId" />
 
           <div class="labels-row">
             <button
