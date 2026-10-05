@@ -64,7 +64,10 @@ export const useRecipesStore = defineStore('recipes', {
         cookMinutes: payload.cookMinutes ?? null,
         source: payload.source ?? null,
         tags: payload.tags ?? [],
-        sections: (payload.sections ?? [{ name: 'Ingrédients', items: [] }]).map((s) => ({
+        sections: (payload.sections ?? [
+          { name: 'Produits frais', items: [] },
+          { name: 'Épicerie', items: [] }
+        ]).map((s) => ({
           id: `rs-${Math.random().toString(36).slice(2, 8)}`,
           name: s.name,
           items: s.items.map((i) => ({ id: `ri-${Math.random().toString(36).slice(2, 8)}`, label: i.label, quantity: i.quantity ?? null }))

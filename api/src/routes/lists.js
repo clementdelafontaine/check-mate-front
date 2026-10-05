@@ -52,6 +52,7 @@ export async function listsRoutes(app) {
       templateId = null
     } = req.body ?? {}
     if (!name?.trim()) return reply.code(400).send({ error: 'name required' })
+    const normalizedSpaceId = spaceId?.trim() === '' ? null : spaceId
 
     const list = await one(
       `INSERT INTO lists (id, name, emoji, type, space_id, start_date, end_date, user_id)
