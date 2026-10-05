@@ -24,7 +24,12 @@ const EMOJIS = ['🍳', '🥘', '🍝', '🍲', '🥗', '🍛', '🥐', '🍰', 
 
 const weekSelection = ref(new Set())
 
-const RECIPE_TAGS = ['plats', 'desserts', 'soupes', 'vegan', 'végétarien', 'sans gluten', 'express']
+const RECIPE_TAGS = [
+  'plats', 'desserts', 'entrées', 'soupes', 'salades', 'petit-déjeuner', 'brunch',
+  'vegan', 'végétarien', 'sans gluten', 'sans lactose',
+  'express', 'batch-cooking', 'four', 'wok', 'cocotte-minute', 'barbecue',
+  'pâtes', 'riz', 'légumes', 'fruits', 'poisson', 'viande', 'fromage', 'gourmand'
+]
 const activeTags = ref(new Set())
 
 const tagOptions = computed(() => {

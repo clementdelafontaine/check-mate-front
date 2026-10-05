@@ -56,7 +56,7 @@ export async function listsRoutes(app) {
     const list = await one(
       `INSERT INTO lists (id, name, emoji, type, space_id, start_date, end_date, user_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [uid('l'), name.trim(), emoji, type, spaceId, startDate, endDate, req.user.id]
+      [uid('l'), name.trim(), emoji, type, normalizedSpaceId, startDate, endDate, req.user.id]
     )
 
     if (templateId) {

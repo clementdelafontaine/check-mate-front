@@ -29,7 +29,31 @@ const metaCook = ref('')
 const metaSource = ref('')
 const metaTags = ref(new Set())
 
-const RECIPE_TAGS = ['plats', 'desserts', 'soupes', 'vegan', 'végétarien', 'sans gluten', 'express']
+const RECIPE_TAGS = [
+  'plats', 'desserts', 'entrées', 'soupes', 'salades', 'petit-déjeuner', 'brunch',
+  'vegan', 'végétarien', 'sans gluten', 'sans lactose',
+  'express', 'batch-cooking', 'four', 'wok', 'cocotte-minute', 'barbecue',
+  'pâtes', 'riz', 'légumes', 'fruits', 'poisson', 'viande', 'fromage', 'gourmand'
+]
+
+const newTag = ref('')
+
+const allTags = computed(() => {
+  const used = new Set(store.recipes.flatMap((r) => r.tags ?? []))
+  return [...new Set([...RECIPE_TAGS, ...used])]
+})
+
+async function addCustomTag() {
+  const value = newTag.value.trim().toLowerCase()
+  if (!value || metaTags.value.has(value)) {
+    newTag.value = ''
+    return
+  }
+  const next = new Set(metaTags.value)
+  next.add(value)
+  metaTags.value = next
+  newTag.value = ''
+}
 
 function toggleMetaTag(tag) {
   const next = new Set(metaTags.value)
@@ -328,7 +352,7 @@ onMounted(() => store.refresh())
           <span class="field-label">Tags</span>
           <div class="tags-row">
             <button
-              v-for="tag in RECIPE_TAGS"
+              v-for="tag in allTags"
               :key="tag"
               type="button"
               class="tag-chip"
@@ -337,6 +361,16 @@ onMounted(() => store.refresh())
             >
               {{ tag }}
             </button>
+          </div>
+          <div class="new-tag-row">
+            <input
+              v-model="newTag"
+              class="input"
+              type="text"
+              placeholder="Nouveau tag (ex : monde, batch-cooking…)"
+              @keydown.enter.prevent="addCustomTag"
+            />
+            <button type="button" class="tag-add-btn" :disabled="!newTag.trim()" @click="addCustomTag">+</button>
           </div>
           <button type="submit" class="submit">Enregistrer</button>
         </form>
@@ -608,6 +642,28 @@ onMounted(() => store.refresh())
   border: 1px solid var(--line);
   border-radius: 0.55rem;
   color: var(--ink-muted);
+}
+.new-tag-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: stretch;
+  margin-bottom: 0.6rem;
+}
+.new-tag-row .input {
+  flex: 1;
+  margin-bottom: 0;
+}
+.tag-add-btn {
+  width: 2.6rem;
+  flex-shrink: 0;
+  border: 1px dashed var(--line-bright);
+  border-radius: 0.7rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.tag-add-btn:disabled {
+  opacity: 0.4;
 }
 .tag-chip.active {
   border-color: var(--accent);
