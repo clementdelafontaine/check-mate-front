@@ -156,8 +156,9 @@ const SEED_LISTS = [
   {
     id: 'l-seed-courses',
     name: 'Courses de la semaine',
-    emoji: '🛒',
+    emoji: '\U0001F6D2',
     type: 'grocery',
+    spaceId: 'sp-seed-courses',
     startDateOffset: null,
     sections: [
       {
@@ -181,8 +182,9 @@ const SEED_LISTS = [
   {
     id: 'l-seed-menage',
     name: 'Ménage du week-end',
-    emoji: '🧹',
+    emoji: '\U0001F9F9',
     type: 'checklist',
+    spaceId: 'sp-seed-maison',
     startDateOffset: 5,
     sections: [
       {
@@ -201,6 +203,93 @@ const SEED_LISTS = [
         ]
       }
     ]
+  },
+  {
+    id: 'l-seed-travaux',
+    name: 'Travaux salle de bain',
+    emoji: '\U0001FAE5',
+    type: 'todo',
+    spaceId: 'sp-seed-maison',
+    startDateOffset: 10,
+    endDateOffset: 24,
+    sections: [
+      {
+        name: 'Préparation',
+        items: [
+          { label: 'Demander des devis', quantity: null },
+          { label: 'Choisir les carrelages', quantity: null }
+        ]
+      },
+      {
+        name: 'Chantier',
+        items: [
+          { label: 'Commander la robinetterie', quantity: null },
+          { label: 'Vider la salle de bain', quantity: null }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'l-seed-valise',
+    name: 'Valise week-end Rome',
+    emoji: '\u2708\uFE0F',
+    type: 'checklist',
+    spaceId: 'sp-seed-sorties',
+    startDateOffset: 14,
+    sections: [
+      {
+        name: 'Papiers',
+        items: [
+          { label: 'Carte d’identité', quantity: null },
+          { label: 'Billets de train', quantity: null },
+          { label: 'Réservation hôtel', quantity: null }
+        ]
+      },
+      {
+        name: 'Affaires',
+        items: [
+          { label: 'Chargeur + adaptateur', quantity: null },
+          { label: 'Trousse de toilette', quantity: null },
+          { label: 'Chaussures marche', quantity: null }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'l-seed-sorties',
+    name: 'Sorties du mois',
+    emoji: '\U0001F3AB',
+    type: 'todo',
+    spaceId: 'sp-seed-sorties',
+    startDateOffset: null,
+    sections: [
+      {
+        name: 'Idées',
+        items: [
+          { label: 'Expo au musée', quantity: null },
+          { label: 'Cinéma en famille', quantity: null },
+          { label: 'Rando du dimanche', quantity: null }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'l-seed-anniversaire',
+    name: 'Anniversaire de Léa',
+    emoji: '\U0001F381',
+    type: 'todo',
+    spaceId: 'sp-seed-divers',
+    startDateOffset: 21,
+    sections: [
+      {
+        name: 'Préparer',
+        items: [
+          { label: 'Choisir le cadeau', quantity: null },
+          { label: 'Commander le gâteau', quantity: null },
+          { label: 'Envoyer les invitations', quantity: null }
+        ]
+      }
+    ]
   }
 ]
 
@@ -212,15 +301,19 @@ async function seedListsForUser(userId) {
 
   for (const list of SEED_LISTS) {
     await query(
-      `INSERT INTO lists (id, name, emoji, type, start_date, end_date, user_id)
-       VALUES ($1, $2, $3, $4, $5, $5, $6)
+      `INSERT INTO lists (id, name, emoji, type, space_id, start_date, end_date, user_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT (id) DO NOTHING`,
       [
         list.id,
         list.name,
         list.emoji,
         list.type,
+        list.spaceId ?? null,
         list.startDateOffset === null ? null : isoInDays2(list.startDateOffset),
+        list.endDateOffset === null || list.endDateOffset === undefined
+          ? (list.startDateOffset === null ? null : isoInDays2(list.startDateOffset))
+          : isoInDays2(list.endDateOffset),
         userId
       ]
     )
