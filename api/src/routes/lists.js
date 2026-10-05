@@ -4,6 +4,8 @@ async function setPosition(table, col, id, value) {
   await query(`UPDATE ${table} SET position = $2 WHERE id = $1`, [id, value])
 }
 
+const normalizeDate = (d) => (typeof d === 'string' && d.trim() === '' ? null : d)
+
 export async function listsRoutes(app) {
   app.get('/lists', async (req) => {
     const { rows } = await query(
@@ -57,7 +59,7 @@ export async function listsRoutes(app) {
     const list = await one(
       `INSERT INTO lists (id, name, emoji, type, space_id, start_date, end_date, user_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [uid('l'), name.trim(), emoji, type, normalizedSpaceId, startDate, endDate, req.user.id]
+      [uid('l'), name.trim(), emoji, type, normalizedSpaceId, normalizeDate(startDate), normalizeDate(endDate), req.user.id]
     )
 
     if (templateId) {
@@ -133,10 +135,10 @@ export async function listsRoutes(app) {
         emoji || null,
         type || null,
         spaceId === undefined ? existing.space_id : (spaceId?.trim() === '' ? null : spaceId),
-        startDate === undefined ? existing.start_date : startDate,
+        startDate === undefined ? existing.start_date : normalizeDate(startDate),
         endDate === undefined
           ? existing.end_date ?? startDate ?? existing.start_date
-          : endDate
+          : normalizeDate(endDate)
       ]
     )
 
