@@ -218,7 +218,10 @@ export async function recipesRoutes(app) {
       if (!list) return reply.code(404).send({ error: 'list not found' })
       let added = 0
       for (const section of recipe.sections) {
-        if (!section.items?.length) continue
+        const items = (section.items ?? []).filter(
+          (it) => typeof it.label === 'string' && it.label.trim() !== ''
+        )
+        if (!items.length) continue
         let target = await one(
           'SELECT id FROM sections WHERE list_id = $1 AND lower(name) = lower($2)',
           [list.id, section.name]
@@ -233,7 +236,7 @@ export async function recipesRoutes(app) {
             [uid('s'), list.id, section.name, last[0].next]
           )
         }
-        for (const item of section.items) {
+        for (const item of items) {
           const { rows: last } = await query(
             'SELECT COALESCE(MAX(position), -1) + 1 AS next FROM items WHERE section_id = $1',
             [target.id]
