@@ -156,7 +156,7 @@ const SEED_LISTS = [
   {
     id: 'l-seed-courses',
     name: 'Courses de la semaine',
-    emoji: '\U0001F6D2',
+    emoji: '🛒',
     type: 'grocery',
     spaceId: 'sp-seed-courses',
     startDateOffset: null,
@@ -182,7 +182,7 @@ const SEED_LISTS = [
   {
     id: 'l-seed-menage',
     name: 'Ménage du week-end',
-    emoji: '\U0001F9F9',
+    emoji: '🧹',
     type: 'checklist',
     spaceId: 'sp-seed-maison',
     startDateOffset: 5,
@@ -258,7 +258,7 @@ const SEED_LISTS = [
   {
     id: 'l-seed-sorties',
     name: 'Sorties du mois',
-    emoji: '\U0001F3AB',
+    emoji: '🎫',
     type: 'todo',
     spaceId: 'sp-seed-sorties',
     startDateOffset: null,
@@ -276,7 +276,7 @@ const SEED_LISTS = [
   {
     id: 'l-seed-anniversaire',
     name: 'Anniversaire de Léa',
-    emoji: '\U0001F381',
+    emoji: '🎁',
     type: 'todo',
     spaceId: 'sp-seed-divers',
     startDateOffset: 21,

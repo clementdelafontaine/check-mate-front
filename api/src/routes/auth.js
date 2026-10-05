@@ -7,6 +7,7 @@ import {
   SESSION_COOKIE_NAME
 } from '../auth.js'
 import { hashPassword } from '../password.js'
+import { seedDemoDataForUser } from '../seed.js'
 
 export async function authRoutes(app) {
   app.get('/auth/me', async (req) => publicUser(req.user))
@@ -59,6 +60,12 @@ export async function authRoutes(app) {
       ]
     ).catch(() => null)
     if (!user) return reply.code(409).send({ error: 'email already used' })
+    try {
+      const seeded = await seedDemoDataForUser(user.id)
+      if (seeded) console.log(`demo data seeded for ${user.email}`)
+    } catch (err) {
+      console.error('seeding failed for new user', err.message)
+    }
     return reply.code(201).send(user)
   })
 
