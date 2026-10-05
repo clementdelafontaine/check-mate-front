@@ -205,11 +205,12 @@ function goAdmin() { router.push('/admin') }
       </ul>
     </section>
 
-    <section v-if="upcomingFirst" class="section">
+    <section class="section">
       <h2 class="section-label">
         <Clock :size="13" /> Prochainement
       </h2>
-      <ul class="mini-lists">
+      <p v-if="!upcomingFirst" class="section-empty">Rien de planifié pour l'instant.</p>
+      <ul v-else class="mini-lists">
         <li>
           <router-link class="mini-row" :to="`/list/${upcomingFirst.id}`">
             <span class="mini-emoji">{{ upcomingFirst.emoji }}</span>
@@ -221,11 +222,12 @@ function goAdmin() { router.push('/admin') }
       </ul>
     </section>
 
-    <section v-if="spacesWithActive.length" class="section">
+    <section class="section">
       <h2 class="section-label">
         <Sparkles :size="13" /> Vue d'ensemble
       </h2>
-      <div class="space-chips">
+      <p v-if="!spacesWithActive.length" class="section-empty">Aucune liste active pour le moment.</p>
+      <div v-else class="space-chips">
         <router-link
           v-for="g in spacesWithActive"
           :key="g.space.id"
@@ -365,6 +367,11 @@ function goAdmin() { router.push('/admin') }
   display: flex;
   align-items: center;
   gap: 0.4rem;
+}
+.section-empty {
+  color: var(--ink-faint);
+  font-size: 0.85rem;
+  margin: 0.3rem 0 0;
 }
 .warn {
   color: #ff6b6b;

@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useChecklistsStore } from '../stores/checklists'
+import { api } from '../services/api'
 import { useUndoToast } from '../composables/useUndoToast'
 import ChecklistSection from '../components/ChecklistSection.vue'
 import CheckedPile from '../components/CheckedPile.vue'
@@ -38,16 +39,37 @@ const showShare = ref(false)
 const friends = useFriendsStore()
 const shareBusy = ref(false)
 
+const isListShared = computed(() => !!list.value?.isShared)
+const sharedUserIds = ref(new Set())
+
 async function openShare() {
   showShare.value = true
   await friends.refresh()
+  try {
+    const rows = await api.fetchCollaborators(route.params.id)
+    sharedUserIds.value = new Set(rows.map((c) => c.userId))
+  } catch {
+    sharedUserIds.value = new Set()
+  }
 }
 
-async function shareWith(friend) {
+function isSharedWith(friend) {
+  return sharedUserIds.value.has(friend.userId)
+}
+
+async function toggleShare(friend) {
+  if (shareBusy.value) return
   shareBusy.value = true
   try {
-    await friends.shareList(list.value.id, friend.userId)
-    toast.show(`Liste partagée avec ${friend.username}`)
+    if (sharedUserIds.value.has(friend.userId)) {
+      await friends.unshareList(list.value.id, friend.userId)
+      sharedUserIds.value = new Set([...sharedUserIds.value].filter((id) => id !== friend.userId))
+      toast.show(`Partage retiré à ${friend.username}`)
+    } else {
+      await friends.shareList(list.value.id, friend.userId)
+      sharedUserIds.value = new Set([...sharedUserIds.value, friend.userId])
+      toast.show(`Liste partagée avec ${friend.username}`)
+    }
   } catch (err) {
     toast.show(err.message ?? 'Erreur')
   } finally {
@@ -103,7 +125,7 @@ async function duplicate() {
       <button class="tool-btn" @click="showEdit = true">
         <Pencil :size="14" /> Modifier
       </button>
-      <button class="tool-btn" @click="openShare">
+      <button class="tool-btn" :class="{ shared: isListShared }" @click="openShare">
         <Share2 :size="14" /> Partager
       </button>
     </div>
@@ -143,10 +165,15 @@ async function duplicate() {
         </p>
         <ul v-else class="share-list">
           <li v-for="friend in friends.accepted" :key="friend.id">
-            <span>{{ friend.username }}</span>
-            <button class="btn ghost" :disabled="shareBusy" @click="shareWith(friend)">
-              Ajouter
-            </button>
+            <label class="share-row" :class="{ active: isSharedWith(friend) }">
+              <input
+                type="checkbox"
+                :checked="isSharedWith(friend)"
+                :disabled="shareBusy"
+                @change="toggleShare(friend)"
+              />
+              <span>{{ friend.username }}</span>
+            </label>
           </li>
         </ul>
         <div class="dialog-actions">
@@ -216,6 +243,34 @@ async function duplicate() {
 .tool-btn:active {
   border-color: var(--accent-dim);
   color: var(--accent);
+}
+.tool-btn.shared {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-deep);
+}
+.share-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.share-row.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-deep);
+  font-weight: 600;
+}
+.share-row input[type='checkbox'] {
+  accent-color: var(--accent);
+  width: 1rem;
+  height: 1rem;
 }
 .global-progress {
   height: 4px;
