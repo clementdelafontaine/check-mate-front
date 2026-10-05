@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useChecklistsStore } from '../stores/checklists'
 import { useAuthStore } from '../stores/auth'
@@ -88,6 +88,10 @@ const greeting = computed(() => {
 })
 
 function goToday() { router.push('/today') }
+
+onMounted(() => {
+  if (auth.isAuthenticated) store.refresh().catch(() => {})
+})
 function goLists() { router.push('/lists') }
 function goCalendar() { router.push('/calendar') }
 function goTemplates() { router.push('/templates') }
