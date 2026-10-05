@@ -129,7 +129,7 @@ export async function listsRoutes(app) {
       startDate,
       endDate
     } = req.body ?? {}
-    const existing = await one(`SELECT * FROM lists WHERE id = $1 AND ${listAccess('$2')}`, [
+    const existing = await one('SELECT * FROM lists WHERE id = $1 AND user_id = $2', [
       req.params.id,
       req.user.id
     ])
