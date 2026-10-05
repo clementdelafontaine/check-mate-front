@@ -45,10 +45,14 @@ export const useFriendsStore = defineStore('friends', {
     async shareList(listId, userId) {
       await api.shareList(listId, userId)
       await this.refresh()
+      const lists = useChecklistsStore()
+      await lists.refresh()
     },
     async unshareList(listId, userId) {
       await api.unshareList(listId, userId)
       await this.refresh()
+      const lists = useChecklistsStore()
+      await lists.refresh()
     },
     async pollSharedLists() {
       if (!api.useApi || !this.loaded) return

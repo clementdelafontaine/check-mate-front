@@ -90,6 +90,7 @@ async function save() {
     for (const userId of removed) {
       await api.unshareList(props.list.id, userId).catch(() => {})
     }
+    if (added.length || removed.length) await store.refresh()
   }
   emit('saved')
   emit('close')
