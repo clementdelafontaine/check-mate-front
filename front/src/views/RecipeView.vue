@@ -27,6 +27,16 @@ const metaServings = ref('')
 const metaPrep = ref('')
 const metaCook = ref('')
 const metaSource = ref('')
+const metaTags = ref(new Set())
+
+const RECIPE_TAGS = ['plats', 'desserts', 'soupes', 'vegan', 'végétarien', 'sans gluten', 'express']
+
+function toggleMetaTag(tag) {
+  const next = new Set(metaTags.value)
+  if (next.has(tag)) next.delete(tag)
+  else next.add(tag)
+  metaTags.value = next
+}
 const EMOJIS = ['🍳', '🥘', '🍝', '🍲', '🥗', '🍛', '🥐', '🍰', '🐟', '🍗', '🥖', '🫕']
 
 // add-item inline forms (one open at a time, per section)
@@ -47,6 +57,7 @@ function openMeta() {
   metaPrep.value = recipe.value.prepMinutes ?? ''
   metaCook.value = recipe.value.cookMinutes ?? ''
   metaSource.value = recipe.value.source ?? ''
+  metaTags.value = new Set(recipe.value.tags ?? [])
   showMeta.value = true
 }
 
@@ -59,7 +70,8 @@ async function saveMeta() {
     servings: metaServings.value === '' ? null : Number(metaServings.value),
     prepMinutes: metaPrep.value === '' ? null : Number(metaPrep.value),
     cookMinutes: metaCook.value === '' ? null : Number(metaCook.value),
-    source: metaSource.value.trim() || null
+    source: metaSource.value.trim() || null,
+    tags: [...metaTags.value]
   })
   showMeta.value = false
   toast.show('Recette modifiée')
@@ -181,6 +193,7 @@ onMounted(() => store.refresh())
       <span v-if="recipe.prepMinutes">🔪 {{ recipe.prepMinutes }} min prépa</span>
       <span v-if="recipe.cookMinutes">🔥 {{ recipe.cookMinutes }} min cuisson</span>
       <span v-if="recipe.source">🔗 {{ recipe.source }}</span>
+      <span v-for="tag in recipe.tags ?? []" :key="tag" class="tag-pill">{{ tag }}</span>
     </div>
 
     <section v-for="(section, si) in recipe.sections" :key="section.id ?? si" class="block">
@@ -264,7 +277,8 @@ onMounted(() => store.refresh())
           <button class="icon-btn" aria-label="Fermer" @click="showPlan = false"><X :size="18" /></button>
         </div>
         <form @submit.prevent="plan">
-          <input v-model="planDate" class="input" type="date" required />
+          <label class="field-label" for="plan-date">Date du repas</label>
+          <input id="plan-date" v-model="planDate" class="input" type="date" required />
           <div class="meal-choice">
             <button type="button" class="meal" :class="{ active: planMeal === 'lunch' }" @click="planMeal = 'lunch'">Midi</button>
             <button type="button" class="meal" :class="{ active: planMeal === 'dinner' }" @click="planMeal = 'dinner'">Soir</button>
@@ -293,14 +307,37 @@ onMounted(() => store.refresh())
               {{ e }}
             </button>
           </div>
-          <input v-model="metaName" class="input" type="text" placeholder="Nom de la recette" required />
-          <input v-model="metaDescription" class="input" type="text" placeholder="Description" />
-          <input v-model="metaServings" class="input" type="number" min="1" placeholder="Nombre de personnes" />
+          <label class="field-label" for="meta-name">Nom de la recette</label>
+          <input id="meta-name" v-model="metaName" class="input" type="text" placeholder="Ex : Pâtes carbonara" required />
+          <label class="field-label" for="meta-desc">Description</label>
+          <input id="meta-desc" v-model="metaDescription" class="input" type="text" placeholder="Quelques mots sur le plat" />
+          <label class="field-label" for="meta-servings">Nombre de personnes</label>
+          <input id="meta-servings" v-model="metaServings" class="input" type="number" min="1" placeholder="Ex : 4" />
           <div class="two-col">
-            <input v-model="metaPrep" class="input" type="number" min="0" placeholder="Prépa (min)" />
-            <input v-model="metaCook" class="input" type="number" min="0" placeholder="Cuisson (min)" />
+            <div>
+              <label class="field-label" for="meta-prep">Préparation (min)</label>
+              <input id="meta-prep" v-model="metaPrep" class="input" type="number" min="0" placeholder="Ex : 15" />
+            </div>
+            <div>
+              <label class="field-label" for="meta-cook">Cuisson (min)</label>
+              <input id="meta-cook" v-model="metaCook" class="input" type="number" min="0" placeholder="Ex : 30" />
+            </div>
           </div>
-          <input v-model="metaSource" class="input" type="text" placeholder="Source / lien" />
+          <label class="field-label" for="meta-source">Source / lien</label>
+          <input id="meta-source" v-model="metaSource" class="input" type="text" placeholder="Ex : Marmiton, livre, URL…" />
+          <span class="field-label">Tags</span>
+          <div class="tags-row">
+            <button
+              v-for="tag in RECIPE_TAGS"
+              :key="tag"
+              type="button"
+              class="tag-chip"
+              :class="{ active: metaTags.has(tag) }"
+              @click="toggleMetaTag(tag)"
+            >
+              {{ tag }}
+            </button>
+          </div>
           <button type="submit" class="submit">Enregistrer</button>
         </form>
       </div>
@@ -345,6 +382,14 @@ onMounted(() => store.refresh())
   color: var(--ink-muted);
   font-size: 0.9rem;
   margin: 0.5rem 0 0;
+}
+.tag-pill {
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--accent-dim);
+  border-radius: 0.45rem;
+  font-size: 0.65rem;
+  color: var(--accent);
+  background: var(--accent-deep);
 }
 .meta {
   display: flex;
@@ -539,6 +584,34 @@ onMounted(() => store.refresh())
 }
 .emoji-choice.active {
   border-color: var(--accent);
+  background: var(--accent-deep);
+}
+.field-label {
+  display: block;
+  margin: 0.35rem 0 0.25rem 0.15rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+}
+.tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.25rem 0 0.6rem;
+}
+.tag-chip {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  color: var(--ink-muted);
+}
+.tag-chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
   background: var(--accent-deep);
 }
 .meal-choice {

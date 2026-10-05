@@ -43,6 +43,7 @@ export async function recipesRoutes(app) {
             prepMinutes: { type: 'integer', nullable: true },
             cookMinutes: { type: 'integer', nullable: true },
             source: { type: 'string', nullable: true },
+            tags: { type: 'array', items: { type: 'string' } },
             sections: {
               type: 'array',
               items: {
@@ -76,14 +77,15 @@ export async function recipesRoutes(app) {
         prepMinutes = null,
         cookMinutes = null,
         source = null,
+        tags = [],
         sections = [],
         steps = []
       } = req.body ?? {}
       if (!name?.trim()) return reply.code(400).send({ error: 'name required' })
       const recipe = await one(
-        `INSERT INTO recipes (id, name, emoji, description, servings, prep_minutes, cook_minutes, source, user_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-        [uid('r'), name.trim(), emoji, description, servings, prepMinutes, cookMinutes, source, req.user.id]
+        `INSERT INTO recipes (id, name, emoji, description, servings, prep_minutes, cook_minutes, source, tags, user_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+        [uid('r'), name.trim(), emoji, description, servings, prepMinutes, cookMinutes, source, tags, req.user.id]
       )
       for (const [si, s] of (sections.length ? sections : [{ name: 'Ingrédients', items: [] }]).entries()) {
         const section = await one(
@@ -124,6 +126,7 @@ export async function recipesRoutes(app) {
       prepMinutes,
       cookMinutes,
       source,
+      tags,
       sections,
       steps
     } = req.body ?? {}
@@ -136,6 +139,7 @@ export async function recipesRoutes(app) {
          prep_minutes = $6,
          cook_minutes = $7,
          source = $8,
+         tags = COALESCE($9, tags),
          updated_at = now()
        WHERE id = $1`,
       [
@@ -146,7 +150,8 @@ export async function recipesRoutes(app) {
         servings === undefined ? existing.servings : servings,
         prepMinutes === undefined ? existing.prep_minutes : prepMinutes,
         cookMinutes === undefined ? existing.cook_minutes : cookMinutes,
-        source === undefined ? existing.source : source
+        source === undefined ? existing.source : source,
+        tags === undefined ? null : tags
       ]
     )
     if (sections !== undefined) {

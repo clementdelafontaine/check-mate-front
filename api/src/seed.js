@@ -10,6 +10,7 @@ const SEED_RECIPES = [
     prepMinutes: 10,
     cookMinutes: 15,
     source: null,
+    tags: ['plats'],
     sections: [
       {
         name: 'Épicerie',
@@ -42,6 +43,7 @@ const SEED_RECIPES = [
     prepMinutes: 25,
     cookMinutes: 40,
     source: 'Cuisine AZ',
+    tags: ['plats', 'vegan'],
     sections: [
       {
         name: 'Produits frais',
@@ -71,6 +73,7 @@ const SEED_RECIPES = [
     emoji: '🍲',
     description: 'Curry coco rapide, parfait pour un soir de semaine.',
     servings: 3,
+    tags: ['plats', 'soupes', 'vegan'],
     prepMinutes: 10,
     cookMinutes: 20,
     source: null,
@@ -103,6 +106,7 @@ const SEED_RECIPES = [
     name: 'Crumble aux pommes',
     emoji: '🍰',
     description: 'Dessert réconfortant : pommes, farine, beurre, sucre roux.',
+    tags: ['desserts'],
     servings: 6,
     prepMinutes: 15,
     cookMinutes: 35,
@@ -443,8 +447,8 @@ export async function seedRecipesForUser(userId) {
 
   for (const recipe of SEED_RECIPES) {
     await query(
-      `INSERT INTO recipes (id, name, emoji, description, servings, prep_minutes, cook_minutes, source, user_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO recipes (id, name, emoji, description, servings, prep_minutes, cook_minutes, source, tags, user_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        ON CONFLICT (id) DO NOTHING`,
       [
         recipe.id,
@@ -455,6 +459,7 @@ export async function seedRecipesForUser(userId) {
         recipe.prepMinutes,
         recipe.cookMinutes,
         recipe.source,
+        recipe.tags ?? [],
         userId
       ]
     )
