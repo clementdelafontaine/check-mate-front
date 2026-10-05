@@ -13,11 +13,18 @@ import { recipesRoutes } from './routes/recipes.js'
 import { mealPlansRoutes } from './routes/meal-plans.js'
 import { authRoutes } from './routes/auth.js'
 import { userFromSession, publicUser, ensureAdmin } from './auth.js'
+import { seedRecipesForUser } from './seed.js'
 
 if (config.adminEmail && config.adminPassword) {
   try {
-    await ensureAdmin(config.adminEmail, config.adminPassword)
+    const admin = await ensureAdmin(config.adminEmail, config.adminPassword)
     console.log(`admin account ready: ${config.adminEmail}`)
+    try {
+      const seeded = await seedRecipesForUser(admin.id)
+      if (seeded) console.log('demo recipes seeded for admin')
+    } catch (err) {
+      console.error('recipe seeding failed', err.message)
+    }
   } catch (err) {
     console.error('admin bootstrap failed (db not ready yet?)', err.message)
   }
