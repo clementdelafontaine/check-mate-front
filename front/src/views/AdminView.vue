@@ -140,13 +140,27 @@ onMounted(refresh)
         <input v-model="newPassword" type="password" />
       </label>
 
-      <label class="field">
+      <div class="field">
         <span class="field-label">Rôle</span>
-        <select v-model="newRole">
-          <option value="user">Utilisateur</option>
-          <option value="admin">Administrateur</option>
-        </select>
-      </label>
+        <div class="role-picker">
+          <button
+            type="button"
+            class="role-chip"
+            :class="{ active: newRole === 'user' }"
+            @click="newRole = 'user'"
+          >
+            Utilisateur
+          </button>
+          <button
+            type="button"
+            class="role-chip"
+            :class="{ active: newRole === 'admin' }"
+            @click="newRole = 'admin'"
+          >
+            Administrateur
+          </button>
+        </div>
+      </div>
 
       <button
         class="btn-primary"
@@ -290,6 +304,27 @@ onMounted(refresh)
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--ink-muted);
+}
+
+.role-picker {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.role-chip {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  color: var(--ink-muted);
+  background: transparent;
+}
+
+.role-chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-deep);
 }
 
 .btn-primary {
