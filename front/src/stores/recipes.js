@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { api } from '../services/api.js'
+import { initialRecipes, initialMealPlans } from '../mocks/data.js'
 
 const STORAGE_KEY = 'checkmate-recipes-v1'
 
@@ -17,7 +18,10 @@ export const useRecipesStore = defineStore('recipes', {
   state: () => {
     if (api.useApi) return { recipes: [], mealPlans: [] }
     const saved = loadLocal()
-    return { recipes: saved?.recipes ?? [], mealPlans: saved?.mealPlans ?? [] }
+    return {
+      recipes: saved?.recipes ?? initialRecipes(),
+      mealPlans: saved?.mealPlans ?? initialMealPlans()
+    }
   },
   getters: {
     recipeById: (state) => (id) => state.recipes.find((r) => r.id === id),

@@ -351,3 +351,153 @@ export const initialLists = () => [
   JSON.parse(JSON.stringify(birthdayList)),
   JSON.parse(JSON.stringify(giftIdeasList))
 ]
+
+export const initialRecipes = () => JSON.parse(JSON.stringify(recipes))
+export const initialMealPlans = () => JSON.parse(JSON.stringify(mealPlans))
+
+export const recipes = [
+  {
+    id: 'r-carbonara',
+    name: 'Pâtes carbonara',
+    emoji: '🍝',
+    description: 'La vraie, sans crème : œufs, pecorino et guanciale.',
+    servings: 2,
+    prepMinutes: 10,
+    cookMinutes: 15,
+    source: null,
+    sections: [
+      {
+        id: 'rs-carbo-epicerie',
+        name: 'Épicerie',
+        items: [
+          { id: 'ri-1', label: 'Spaghetti', quantity: '200 g' },
+          { id: 'ri-2', label: 'Pecorino', quantity: '50 g' }
+        ]
+      },
+      {
+        id: 'rs-carbo-frais',
+        name: 'Produits frais',
+        items: [
+          { id: 'ri-3', label: 'Œufs', quantity: '2' },
+          { id: 'ri-4', label: 'Guanciale', quantity: '100 g' }
+        ]
+      }
+    ],
+    steps: [
+      { id: 'rst-1', text: 'Cuire les spaghetti al dente dans une grande casserole d\u2019eau salée.' },
+      { id: 'rst-2', text: 'Faire revenir le guanciale en lardons jusqu\u2019à ce qu\u2019il soit doré.' },
+      { id: 'rst-3', text: 'Battre les œufs avec le pecorino râpé, poivrer généreusement.' },
+      { id: 'rst-4', text: 'Hors du feu, mélanger pâtes, guanciale puis crème d\u2019œufs — le plat ne doit plus bouillir.' }
+    ]
+  },
+  {
+    id: 'r-courgettes',
+    name: 'Courgettes farcies végétariennes',
+    emoji: '🥘',
+    description: 'Courgettes creusées garnies de riz, fromage et herbes, au four.',
+    servings: 4,
+    prepMinutes: 25,
+    cookMinutes: 40,
+    source: 'Cuisine AZ',
+    sections: [
+      {
+        id: 'rs-courgette-frais',
+        name: 'Produits frais',
+        items: [
+          { id: 'ri-5', label: 'Courgettes', quantity: '4' },
+          { id: 'ri-6', label: 'Tomates', quantity: '2' }
+        ]
+      },
+      {
+        id: 'rs-courgette-epicerie',
+        name: 'Épicerie',
+        items: [
+          { id: 'ri-7', label: 'Riz', quantity: '150 g' },
+          { id: 'ri-8', label: 'Herbes de Provence', quantity: null }
+        ]
+      }
+    ],
+    steps: [
+      { id: 'rst-5', text: 'Préchauffer le four à 180°C.' },
+      { id: 'rst-6', text: 'Couper les courgettes en deux et les évider, réserver la chair.' },
+      { id: 'rst-7', text: 'Mélanger la chair, le riz cuit, les tomates en dés et les herbes.' },
+      { id: 'rst-8', text: 'Farcir les courgettes, parsemer de fromage et enfourner 40 minutes.' }
+    ]
+  },
+  {
+    id: 'r-curry',
+    name: 'Curry de pois chiches express',
+    emoji: '🍲',
+    description: 'Curry coco rapide, parfait pour un soir de semaine.',
+    servings: 3,
+    prepMinutes: 10,
+    cookMinutes: 20,
+    source: null,
+    sections: [
+      {
+        id: 'rs-curry-epicerie',
+        name: 'Épicerie',
+        items: [
+          { id: 'ri-9', label: 'Pois chiches (boîte)', quantity: '2' },
+          { id: 'ri-10', label: 'Lait de coco', quantity: '400 ml' },
+          { id: 'ri-11', label: 'Pâte de curry', quantity: '2 c. à s.' }
+        ]
+      },
+      {
+        id: 'rs-curry-frais',
+        name: 'Produits frais',
+        items: [
+          { id: 'ri-12', label: 'Oignons', quantity: '1' },
+          { id: 'ri-13', label: 'Épinards', quantity: '200 g' }
+        ]
+      }
+    ],
+    steps: [
+      { id: 'rst-9', text: 'Faire suer l\u2019oignon émincé dans un filet d\u2019huile.' },
+      { id: 'rst-10', text: 'Ajouter la pâte de curry et faire revenir une minute.' },
+      { id: 'rst-11', text: 'Verser le lait de coco et les pois chiches, laisser mijoter 15 minutes.' },
+      { id: 'rst-12', text: 'Incorporer les épinards en fin de cuisson, servir avec du riz.' }
+    ]
+  },
+  {
+    id: 'r-crumble',
+    name: 'Crumble aux pommes',
+    emoji: '🍰',
+    description: 'Dessert réconfortant : pommes, farine, beurre, sucre roux.',
+    servings: 6,
+    prepMinutes: 15,
+    cookMinutes: 35,
+    source: 'Marmiton',
+    sections: [
+      {
+        id: 'rs-crumble-epicerie',
+        name: 'Épicerie',
+        items: [
+          { id: 'ri-14', label: 'Farine', quantity: '120 g' },
+          { id: 'ri-15', label: 'Sucre roux', quantity: '80 g' }
+        ]
+      },
+      {
+        id: 'rs-crumble-frais',
+        name: 'Produits frais',
+        items: [
+          { id: 'ri-16', label: 'Pommes', quantity: '6' },
+          { id: 'ri-17', label: 'Beurre', quantity: '80 g' }
+        ]
+      }
+    ],
+    steps: [
+      { id: 'rst-13', text: 'Préchauffer le four à 180°C.' },
+      { id: 'rst-14', text: 'Peler et couper les pommes en lamelles, les disposer dans un plat beurré.' },
+      { id: 'rst-15', text: 'Sabler du bout des doigts farine, beurre froid et sucre roux.' },
+      { id: 'rst-16', text: 'Répartir la pâte sur les pommes et enfourner 35 minutes.' }
+    ]
+  }
+]
+
+export const mealPlans = [
+  { id: 'mp-carbo', date: inDays(0), meal: 'dinner', servings: 2, recipeId: 'r-carbonara', recipeName: 'Pâtes carbonara', recipeEmoji: '🍝' },
+  { id: 'mp-courgettes', date: inDays(2), meal: 'lunch', servings: 4, recipeId: 'r-courgettes', recipeName: 'Courgettes farcies végétariennes', recipeEmoji: '🥘' },
+  { id: 'mp-curry', date: inDays(3), meal: 'dinner', servings: 3, recipeId: 'r-curry', recipeName: 'Curry de pois chiches express', recipeEmoji: '🍲' },
+  { id: 'mp-crumble', date: inDays(5), meal: 'dinner', servings: 6, recipeId: 'r-crumble', recipeName: 'Crumble aux pommes', recipeEmoji: '🍰' }
+]
