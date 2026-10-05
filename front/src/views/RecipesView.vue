@@ -5,6 +5,7 @@ import { useUndoToast } from '../composables/useUndoToast'
 import ItemCard from '../components/ItemCard.vue'
 import AddCard from '../components/AddCard.vue'
 import AddToGroceryDialog from '../components/AddToGroceryDialog.vue'
+import RecipeMetaDialog from '../components/RecipeMetaDialog.vue'
 import { X, Plus, ArrowRight, Check } from 'lucide-vue-next'
 
 const store = useRecipesStore()
@@ -15,12 +16,6 @@ const showGroceryWeek = ref(false)
 const showGrocerySelection = ref(false)
 const selection = ref(new Set())
 
-const newName = ref('')
-const newEmoji = ref('🍝')
-const newServings = ref('')
-const newDescription = ref('')
-const newSource = ref('')
-const EMOJIS = ['🍳', '🥘', '🍝', '🍲', '🥗', '🍛', '🥐', '🍰', '🐟', '🍗', '🥖', '🫕']
 
 const weekSelection = ref(new Set())
 
@@ -69,29 +64,8 @@ function toggleSelect(recipeId) {
   selection.value = next
 }
 
-function close() {
+function closeForm() {
   showForm.value = false
-  newName.value = ''
-  newEmoji.value = '🍝'
-  newServings.value = ''
-  newDescription.value = ''
-  newSource.value = ''
-}
-
-async function create() {
-  const name = newName.value.trim()
-  if (!name) return
-  await store.createRecipe({
-    name,
-    emoji: newEmoji.value,
-    description: newDescription.value.trim(),
-    servings: newServings.value ? Number(newServings.value) : null,
-    source: newSource.value.trim() || null,
-    sections: [{ name: 'Ingrédients', items: [] }],
-    steps: []
-  })
-  close()
-  toast.show('Recette créée')
 }
 
 async function removeRecipe(recipe) {
@@ -170,33 +144,12 @@ onMounted(() => store.refresh())
       <li><AddCard label="Ajouter une recette" @click="showForm = true" /></li>
     </ul>
 
-    <div v-if="showForm" class="overlay" @click.self="close">
-      <div class="dialog">
-        <div class="dialog-head">
-          <span class="font-mono dialog-title">Nouvelle recette</span>
-          <button class="icon-btn" aria-label="Fermer" @click="close"><X :size="18" /></button>
-        </div>
-        <form @submit.prevent="create">
-          <div class="emoji-row">
-            <button
-              v-for="e in EMOJIS"
-              :key="e"
-              type="button"
-              class="emoji-choice"
-              :class="{ active: newEmoji === e }"
-              @click="newEmoji = e"
-            >
-              {{ e }}
-            </button>
-          </div>
-          <input v-model="newName" class="input" type="text" placeholder="Nom de la recette" autofocus />
-          <input v-model="newServings" class="input" type="number" min="1" placeholder="Nombre de personnes" />
-          <input v-model="newDescription" class="input" type="text" placeholder="Description (optionnelle)" />
-          <input v-model="newSource" class="input" type="text" placeholder="Source / lien (optionnel)" />
-          <button type="submit" class="submit">Créer</button>
-        </form>
-      </div>
-    </div>
+    <RecipeMetaDialog
+      v-if="showForm"
+      @close="closeForm"
+      @saved="() => { toast.show('Recette créée'); closeForm() }"
+    />
+
 
     <AddToGroceryDialog
       v-if="showGroceryWeek"
@@ -330,44 +283,5 @@ onMounted(() => store.refresh())
   color: var(--accent);
   background: var(--accent-deep);
 }
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(2px);
-}
-.dialog {
-  width: min(22rem, 100%);
-  border: 1px solid var(--line);
-  border-radius: 1rem;
-  background: var(--bg-1);
-  padding: 1.1rem;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
-}
-.dialog-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-}
-.dialog-title {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--ink-muted);
-}
-.icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.5rem;
-  color: var(--ink-muted);
-}
+
 </style>

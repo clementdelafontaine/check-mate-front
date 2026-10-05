@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useRecipesStore } from '../stores/recipes'
 import { useUndoToast } from '../composables/useUndoToast'
 import AddToGroceryDialog from '../components/AddToGroceryDialog.vue'
+import RecipeMetaDialog from '../components/RecipeMetaDialog.vue'
 import { X, Plus, ArrowRight, Pencil, Trash2, CalendarPlus } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -312,70 +313,13 @@ onMounted(() => store.refresh())
       </div>
     </div>
 
-    <div v-if="showMeta" class="overlay" @click.self="showMeta = false">
-      <div class="dialog">
-        <div class="dialog-head">
-          <span class="font-mono dialog-title">Modifier la recette</span>
-          <button class="icon-btn" aria-label="Fermer" @click="showMeta = false"><X :size="18" /></button>
-        </div>
-        <form @submit.prevent="saveMeta">
-          <div class="emoji-row">
-            <button
-              v-for="e in EMOJIS"
-              :key="e"
-              type="button"
-              class="emoji-choice"
-              :class="{ active: metaEmoji === e }"
-              @click="metaEmoji = e"
-            >
-              {{ e }}
-            </button>
-          </div>
-          <label class="field-label" for="meta-name">Nom de la recette</label>
-          <input id="meta-name" v-model="metaName" class="input" type="text" placeholder="Ex : Pâtes carbonara" required />
-          <label class="field-label" for="meta-desc">Description</label>
-          <input id="meta-desc" v-model="metaDescription" class="input" type="text" placeholder="Quelques mots sur le plat" />
-          <label class="field-label" for="meta-servings">Nombre de personnes</label>
-          <input id="meta-servings" v-model="metaServings" class="input" type="number" min="1" placeholder="Ex : 4" />
-          <div class="two-col">
-            <div>
-              <label class="field-label" for="meta-prep">Préparation (min)</label>
-              <input id="meta-prep" v-model="metaPrep" class="input" type="number" min="0" placeholder="Ex : 15" />
-            </div>
-            <div>
-              <label class="field-label" for="meta-cook">Cuisson (min)</label>
-              <input id="meta-cook" v-model="metaCook" class="input" type="number" min="0" placeholder="Ex : 30" />
-            </div>
-          </div>
-          <label class="field-label" for="meta-source">Source / lien</label>
-          <input id="meta-source" v-model="metaSource" class="input" type="text" placeholder="Ex : Marmiton, livre, URL…" />
-          <span class="field-label">Tags</span>
-          <div class="tags-row">
-            <button
-              v-for="tag in allTags"
-              :key="tag"
-              type="button"
-              class="tag-chip"
-              :class="{ active: metaTags.has(tag) }"
-              @click="toggleMetaTag(tag)"
-            >
-              {{ tag }}
-            </button>
-          </div>
-          <div class="new-tag-row">
-            <input
-              v-model="newTag"
-              class="input"
-              type="text"
-              placeholder="Nouveau tag (ex : monde, batch-cooking…)"
-              @keydown.enter.prevent="addCustomTag"
-            />
-            <button type="button" class="tag-add-btn" :disabled="!newTag.trim()" @click="addCustomTag">+</button>
-          </div>
-          <button type="submit" class="submit">Enregistrer</button>
-        </form>
-      </div>
-    </div>
+    <RecipeMetaDialog
+      v-if="showMeta"
+      :recipe="recipe"
+      @close="showMeta = false"
+      @saved="toast.show('Recette modifiée')"
+    />
+
   </div>
 </template>
 
