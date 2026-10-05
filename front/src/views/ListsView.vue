@@ -73,6 +73,25 @@ const newSpaceId = ref('')
 const newLabelIds = ref([])
 const newStartDate = ref('')
 const newEndDate = ref('')
+const hasDate = ref(false)
+const hasRange = ref(false)
+
+function toggleHasDate() {
+  hasDate.value = !hasDate.value
+  if (!hasDate.value) {
+    hasRange.value = false
+    newStartDate.value = ''
+    newEndDate.value = ''
+  }
+}
+
+function toggleHasRange() {
+  hasRange.value = !hasRange.value
+  newEndDate.value = ''
+}
+
+const listStart = () => (hasDate.value && newStartDate.value ? newStartDate.value : null)
+const listEnd = () => (hasRange.value && newEndDate.value ? newEndDate.value : listStart())
 
 const EMOJIS = ['📋', '🛒', '🧳', '🏠', '✈️', '🎒', '🎁', '📝', '🌟', '🧹', '🔧', '💊']
 
@@ -105,11 +124,11 @@ function create() {
   if (!name) return
   const created =
     pickedTemplateId.value === 'blank'
-      ? store.createEmptyList(name, newEmoji.value, newSpaceId.value, newLabelIds.value, newStartDate.value || null, newEndDate.value || null)
+      ? store.createEmptyList(name, newEmoji.value, newSpaceId.value, newLabelIds.value, listStart(), listEnd())
       : store.createListFromTemplate(pickedTemplateId.value, name, newEmoji.value, newSpaceId.value)
   if (pickedTemplateId.value !== 'blank') {
     for (const id of newLabelIds.value) store.toggleListLabel(created.id, id)
-    if (newStartDate.value) store.setListDates(created.id, newStartDate.value, newEndDate.value || null)
+    if (listStart()) store.setListDates(created.id, listStart(), listEnd())
   }
   showForm.value = false
   pickedTemplateId.value = null
@@ -121,6 +140,10 @@ function closeAll() {
   showForm.value = false
   pickedTemplateId.value = null
   newName.value = ''
+  hasDate.value = false
+  hasRange.value = false
+  newStartDate.value = ''
+  newEndDate.value = ''
 }
 
 const showNewLabelForm = ref(false)
@@ -300,10 +323,35 @@ function createLabel() {
             </button>
           </div>
 
-          <div class="dates-row">
-            <input v-model="newStartDate" class="input date" type="date" />
-            <span class="date-sep">→</span>
-            <input v-model="newEndDate" class="input date" type="date" />
+          <div class="dates-block">
+            <button type="button" class="date-toggle" :class="{ active: hasDate }" @click="toggleHasDate">
+              <span class="toggle-dot" /> Programmer une date
+            </button>
+            <template v-if="hasDate">
+              <div class="dates-row">
+                <input v-model="newStartDate" class="input date" type="date" />
+                <button
+                  v-if="!hasRange"
+                  type="button"
+                  class="range-btn"
+                  aria-label="Ajouter une date de fin"
+                  @click="toggleHasRange"
+                >+</button>
+                <template v-else>
+                  <span class="date-sep">→</span>
+                  <input v-model="newEndDate" class="input date" type="date" />
+                  <button
+                    type="button"
+                    class="range-btn"
+                    aria-label="Retirer la date de fin"
+                    @click="toggleHasRange"
+                  >−</button>
+                </template>
+              </div>
+              <p v-if="hasRange && newStartDate && newEndDate && newEndDate < newStartDate" class="date-error">
+                La date de fin doit suivre la date de début.
+              </p>
+            </template>
           </div>
 
           <button type="submit" class="submit">Créer</button>
@@ -561,5 +609,60 @@ html[data-theme='light'] .input {
   color: #fff;
   font-weight: 700;
   font-size: 0.9rem;
+}
+.dates-block {
+  margin-bottom: 0.6rem;
+}
+.date-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px dashed var(--line-bright);
+  border-radius: 0.7rem;
+  color: var(--ink-muted);
+}
+.date-toggle.active {
+  border-style: solid;
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+.toggle-dot {
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid var(--line-bright);
+  border-radius: 0.35rem;
+  flex-shrink: 0;
+}
+.date-toggle.active .toggle-dot {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.dates-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+.dates-row .input {
+  flex: 1;
+  margin-bottom: 0;
+}
+.range-btn {
+  width: 2.4rem;
+  flex-shrink: 0;
+  border: 1px dashed var(--line-bright);
+  border-radius: 0.7rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.date-error {
+  margin: 0.35rem 0 0 0.2rem;
+  font-size: 0.75rem;
+  color: var(--danger, #e5484d);
 }
 </style>

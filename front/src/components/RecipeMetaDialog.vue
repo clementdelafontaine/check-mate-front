@@ -86,7 +86,10 @@ async function submit() {
   const saved = isNew.value
     ? await store.createRecipe({
         ...payload,
-        sections: [{ name: 'Ingrédients', items: [] }],
+        sections: [
+          { name: 'Produits frais', items: [] },
+          { name: 'Épicerie', items: [] }
+        ],
         steps: []
       })
     : await store.updateRecipe(props.recipe.id, payload)

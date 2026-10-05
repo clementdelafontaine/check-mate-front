@@ -87,7 +87,11 @@ export async function recipesRoutes(app) {
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
         [uid('r'), name.trim(), emoji, description, servings, prepMinutes, cookMinutes, source, tags, req.user.id]
       )
-      for (const [si, s] of (sections.length ? sections : [{ name: 'Ingrédients', items: [] }]).entries()) {
+      const defaultSections = [
+        { name: 'Produits frais', items: [] },
+        { name: 'Épicerie', items: [] }
+      ]
+      for (const [si, s] of (sections.length ? sections : defaultSections).entries()) {
         const section = await one(
           'INSERT INTO recipe_sections (id, recipe_id, name, position) VALUES ($1, $2, $3, $4) RETURNING *',
           [uid('rs'), recipe.id, s.name ?? 'Divers', si]
