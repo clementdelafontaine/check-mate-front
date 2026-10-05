@@ -11,7 +11,10 @@ import { hashPassword } from '../password.js'
 import { seedDemoDataForUser } from '../seed.js'
 
 export async function authRoutes(app) {
-  app.get('/auth/me', async (req) => publicUser(req.user))
+  app.get('/auth/me', async (req, reply) => {
+    if (!req.user) return reply.code(401).send({ error: 'authentication required' })
+    return publicUser(req.user)
+  })
 
   app.post('/auth/login', async (req, reply) => {
     const { username, password } = req.body ?? {}
@@ -20,13 +23,13 @@ export async function authRoutes(app) {
     }
     const user = await authenticate(String(username), String(password))
     if (!user) return reply.code(401).send({ error: 'invalid credentials' })
-    createSession(app, reply, user.id)
+    await createSession(app, reply, user.id)
     return publicUser(user)
   })
 
   app.post('/auth/logout', async (req, reply) => {
     const sessionId = req.cookies?.[SESSION_COOKIE_NAME]
-    if (sessionId) destroySession(app, reply, sessionId)
+    if (sessionId) await destroySession(app, reply, sessionId)
     return { ok: true }
   })
 

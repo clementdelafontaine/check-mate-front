@@ -12,6 +12,22 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: checkmate
+          POSTGRES_PASSWORD: checkmate
+          POSTGRES_DB: checkmate_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://checkmate:checkmate@localhost:5432/checkmate_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,10 +39,14 @@ jobs:
           npm ci
           npx vitest run
           npm run build
-      - name: API — install & check
+      - name: API — install & integration tests
         working-directory: api
         run: |
           npm ci
+          npm test
+      - name: API — syntax check
+        working-directory: api
+        run: |
           node --check src/server.js
           node --check src/db.js
 

@@ -29,10 +29,10 @@ export async function authenticate(identifier, password) {
   return ok ? user : null
 }
 
-export function createSession(app, reply, userId) {
+export async function createSession(app, reply, userId) {
   const sessionId = newSessionId()
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS)
-  query('INSERT INTO sessions (id, user_id, expires_at) VALUES ($1, $2, $3)', [
+  await query('INSERT INTO sessions (id, user_id, expires_at) VALUES ($1, $2, $3)', [
     sessionId,
     userId,
     expiresAt
@@ -47,8 +47,8 @@ export function createSession(app, reply, userId) {
   return sessionId
 }
 
-export function destroySession(app, reply, sessionId) {
-  query('DELETE FROM sessions WHERE id = $1', [sessionId])
+export async function destroySession(app, reply, sessionId) {
+  await query('DELETE FROM sessions WHERE id = $1', [sessionId])
   reply.clearCookie(SESSION_COOKIE, { path: '/' })
 }
 
