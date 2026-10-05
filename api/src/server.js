@@ -21,7 +21,7 @@ if (config.adminEmail && config.adminPassword) {
     console.log(`admin account ready: ${config.adminEmail}`)
     try {
       const seeded = await seedDemoDataForUser(admin.id)
-      if (seeded) console.log('demo data seeded for admin (recipes, meal plans, lists)')
+      if (seeded) console.log('demo data seeded for admin (recipes, meal plans, lists, templates)')
     } catch (err) {
       console.error('recipe seeding failed', err.message)
     }
