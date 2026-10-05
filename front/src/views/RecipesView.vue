@@ -12,6 +12,7 @@ const store = useRecipesStore()
 const toast = useUndoToast()
 
 const showForm = ref(false)
+const editingRecipe = ref(null)
 const showGroceryWeek = ref(false)
 const showGrocerySelection = ref(false)
 const selection = ref(new Set())
@@ -66,6 +67,12 @@ function toggleSelect(recipeId) {
 
 function closeForm() {
   showForm.value = false
+  editingRecipe.value = null
+}
+
+function editRecipe(recipe) {
+  editingRecipe.value = recipe
+  showForm.value = true
 }
 
 async function removeRecipe(recipe) {
@@ -138,7 +145,9 @@ onMounted(() => store.refresh())
           :emoji="recipe.emoji"
           :name="recipe.name"
           :meta="recipe.description"
+          editable
           @delete="removeRecipe(recipe)"
+          @edit="editRecipe(recipe)"
         />
       </li>
       <li><AddCard label="Ajouter une recette" @click="showForm = true" /></li>
@@ -146,8 +155,9 @@ onMounted(() => store.refresh())
 
     <RecipeMetaDialog
       v-if="showForm"
+      :recipe="editingRecipe"
       @close="closeForm"
-      @saved="() => { toast.show('Recette créée'); closeForm() }"
+      @saved="(r) => { toast.show(editingRecipe ? 'Recette mise à jour' : `« ${r?.name ?? ''} » créée`); closeForm() }"
     />
 
 
