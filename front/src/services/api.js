@@ -1,11 +1,12 @@
 const BASE = import.meta.env.VITE_API_BASE ?? '/api'
 
 async function request(path, options = {}) {
+  const hasBody = options.body !== undefined
   const res = await fetch(`${BASE}${path}`, {
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
     ...options,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined
+    headers: hasBody ? { 'Content-Type': 'application/json' } : undefined,
+    body: hasBody ? JSON.stringify(options.body) : undefined
   })
   if (res.status === 204) return null
   const data = await res.json().catch(() => null)
