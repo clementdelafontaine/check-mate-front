@@ -124,7 +124,7 @@ function goTemplates() { router.push('/templates') }
       <button class="tile" @click="goCalendar">
         <span class="tile-icon-wrap"><CalendarRange :size="20" class="tile-icon" /></span>
         <span class="tile-label">Calendrier</span>
-        <span v-if="upcomingFirst" class="tile-value">{{ fmtDate(upcomingFirst.startDate) }}</span>
+        <span v-if="upcomingFirst" class="tile-value">{{ fmtDate(upcomingFirst.startDate, '-') }}</span>
         <span v-else class="tile-value">-</span>
         <span class="tile-hint">{{ upcomingCount }} à venir</span>
       </button>
