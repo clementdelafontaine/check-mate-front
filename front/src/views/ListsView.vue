@@ -485,18 +485,6 @@ html[data-theme='light'] .input {
   gap: 0.4rem;
   margin-bottom: 0.75rem;
 }
-.dates-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.6rem;
-}
-.dates-row .input {
-  margin-bottom: 0;
-}
-.date-sep {
-  color: var(--ink-faint);
-}
 .submit {
   width: 100%;
   padding: 0.65rem;
@@ -545,6 +533,7 @@ html[data-theme='light'] .input {
 }
 .dates-row .input {
   flex: 1;
+  min-width: 0;
   margin-bottom: 0;
 }
 .range-btn {

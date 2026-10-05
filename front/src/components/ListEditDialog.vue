@@ -295,6 +295,7 @@ html[data-theme='light'] .input {
 }
 .dates-row .input {
   flex: 1;
+  min-width: 0;
   margin-bottom: 0;
 }
 .range-btn {
