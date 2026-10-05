@@ -293,23 +293,22 @@ const SEED_LISTS = [
   }
 ]
 
-async function seedListsForUser(userId) {
+async function seedListsForUser(userId, spaceIdMap) {
   const { rowCount } = await query('SELECT 1 FROM lists WHERE user_id = $1 LIMIT 1', [
     userId
   ])
   if (rowCount) return false
 
   for (const list of SEED_LISTS) {
-    await query(
+    const listRow = await one(
       `INSERT INTO lists (id, name, emoji, type, space_id, start_date, end_date, user_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       ON CONFLICT (id) DO NOTHING`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
       [
-        list.id,
+        uid('l'),
         list.name,
         list.emoji,
         list.type,
-        list.spaceId ?? null,
+        (list.spaceId ? spaceIdMap.get(list.spaceId) : null) ?? null,
         list.startDateOffset === null ? null : isoInDays2(list.startDateOffset),
         list.endDateOffset === null || list.endDateOffset === undefined
           ? (list.startDateOffset === null ? null : isoInDays2(list.startDateOffset))
@@ -320,7 +319,7 @@ async function seedListsForUser(userId) {
     for (const [si, section] of list.sections.entries()) {
       const sectionRow = await one(
         'INSERT INTO sections (id, list_id, name, position) VALUES ($1, $2, $3, $4) RETURNING id',
-        [uid('s'), list.id, section.name, si]
+        [uid('s'), listRow.id, section.name, si]
       )
       for (const [ii, item] of section.items.entries()) {
         await query(
@@ -507,16 +506,15 @@ async function seedTemplatesForUser(userId) {
   if (rowCount) return false
 
   for (const tpl of SEED_TEMPLATES) {
-    await query(
+    const tplRow = await one(
       `INSERT INTO templates (id, name, emoji, description, type, user_id)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT (id) DO NOTHING`,
-      [tpl.id, tpl.name, tpl.emoji, tpl.description, tpl.type, userId]
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      [uid('t'), tpl.name, tpl.emoji, tpl.description, tpl.type, userId]
     )
     for (const [si, section] of tpl.sections.entries()) {
       const sectionRow = await one(
         'INSERT INTO template_sections (id, template_id, name, position) VALUES ($1, $2, $3, $4) RETURNING id',
-        [uid('ts'), tpl.id, section.name, si]
+        [uid('ts'), tplRow.id, section.name, si]
       )
       for (const [ii, item] of section.items.entries()) {
         await query(
@@ -545,15 +543,17 @@ async function seedSpacesForUser(userId) {
     userId
   ])
   if (rowCount) return false
-  for (const [idx, sp] of SEED_SPACES.entries()) {
+  const spaceIdMap = new Map()
+  for (const sp of SEED_SPACES) {
+    const spaceId = uid('sp')
+    spaceIdMap.set(sp.id, spaceId)
     await query(
       `INSERT INTO spaces (id, name, emoji, user_id)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (id) DO NOTHING`,
-      [sp.id, sp.name, sp.emoji, userId]
+       VALUES ($1, $2, $3, $4)`,
+      [spaceId, sp.name, sp.emoji, userId]
     )
   }
-  return true
+  return spaceIdMap
 }
 
 
@@ -563,13 +563,15 @@ export async function seedRecipesForUser(userId) {
   ])
   if (rowCount) return false
 
+  const recipeIdMap = new Map()
   for (const recipe of SEED_RECIPES) {
+    const recipeId = uid('r')
+    recipeIdMap.set(recipe.id, recipeId)
     await query(
       `INSERT INTO recipes (id, name, emoji, description, servings, prep_minutes, cook_minutes, source, tags, user_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-       ON CONFLICT (id) DO NOTHING`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
-        recipe.id,
+        recipeId,
         recipe.name,
         recipe.emoji,
         recipe.description,
@@ -584,7 +586,7 @@ export async function seedRecipesForUser(userId) {
     for (const [si, section] of recipe.sections.entries()) {
       const sectionRow = await one(
         'INSERT INTO recipe_sections (id, recipe_id, name, position) VALUES ($1, $2, $3, $4) RETURNING id',
-        [uid('rs'), recipe.id, section.name, si]
+        [uid('rs'), recipeIdMap.get(recipe.id), section.name, si]
       )
       for (const [ii, item] of section.items.entries()) {
         await query(
@@ -597,7 +599,7 @@ export async function seedRecipesForUser(userId) {
     for (const [idx, text] of recipe.steps.entries()) {
       await query(
         'INSERT INTO recipe_steps (id, recipe_id, text, position) VALUES ($1, $2, $3, $4)',
-        [uid('rst'), recipe.id, text, idx]
+        [uid('rst'), recipeIdMap.get(recipe.id), text, idx]
       )
     }
   }
@@ -605,18 +607,17 @@ export async function seedRecipesForUser(userId) {
   for (const plan of SEED_MEAL_PLANS) {
     await query(
       `INSERT INTO meal_plans (id, date, meal, recipe_id, user_id)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT DO NOTHING`,
-      [plan.id, isoInDays(plan.offset), plan.meal, plan.recipeId, userId]
+       VALUES ($1, $2, $3, $4, $5)`,
+      [uid('mp'), isoInDays(plan.offset), plan.meal, recipeIdMap.get(plan.recipeId), userId]
     )
   }
   return true
 }
 
 export async function seedDemoDataForUser(userId) {
-  const seededSpaces = await seedSpacesForUser(userId)
+  const spaceIdMap = await seedSpacesForUser(userId)
   const seededRecipes = await seedRecipesForUser(userId)
-  const seededLists = await seedListsForUser(userId)
+  const seededLists = await seedListsForUser(userId, spaceIdMap ?? new Map())
   const seededTemplates = await seedTemplatesForUser(userId)
-  return seededSpaces || seededRecipes || seededLists || seededTemplates
+  return Boolean(spaceIdMap) || seededRecipes || seededLists || seededTemplates
 }
