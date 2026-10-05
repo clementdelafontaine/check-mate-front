@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useRecipesStore } from '../stores/recipes'
 import { useUndoToast } from '../composables/useUndoToast'
 import AddToGroceryDialog from '../components/AddToGroceryDialog.vue'
-import { Plus, X, Trash2, CalendarPlus } from 'lucide-vue-next'
+import { X, Plus, ArrowRight, Pencil, Trash2, CalendarPlus } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -12,68 +12,118 @@ const store = useRecipesStore()
 const toast = useUndoToast()
 
 const recipe = computed(() => store.recipeById(route.params.id))
-const editing = ref(false)
+
 const showGrocery = ref(false)
 const showPlan = ref(false)
+const showMeta = ref(false)
 const planDate = ref(new Date().toISOString().slice(0, 10))
 const planMeal = ref('dinner')
 
-const newSectionName = ref('')
-const newItemLabel = ref('')
-const newItemQuantity = ref('')
-const activeSection = ref(null)
-const newStep = ref('')
+// meta edit
+const metaName = ref('')
+const metaEmoji = ref('🍝')
+const metaDescription = ref('')
+const metaServings = ref('')
+const metaPrep = ref('')
+const metaCook = ref('')
+const metaSource = ref('')
+const EMOJIS = ['🍳', '🥘', '🍝', '🍲', '🥗', '🍛', '🥐', '🍰', '🐟', '🍗', '🥖', '🫕']
 
-async function addIngredient() {
-  const label = newItemLabel.value.trim()
-  if (!label || !recipe.value) return
-  const sections = recipe.value.sections.map((s) => ({
+// add-item inline forms (one open at a time, per section)
+const openItemFor = ref(null)
+const itemLabel = ref('')
+const itemQuantity = ref('')
+const showSectionForm = ref(false)
+const sectionName = ref('')
+const showStepForm = ref(false)
+const stepText = ref('')
+
+function openMeta() {
+  if (!recipe.value) return
+  metaName.value = recipe.value.name
+  metaEmoji.value = recipe.value.emoji ?? '🍝'
+  metaDescription.value = recipe.value.description ?? ''
+  metaServings.value = recipe.value.servings ?? ''
+  metaPrep.value = recipe.value.prepMinutes ?? ''
+  metaCook.value = recipe.value.cookMinutes ?? ''
+  metaSource.value = recipe.value.source ?? ''
+  showMeta.value = true
+}
+
+async function saveMeta() {
+  if (!recipe.value) return
+  await store.updateRecipe(recipe.value.id, {
+    name: metaName.value.trim(),
+    emoji: metaEmoji.value,
+    description: metaDescription.value.trim(),
+    servings: metaServings.value === '' ? null : Number(metaServings.value),
+    prepMinutes: metaPrep.value === '' ? null : Number(metaPrep.value),
+    cookMinutes: metaCook.value === '' ? null : Number(metaCook.value),
+    source: metaSource.value.trim() || null
+  })
+  showMeta.value = false
+  toast.show('Recette modifiée')
+}
+
+const sectionsPayload = () =>
+  (recipe.value?.sections ?? []).map((s) => ({
     ...s,
     items: s.items.map((i) => ({ ...i }))
   }))
-  const section =
-    activeSection.value != null && sections[activeSection.value]
-      ? sections[activeSection.value]
-      : sections[0]
+
+function openItemForm(sectionId) {
+  openItemFor.value = sectionId
+  itemLabel.value = ''
+  itemQuantity.value = ''
+}
+
+async function submitItem() {
+  const label = itemLabel.value.trim()
+  if (!label || !recipe.value) return
+  const sections = sectionsPayload()
+  const section = sections.find((s) => s.id === openItemFor.value)
+  if (!section) return
   section.items.push({
     id: null,
     label,
-    quantity: newItemQuantity.value.trim() || null
+    quantity: itemQuantity.value.trim() || null
   })
   await store.updateRecipe(recipe.value.id, { sections })
-  newItemLabel.value = ''
-  newItemQuantity.value = ''
+  openItemFor.value = null
+}
+
+async function submitSection() {
+  const name = sectionName.value.trim()
+  if (!name || !recipe.value) return
+  const sections = sectionsPayload()
+  sections.push({ id: null, name, items: [] })
+  await store.updateRecipe(recipe.value.id, { sections })
+  sectionName.value = ''
+  showSectionForm.value = false
+}
+
+async function submitStep() {
+  const text = stepText.value.trim()
+  if (!text || !recipe.value) return
+  await store.updateRecipe(recipe.value.id, {
+    steps: [...(recipe.value.steps ?? []).map((s) => s.text), text]
+  })
+  stepText.value = ''
+  showStepForm.value = false
 }
 
 async function removeIngredient(si, ii) {
   if (!recipe.value) return
-  const sections = recipe.value.sections.map((s) => ({
-    ...s,
-    items: s.items.map((i) => ({ ...i }))
-  }))
+  const sections = sectionsPayload()
   sections[si].items.splice(ii, 1)
   await store.updateRecipe(recipe.value.id, { sections })
 }
 
-async function addSection() {
-  const name = newSectionName.value.trim()
-  if (!name || !recipe.value) return
-  const sections = recipe.value.sections.map((s) => ({
-    ...s,
-    items: s.items.map((i) => ({ ...i }))
-  }))
-  sections.push({ id: null, name, items: [] })
+async function removeSection(si) {
+  if (!recipe.value) return
+  const sections = sectionsPayload()
+  sections.splice(si, 1)
   await store.updateRecipe(recipe.value.id, { sections })
-  newSectionName.value = ''
-}
-
-async function addStep() {
-  const text = newStep.value.trim()
-  if (!text || !recipe.value) return
-  await store.updateRecipe(recipe.value.id, {
-    steps: [...recipe.value.steps.map((s) => s.text), text]
-  })
-  newStep.value = ''
 }
 
 async function removeStep(idx) {
@@ -117,7 +167,9 @@ onMounted(() => store.refresh())
         <button class="action" @click="showPlan = true">
           <CalendarPlus :size="15" /> Planifier
         </button>
-        <button class="action" @click="showGrocery = true">🛒 Courses</button>
+        <button class="action" @click="openMeta">
+          <Pencil :size="15" /> Modifier
+        </button>
         <button class="action danger" @click="removeRecipe">
           <Trash2 :size="15" /> Supprimer
         </button>
@@ -132,7 +184,12 @@ onMounted(() => store.refresh())
     </div>
 
     <section v-for="(section, si) in recipe.sections" :key="section.id ?? si" class="block">
-      <h2 class="section-label">{{ section.name }}</h2>
+      <div class="section-head">
+        <h2 class="section-label">{{ section.name }}</h2>
+        <button class="icon-btn" aria-label="Supprimer le rayon" @click="removeSection(si)">
+          <X :size="14" />
+        </button>
+      </div>
       <ul class="items">
         <li v-for="(item, ii) in section.items" :key="item.id ?? ii" class="item">
           <span class="item-label">{{ item.label }}</span>
@@ -142,35 +199,59 @@ onMounted(() => store.refresh())
           </button>
         </li>
       </ul>
-      <form v-if="si === (activeSection ?? 0) || activeSection === null" class="add-row" @submit.prevent="addIngredient">
-        <input v-model="newItemLabel" class="input" type="text" placeholder="Ingrédient" />
-        <input v-model="newItemQuantity" class="input qty" type="text" placeholder="Qté" />
-        <button type="submit" class="icon-btn add" aria-label="Ajouter"><Plus :size="16" /></button>
-      </form>
+      <div v-if="openItemFor === section.id" class="form-card">
+        <form @submit.prevent="submitItem">
+          <input v-model="itemLabel" class="input" type="text" placeholder="Ingrédient" autofocus />
+          <input v-model="itemQuantity" class="input" type="text" placeholder="Quantité (ex : 200 g)" />
+          <button type="submit" class="submit">Ajouter</button>
+        </form>
+      </div>
+      <button v-else class="add-inline" @click="openItemForm(section.id)">
+        <span class="plus-circle">+</span>
+        <span class="add-label">Ajouter un ingrédient</span>
+      </button>
     </section>
 
-    <form class="add-row" @submit.prevent="addSection">
-      <input v-model="newSectionName" class="input" type="text" placeholder="Nouveau rayon (ex : Frais, Épicerie)" />
-      <button type="submit" class="icon-btn add" aria-label="Ajouter rayon"><Plus :size="16" /></button>
-    </form>
+    <div v-if="showSectionForm" class="form-card">
+      <form @submit.prevent="submitSection">
+        <input v-model="sectionName" class="input" type="text" placeholder="Nouveau rayon (ex : Frais, Épicerie)" autofocus />
+        <button type="submit" class="submit">Ajouter le rayon</button>
+      </form>
+    </div>
+    <button v-else class="add-inline" @click="showSectionForm = true">
+      <span class="plus-circle">+</span>
+      <span class="add-label">Ajouter un rayon</span>
+    </button>
 
-    <section class="block">
+    <section class="block steps-block">
       <h2 class="section-label">Préparation</h2>
       <ol class="steps">
         <li v-for="(step, idx) in recipe.steps" :key="step.id ?? idx" class="step">
+          <span class="step-num font-mono">{{ idx + 1 }}</span>
           <span class="step-text">{{ step.text }}</span>
           <button class="icon-btn" aria-label="Retirer" @click="removeStep(idx)"><X :size="14" /></button>
         </li>
       </ol>
-      <form class="add-row" @submit.prevent="addStep">
-        <input v-model="newStep" class="input" type="text" placeholder="Nouvelle étape" />
-        <button type="submit" class="icon-btn add" aria-label="Ajouter"><Plus :size="16" /></button>
-      </form>
+      <div v-if="showStepForm" class="form-card">
+        <form @submit.prevent="submitStep">
+          <input v-model="stepText" class="input" type="text" placeholder="Nouvelle étape" autofocus />
+          <button type="submit" class="submit">Ajouter</button>
+        </form>
+      </div>
+      <button v-else class="add-inline" @click="showStepForm = true">
+        <span class="plus-circle">+</span>
+        <span class="add-label">Ajouter une étape</span>
+      </button>
     </section>
+
+    <button class="grocery-cta" @click="showGrocery = true">
+      <ArrowRight :size="16" />
+      <span>Intégrer à ma liste de courses</span>
+    </button>
 
     <AddToGroceryDialog
       v-if="showGrocery"
-      title="Ajouter les ingrédients à…"
+      title="Ingrédients de la recette vers…"
       mode="recipes"
       :recipes="[recipe]"
       @close="showGrocery = false"
@@ -189,6 +270,38 @@ onMounted(() => store.refresh())
             <button type="button" class="meal" :class="{ active: planMeal === 'dinner' }" @click="planMeal = 'dinner'">Soir</button>
           </div>
           <button type="submit" class="submit">Planifier</button>
+        </form>
+      </div>
+    </div>
+
+    <div v-if="showMeta" class="overlay" @click.self="showMeta = false">
+      <div class="dialog">
+        <div class="dialog-head">
+          <span class="font-mono dialog-title">Modifier la recette</span>
+          <button class="icon-btn" aria-label="Fermer" @click="showMeta = false"><X :size="18" /></button>
+        </div>
+        <form @submit.prevent="saveMeta">
+          <div class="emoji-row">
+            <button
+              v-for="e in EMOJIS"
+              :key="e"
+              type="button"
+              class="emoji-choice"
+              :class="{ active: metaEmoji === e }"
+              @click="metaEmoji = e"
+            >
+              {{ e }}
+            </button>
+          </div>
+          <input v-model="metaName" class="input" type="text" placeholder="Nom de la recette" required />
+          <input v-model="metaDescription" class="input" type="text" placeholder="Description" />
+          <input v-model="metaServings" class="input" type="number" min="1" placeholder="Nombre de personnes" />
+          <div class="two-col">
+            <input v-model="metaPrep" class="input" type="number" min="0" placeholder="Prépa (min)" />
+            <input v-model="metaCook" class="input" type="number" min="0" placeholder="Cuisson (min)" />
+          </div>
+          <input v-model="metaSource" class="input" type="text" placeholder="Source / lien" />
+          <button type="submit" class="submit">Enregistrer</button>
         </form>
       </div>
     </div>
@@ -244,6 +357,11 @@ onMounted(() => store.refresh())
 .block {
   margin-bottom: 1.4rem;
 }
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 .items,
 .steps {
   list-style: none;
@@ -263,8 +381,18 @@ onMounted(() => store.refresh())
   border-radius: 0.7rem;
   background: var(--bg-1);
 }
-.steps {
-  counter-reset: step;
+.step-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  flex-shrink: 0;
+  border: 1px solid var(--accent-dim);
+  border-radius: 0.45rem;
+  font-size: 0.7rem;
+  color: var(--accent);
+  background: var(--accent-deep);
 }
 .step-text {
   flex: 1;
@@ -278,25 +406,87 @@ onMounted(() => store.refresh())
   font-size: 0.75rem;
   color: var(--ink-muted);
 }
-.add-row {
-  display: flex;
-  gap: 0.4rem;
-  margin-top: 0.5rem;
-}
-.add-row .input {
-  flex: 1;
-}
-.add-row .qty {
-  max-width: 5rem;
-}
-.icon-btn.add {
-  border: 1px dashed var(--line);
-  border-radius: 0.6rem;
-  color: var(--ink-muted);
+.grocery-cta {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.2rem;
+  gap: 0.45rem;
+  width: 100%;
+  padding: 0.7rem;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 1px solid var(--accent-dim);
+  border-radius: 0.9rem;
+  color: var(--accent);
+  background: var(--accent-deep);
+}
+.add-inline {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.85rem 1rem;
+  border: 1px dashed var(--line-bright);
+  border-radius: 1rem;
+  background: transparent;
+  color: var(--ink-faint);
+  transition: border-color 0.15s, color 0.15s;
+}
+.add-inline:active {
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+.plus-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px dashed var(--line-bright);
+  border-radius: 0.6rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.add-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.form-card {
+  border: 1px solid var(--accent-dim);
+  border-radius: 1rem;
+  background: var(--bg-1);
+  padding: 0.85rem;
+}
+.input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: var(--bg-2);
+  color: var(--ink);
+  outline: none;
+  margin-bottom: 0.5rem;
+}
+.input:focus {
+  border-color: var(--accent-dim);
+}
+.two-col {
+  display: flex;
+  gap: 0.5rem;
+}
+.two-col .input {
+  flex: 1;
+}
+.submit {
+  width: 100%;
+  padding: 0.65rem;
+  border-radius: 0.7rem;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
 }
 .overlay {
   position: fixed;
@@ -311,6 +501,8 @@ onMounted(() => store.refresh())
 }
 .dialog {
   width: min(22rem, 100%);
+  max-height: 85vh;
+  overflow-y: auto;
   border: 1px solid var(--line);
   border-radius: 1rem;
   background: var(--bg-1);
@@ -328,6 +520,26 @@ onMounted(() => store.refresh())
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--ink-muted);
+}
+.emoji-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+.emoji-choice {
+  width: 2.1rem;
+  height: 2.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+}
+.emoji-choice.active {
+  border-color: var(--accent);
+  background: var(--accent-deep);
 }
 .meal-choice {
   display: flex;
@@ -347,5 +559,14 @@ onMounted(() => store.refresh())
   border-color: var(--accent-dim);
   color: var(--accent);
   background: var(--accent-deep);
+}
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 0.5rem;
+  color: var(--ink-muted);
 }
 </style>
