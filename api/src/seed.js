@@ -10,7 +10,7 @@ const SEED_RECIPES = [
     prepMinutes: 10,
     cookMinutes: 15,
     source: null,
-    tags: ['plats'],
+    tags: ['plats', 'express', 'pâtes'],
     sections: [
       {
         name: 'Épicerie',
@@ -43,7 +43,7 @@ const SEED_RECIPES = [
     prepMinutes: 25,
     cookMinutes: 40,
     source: 'Cuisine AZ',
-    tags: ['plats', 'vegan'],
+    tags: ['plats', 'végétarien', 'four', 'légumes'],
     sections: [
       {
         name: 'Produits frais',
@@ -73,7 +73,7 @@ const SEED_RECIPES = [
     emoji: '🍲',
     description: 'Curry coco rapide, parfait pour un soir de semaine.',
     servings: 3,
-    tags: ['plats', 'soupes', 'vegan'],
+    tags: ['plats', 'soupes', 'vegan', 'express', 'cocotte-minute'],
     prepMinutes: 10,
     cookMinutes: 20,
     source: null,
@@ -106,7 +106,7 @@ const SEED_RECIPES = [
     name: 'Crumble aux pommes',
     emoji: '🍰',
     description: 'Dessert réconfortant : pommes, farine, beurre, sucre roux.',
-    tags: ['desserts'],
+    tags: ['desserts', 'four', 'fruits', 'gourmand'],
     servings: 6,
     prepMinutes: 15,
     cookMinutes: 35,
