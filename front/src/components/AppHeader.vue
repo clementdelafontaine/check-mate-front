@@ -1,10 +1,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Sun, Moon, ArrowLeft } from 'lucide-vue-next'
+import { Sun, Moon, ArrowLeft, Shield, LogOut } from 'lucide-vue-next'
+import { useAuthStore } from '../stores/auth'
 
 const route = useRoute()
 const router = useRouter()
+const auth = useAuthStore()
 const showBack = computed(
   () => route.name !== null && !['home', 'lists', 'recipes', 'login'].includes(route.name)
 )

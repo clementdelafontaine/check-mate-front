@@ -718,10 +718,14 @@ export const useChecklistsStore = defineStore('checklists', {
     knownSectionNames() {
       const names = new Set()
       for (const l of this.lists) {
-        for (const s of l.sections) names.add(s.name)
+        for (const s of l.sections ?? []) {
+          if (typeof s.name === 'string' && s.name.trim() !== '') names.add(s.name)
+        }
       }
       for (const t of this.templates) {
-        for (const s of t.sections) names.add(s.name)
+        for (const s of t.sections ?? []) {
+          if (typeof s.name === 'string' && s.name.trim() !== '') names.add(s.name)
+        }
       }
       return [...names].sort()
     },
