@@ -33,7 +33,7 @@ const sortLabel = computed(() => sortOptions.find((o) => o.id === sortBy.value)?
 
 const spaceFilter = ref(null)
 const filteredLists = computed(() => {
-  const lists = spaceFilter.value
+  let lists = spaceFilter.value
     ? store.lists.filter((l) => l.spaceId === spaceFilter.value)
     : store.lists
   if (sortBy.value === 'name') {

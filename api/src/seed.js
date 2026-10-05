@@ -207,7 +207,7 @@ const SEED_LISTS = [
   {
     id: 'l-seed-travaux',
     name: 'Travaux salle de bain',
-    emoji: '\U0001FAE5',
+    emoji: '🫥',
     type: 'todo',
     spaceId: 'sp-seed-maison',
     startDateOffset: 10,
