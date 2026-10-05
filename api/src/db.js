@@ -74,3 +74,30 @@ export const templateWithSections = async (templateId, userId = null) => {
   if (!tpl) return null
   return { ...tpl, sections: tpl.sections }
 }
+
+export const recipeWithSections = async (recipeId, userId = null) => {
+  const recipe = await one(
+    `SELECT r.*,
+       COALESCE((
+         SELECT json_agg(json_build_object('id', s.id, 'text', s.text) ORDER BY s.position, s.id)
+         FROM recipe_steps s WHERE s.recipe_id = r.id
+       ), '[]') AS steps
+     FROM recipes r
+     WHERE r.id = $1 AND ($2::text IS NULL OR r.user_id = $2)`,
+    [recipeId, userId]
+  )
+  if (!recipe) return null
+  const { rows: sections } = await query(
+    `SELECT rs.id, rs.name,
+       COALESCE(json_agg(json_build_object(
+         'id', ri.id, 'label', ri.label, 'kind', ri.kind, 'quantity', ri.quantity
+       ) ORDER BY ri.position, ri.id), '[]') AS items
+     FROM recipe_sections rs
+     LEFT JOIN recipe_items ri ON ri.section_id = rs.id
+     WHERE rs.recipe_id = $1
+     GROUP BY rs.id, rs.name, rs.position
+     ORDER BY rs.position, rs.id`,
+    [recipeId]
+  )
+  return { ...recipe, sections }
+}

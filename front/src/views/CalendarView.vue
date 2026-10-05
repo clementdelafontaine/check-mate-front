@@ -1,9 +1,11 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useChecklistsStore } from '../stores/checklists'
+import { useRecipesStore } from '../stores/recipes'
 import { useUndoToast } from '../composables/useUndoToast'
 import AddListForDayDialog from '../components/AddListForDayDialog.vue'
-import { ChevronLeft, ChevronRight, CalendarX2, Plus } from 'lucide-vue-next'
+import AddToGroceryDialog from '../components/AddToGroceryDialog.vue'
+import { ChevronLeft, ChevronRight, CalendarX2, Plus, ShoppingBasket, X } from 'lucide-vue-next'
 
 const toast = useUndoToast()
 
@@ -34,7 +36,8 @@ const days = computed(() => {
     cells.push({
       num: d,
       iso: iso(year.value, month.value, d),
-      lists: store.lists.filter((l) => l.startDate && l.startDate <= iso(year.value, month.value, d) && (!l.endDate || l.endDate >= iso(year.value, month.value, d)))
+      lists: store.lists.filter((l) => l.startDate && l.startDate <= iso(year.value, month.value, d) && (!l.endDate || l.endDate >= iso(year.value, month.value, d))),
+      meals: recipesStore.mealPlansByDate(iso(year.value, month.value, d))
     })
   }
   return cells
@@ -64,6 +67,24 @@ const selectedLists = computed(() => {
     (l) => l.startDate && l.startDate <= selected.value && (!l.endDate || l.endDate >= selected.value)
   )
 })
+const selectedMeals = computed(() =>
+  selected.value ? recipesStore.mealPlansByDate(selected.value) : []
+)
+const showGroceryWeek = ref(false)
+const groceryRange = computed(() => {
+  const d = selected.value ? new Date(selected.value + 'T00:00:00') : new Date()
+  const day = (d.getDay() + 6) % 7
+  const monday = new Date(d)
+  monday.setDate(d.getDate() - day)
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+  const fmt = (x) => x.toISOString().slice(0, 10)
+  return { from: fmt(monday), to: fmt(sunday) }
+})
+async function removeMeal(plan) {
+  await recipesStore.removeMealPlan(plan.id)
+}
+onMounted(() => recipesStore.refresh())
 
 const showAdd = ref(false)
 
@@ -96,12 +117,17 @@ const fmtDate = (isoStr) => {
           @click="selected = selected === cell.iso ? null : cell.iso"
         >
           <span class="day-num">{{ cell.num }}</span>
-          <span v-if="cell.lists.length" class="dots">
+          <span v-if="cell.lists.length || cell.meals.length" class="dots">
             <span
-              v-for="list in cell.lists.slice(0, 3)"
+              v-for="list in cell.lists.slice(0, 2)"
               :key="list.id"
               class="dot"
             >{{ list.emoji }}</span>
+            <span
+              v-for="meal in cell.meals.slice(0, 1)"
+              :key="meal.id"
+              class="dot meal"
+            >{{ meal.recipeEmoji }}</span>
           </span>
         </button>
       </div>
@@ -123,15 +149,42 @@ const fmtDate = (isoStr) => {
           </router-link>
         </li>
       </ul>
-      <div v-else class="day-empty">
+      <div v-if="selectedMeals.length" class="meals-block">
+        <h3 class="section-label">Repas prévus</h3>
+        <ul class="meals">
+          <li v-for="meal in selectedMeals" :key="meal.id" class="meal-row">
+            <router-link class="day-list" :to="`/recipe/${meal.recipeId}`">
+              <span class="emoji">{{ meal.recipeEmoji }}</span>
+              <span class="list-info">
+                <span class="list-name">{{ meal.recipeName }}</span>
+                <span class="list-dates font-mono">{{ meal.meal === 'lunch' ? 'midi' : 'soir' }}</span>
+              </span>
+            </router-link>
+            <button class="icon-btn" aria-label="Retirer le repas" @click="removeMeal(meal)">
+              <X :size="14" />
+            </button>
+          </li>
+        </ul>
+      </div>
+      <div v-if="!selectedLists.length && !selectedMeals.length" class="day-empty">
         <CalendarX2 :size="22" class="day-empty-icon" />
         Aucune liste prévue ce jour-là
       </div>
       <button class="add-day-btn" @click="showAdd = true">
         <Plus :size="15" /> Ajouter une liste ce jour
       </button>
+      <button class="add-day-btn" @click="showGroceryWeek = true">
+        <ShoppingBasket :size="15" /> Ajouter les repas de la semaine aux listes de courses
+      </button>
     </div>
 
+    <AddToGroceryDialog
+      v-if="showGroceryWeek"
+      title="Repas de la semaine vers…"
+      mode="meals"
+      :range="groceryRange"
+      @close="showGroceryWeek = false"
+    />
     <AddListForDayDialog
       v-if="showAdd && selected"
       :date="selected"
