@@ -53,6 +53,9 @@ await app.register(
     api.get('/health', async () => ({ status: 'ok' }))
     await authRoutes(api)
     api.addHook('onRequest', async (req, reply) => {
+      if (req.raw.url.startsWith('/api/auth/login') || req.raw.url.startsWith('/api/auth/logout')) {
+        return
+      }
       if (!req.user) return reply.code(401).send({ error: 'authentication required' })
     })
     await spacesRoutes(api)
