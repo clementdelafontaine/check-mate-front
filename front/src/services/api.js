@@ -51,6 +51,29 @@ const mapTemplate = (t) => ({
   sections: (t.sections ?? []).map(mapSection)
 })
 
+
+const mapRecipe = (r) => ({
+  id: r.id,
+  name: r.name,
+  emoji: r.emoji ?? '🍳',
+  description: r.description ?? '',
+  servings: r.servings ?? null,
+  prepMinutes: r.prep_minutes ?? null,
+  cookMinutes: r.cook_minutes ?? null,
+  source: r.source ?? null,
+  sections: (r.sections ?? []).map((s) => ({
+    id: s.id,
+    name: s.name,
+    items: (s.items ?? []).map((i) => ({
+      id: i.id,
+      label: i.label,
+      quantity: i.quantity ?? null
+    }))
+  })),
+  steps: (r.steps ?? []).map((s) => ({ id: s.id, text: s.text }))
+})
+
+
 export const api = {
   useApi: import.meta.env.VITE_USE_API === 'true',
 
@@ -132,6 +155,49 @@ export const api = {
     return request(`/suggestions?${qs}`)
   },
 
+  fetchRecipes() {
+    return request('/recipes').then((rows) => rows.map((r) => ({
+      ...mapRecipe(r),
+      itemCount: Number(r.item_count ?? 0)
+    })))
+  },
+  fetchRecipe(id) {
+    return request(`/recipes/${id}`).then(mapRecipe)
+  },
+  createRecipe(payload) {
+    return request('/recipes', { method: 'POST', body: payload }).then(mapRecipe)
+  },
+  updateRecipe(id, patch) {
+    return request(`/recipes/${id}`, { method: 'PATCH', body: patch }).then(mapRecipe)
+  },
+  removeRecipe(id) {
+    return request(`/recipes/${id}`, { method: 'DELETE' })
+  },
+  addRecipeToList(recipeId, listId) {
+    return request(`/recipes/${recipeId}/add-to-list`, { method: 'POST', body: { listId } })
+  },
+  fetchMealPlans() {
+    return request('/meal-plans').then((rows) =>
+      rows.map((p) => ({
+        id: p.id,
+        date: p.date,
+        meal: p.meal,
+        servings: p.servings ?? null,
+        recipeId: p.recipe_id,
+        recipeName: p.recipe_name,
+        recipeEmoji: p.recipe_emoji
+      }))
+    )
+  },
+  createMealPlan(payload) {
+    return request('/meal-plans', { method: 'POST', body: payload })
+  },
+  removeMealPlan(id) {
+    return request(`/meal-plans/${id}`, { method: 'DELETE' })
+  },
+  addMealPlansToList(listId, { from, to, planIds } = {}) {
+    return request('/meal-plans/add-to-list', { method: 'POST', body: { listId, from, to, planIds } })
+  },
   addSpace(name, emoji) {
     return request('/spaces', { method: 'POST', body: { name, emoji } })
   },

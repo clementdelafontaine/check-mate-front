@@ -1,0 +1,171 @@
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRecipesStore } from '../stores/recipes'
+import { useChecklistsStore } from '../stores/checklists'
+import { useUndoToast } from '../composables/useUndoToast'
+import AddCard from './AddCard.vue'
+import { X } from 'lucide-vue-next'
+
+const props = defineProps({
+  title: { type: String, default: 'Ajouter à une liste de courses' },
+  recipes: { type: Array, default: () => [] },
+  mode: { type: String, default: 'recipes' },
+  range: { type: Object, default: null }
+})
+const emit = defineEmits(['close', 'added'])
+
+const recipesStore = useRecipesStore()
+const checklists = useChecklistsStore()
+const toast = useUndoToast()
+
+const groceryLists = computed(() =>
+  checklists.lists.filter((l) => l.type === 'grocery')
+)
+const selected = ref(new Set())
+const busy = ref(false)
+const error = ref('')
+
+function toggle(id) {
+  const next = new Set(selected.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  selected.value = next
+}
+
+async function push() {
+  if (!selected.value.size) return
+  busy.value = true
+  error.value = ''
+  try {
+    for (const listId of selected.value) {
+      if (props.mode === 'recipes') {
+        for (const recipe of props.recipes) {
+          await recipesStore.addRecipeToList(recipe.id, listId)
+        }
+      } else {
+        await recipesStore.addMealPlansToList(listId, props.range ?? {})
+      }
+    }
+    const n = selected.value.size
+    toast.show(`Ingrédients ajoutés à ${n} liste${n > 1 ? 's' : ''} de courses`)
+    emit('added')
+    emit('close')
+  } catch (e) {
+    error.value = e.message ?? 'Erreur'
+  } finally {
+    busy.value = false
+  }
+}
+
+onMounted(() => checklists.init?.())
+</script>
+
+<template>
+  <div class="overlay" @click.self="emit('close')">
+    <div class="dialog">
+      <div class="dialog-head">
+        <span class="font-mono dialog-title">{{ title }}</span>
+        <button class="icon-btn" aria-label="Fermer" @click="emit('close')">
+          <X :size="18" />
+        </button>
+      </div>
+      <p v-if="!groceryLists.length" class="empty">
+        Aucune liste de courses. Créez-en une dans « Mes listes » (type Courses).
+      </p>
+      <ul v-else class="options">
+        <li v-for="list in groceryLists" :key="list.id">
+          <button class="option" :class="{ active: selected.has(list.id) }" @click="toggle(list.id)">
+            <span class="emoji">{{ list.emoji }}</span>
+            <span class="name">{{ list.name }}</span>
+            <span class="check">{{ selected.has(list.id) ? '✓' : '' }}</span>
+          </button>
+        </li>
+      </ul>
+      <p v-if="error" class="error">{{ error }}</p>
+      <button class="submit" :disabled="!selected.size || busy" @click="push">
+        {{ busy ? 'Ajout…' : `Ajouter (${selected.size})` }}
+      </button>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+}
+.dialog {
+  width: min(22rem, 100%);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--bg-1);
+  padding: 1.1rem;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+.dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.dialog-title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+}
+.options {
+  list-style: none;
+  margin: 0 0 0.9rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-height: 15rem;
+  overflow-y: auto;
+}
+.option {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: var(--bg-2);
+  text-align: left;
+}
+.option.active {
+  border-color: var(--accent-dim);
+  background: var(--accent-deep);
+}
+.emoji {
+  font-size: 1.1rem;
+}
+.name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.check {
+  color: var(--accent);
+  font-weight: 800;
+}
+.empty {
+  color: var(--ink-faint);
+  font-size: 0.85rem;
+  margin-bottom: 0.8rem;
+}
+.error {
+  color: var(--danger, #e5484d);
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+</style>

@@ -19,6 +19,16 @@ const router = createRouter({
       component: () => import('../views/CalendarView.vue')
     },
     {
+      path: '/recipes',
+      name: 'recipes',
+      component: () => import('../views/RecipesView.vue')
+    },
+    {
+      path: '/recipe/:id',
+      name: 'recipe',
+      component: () => import('../views/RecipeView.vue')
+    },
+    {
       path: '/templates',
       name: 'templates',
       component: () => import('../views/TemplatesView.vue')

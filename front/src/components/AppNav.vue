@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useChecklistsStore } from '../stores/checklists'
-import { House, Sun, CalendarRange, ClipboardList, LayoutGrid } from 'lucide-vue-next'
+import { House, Sun, CalendarRange, ClipboardList, LayoutGrid, CookingPot } from 'lucide-vue-next'
 
 const route = useRoute()
 const store = useChecklistsStore()
@@ -12,6 +12,7 @@ const items = [
   { name: 'today', label: 'Aujourd\'hui', to: '/today', icon: Sun },
   { name: 'lists', label: 'Mes listes', to: '/lists', icon: ClipboardList },
   { name: 'calendar', label: 'Calendrier', to: '/calendar', icon: CalendarRange },
+  { name: 'recipes', label: 'Recettes', to: '/recipes', icon: CookingPot },
   { name: 'templates', label: 'Templates', to: '/templates', icon: LayoutGrid }
 ]
 
@@ -28,6 +29,7 @@ const todayCount = computed(() => {
 
 const isActive = (item) => {
   if (item.name === 'lists') return route.name === 'lists' || route.name === 'list'
+  if (item.name === 'recipes') return route.name === 'recipes' || route.name === 'recipe'
   if (item.name === 'templates') return route.name === 'templates' || route.name === 'template'
   return route.name === item.name
 }

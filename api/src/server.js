@@ -9,6 +9,8 @@ import { labelsRoutes } from './routes/labels.js'
 import { listsRoutes } from './routes/lists.js'
 import { templatesRoutes } from './routes/templates.js'
 import { suggestionsRoutes } from './routes/suggestions.js'
+import { recipesRoutes } from './routes/recipes.js'
+import { mealPlansRoutes } from './routes/meal-plans.js'
 import { authRoutes } from './routes/auth.js'
 import { userFromSession, publicUser, ensureAdmin } from './auth.js'
 
@@ -58,6 +60,8 @@ await app.register(
     await listsRoutes(api)
     await templatesRoutes(api)
     await suggestionsRoutes(api)
+    await recipesRoutes(api)
+    await mealPlansRoutes(api)
   },
   { prefix: '/api' }
 )
