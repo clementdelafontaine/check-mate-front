@@ -43,6 +43,8 @@ export const listWithSections = async (listId, userId = null) => {
   if (!list) return null
   return {
     ...list,
+    startDate: list.start_date === '' ? null : list.start_date,
+    endDate: list.end_date === '' ? null : list.end_date,
     labelIds: list.label_ids,
     sections: list.sections
   }
