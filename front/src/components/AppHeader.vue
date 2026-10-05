@@ -1,6 +1,13 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { Sun, Moon } from 'lucide-vue-next'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { Sun, Moon, ArrowLeft } from 'lucide-vue-next'
+
+const route = useRoute()
+const router = useRouter()
+const showBack = computed(
+  () => route.name !== null && !['home', 'lists', 'recipes', 'login'].includes(route.name)
+)
 
 const theme = ref('dark')
 
@@ -29,7 +36,17 @@ async function logout() {
 <template>
   <header class="header">
     <div class="header-inner">
-      <router-link to="/" class="brand font-display">Check<span class="glow-text">Mate</span></router-link>
+      <div class="header-left">
+        <button
+          v-if="showBack"
+          class="theme-btn back-btn"
+          aria-label="Retour"
+          @click="router.back()"
+        >
+          <ArrowLeft :size="18" />
+        </button>
+        <router-link to="/" class="brand font-display">Check<span class="glow-text">Mate</span></router-link>
+      </div>
       <div class="header-actions">
         <router-link v-if="auth.isAdmin" to="/admin" class="theme-btn" aria-label="Administration">
           <Shield :size="17" />
@@ -62,6 +79,14 @@ async function logout() {
   align-items: center;
   justify-content: space-between;
   padding: 0 1rem;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.back-btn {
+  color: var(--ink);
 }
 .header-actions {
   display: flex;
