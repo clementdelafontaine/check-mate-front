@@ -60,7 +60,7 @@ export const useFriendsStore = defineStore('friends', {
         const versions = await api.fetchListVersions()
         const known = this.versions
         const changed = versions.filter(
-          (v) => known[v.id] && known[v.id] !== v.updatedAt
+          (v) => !known[v.id] || known[v.id] !== v.updatedAt
         )
         this.versions = Object.fromEntries(versions.map((v) => [v.id, v.updatedAt]))
         if (!changed.length) return

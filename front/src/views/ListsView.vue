@@ -197,8 +197,10 @@ function closeAll() {
           :meta="`${progressOf(list)}%`"
           :shared="list.isShared"
           :editable="isOwnList(list)"
+          :can-delete="isOwnList(list)"
           @delete="removeList(list)"
           @edit="editingList = list"
+          @leave="leaveList(list)"
         />
       </li>
     </ul>

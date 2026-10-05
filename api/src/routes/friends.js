@@ -138,14 +138,17 @@ export async function friendsRoutes(app) {
   })
 
   app.delete('/lists/:id/collaborators/:userId', async (req, reply) => {
-    const list = await one('SELECT id FROM lists WHERE id = $1 AND user_id = $2', [
-      req.params.id,
-      req.user.id
+    const targetUserId = req.params.userId === 'me' ? req.user.id : req.params.userId
+    const list = await one('SELECT id, user_id FROM lists WHERE id = $1', [
+      req.params.id
     ])
     if (!list) return reply.code(404).send({ error: 'list not found' })
+    if (list.user_id !== req.user.id && targetUserId !== req.user.id) {
+      return reply.code(403).send({ error: 'only the owner can remove other members' })
+    }
     const { rowCount } = await query(
       'DELETE FROM list_collaborators WHERE list_id = $1 AND user_id = $2',
-      [req.params.id, req.params.userId]
+      [req.params.id, targetUserId]
     )
     if (!rowCount) return reply.code(404).send({ error: 'not found' })
     await query('UPDATE lists SET updated_at = now() WHERE id = $1', [req.params.id])

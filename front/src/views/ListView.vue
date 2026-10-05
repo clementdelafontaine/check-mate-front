@@ -10,6 +10,7 @@ import AddItemCard from '../components/AddItemCard.vue'
 import UndoToast from '../components/UndoToast.vue'
 import ListEditDialog from '../components/ListEditDialog.vue'
 import { useFriendsStore } from '../stores/friends'
+import { useAuthStore } from '../stores/auth'
 import { ArrowLeft, RotateCcw, Eraser, Pencil, Share2 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -37,9 +38,13 @@ const confirmClear = ref(false)
 const showEdit = ref(false)
 const showShare = ref(false)
 const friends = useFriendsStore()
+const auth = useAuthStore()
 const shareBusy = ref(false)
 
 const isListShared = computed(() => !!list.value?.isShared)
+const isOwnList = computed(
+  () => !list.value || list.value.ownerId === null || list.value.ownerId === auth.user?.id
+)
 const sharedUserIds = ref(new Set())
 
 async function openShare() {
@@ -120,9 +125,9 @@ async function duplicate() {
       <button v-if="done > 0" class="tool-btn" @click="resetList">
         <RotateCcw :size="14" /> Tout décocher
       </button>
-      <button class="tool-btn" @click="duplicate">Dupliquer</button>
-      <button class="tool-btn" @click="saveAsTemplate">→ Template</button>
-      <button class="tool-btn" @click="showEdit = true">
+      <button v-if="isOwnList" class="tool-btn" @click="duplicate">Dupliquer</button>
+      <button v-if="isOwnList" class="tool-btn" @click="saveAsTemplate">→ Template</button>
+      <button v-if="isOwnList" class="tool-btn" @click="showEdit = true">
         <Pencil :size="14" /> Modifier
       </button>
       <button class="tool-btn" :class="{ shared: isListShared }" @click="openShare">

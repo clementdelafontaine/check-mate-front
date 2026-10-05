@@ -1,18 +1,19 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useExclusiveMenu } from '../composables/useExclusiveMenu'
-import { MoreVertical, Trash2, Pencil, Share2 } from 'lucide-vue-next'
+import { MoreVertical, Trash2, Pencil, Share2, LogOut } from 'lucide-vue-next'
 
-defineProps({
+const props = defineProps({
   to: { type: String, default: null },
   emoji: { type: String, default: '' },
   name: { type: String, required: true },
   meta: { type: String, default: '' },
   dashed: { type: Boolean, default: false },
   editable: { type: Boolean, default: false },
-  shared: { type: Boolean, default: false }
+  shared: { type: Boolean, default: false },
+  canDelete: { type: Boolean, default: true }
 })
-const emit = defineEmits(['delete', 'edit'])
+const emit = defineEmits(['delete', 'edit', 'leave'])
 
 const menu = useExclusiveMenu()
 const confirm = ref(false)
@@ -49,8 +50,11 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           <button v-if="editable" class="menu-item" @click="menu.close(); emit('edit')">
             <Pencil :size="15" /> Modifier
           </button>
-          <button class="menu-item danger" @click="menu.close(); confirm = true">
+          <button v-if="canDelete" class="menu-item danger" @click="menu.close(); confirm = true">
             <Trash2 :size="15" /> Supprimer
+          </button>
+          <button v-else class="menu-item danger" @click="menu.close(); emit('leave')">
+            <LogOut :size="15" /> Quitter la liste
           </button>
         </div>
       </div>
