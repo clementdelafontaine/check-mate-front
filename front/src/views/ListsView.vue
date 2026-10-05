@@ -6,7 +6,7 @@ import ItemCard from '../components/ItemCard.vue'
 import AddCard from '../components/AddCard.vue'
 import ListEditDialog from '../components/ListEditDialog.vue'
 import SpacePicker from '../components/SpacePicker.vue'
-import { X, LayoutGrid, FilePlus2, ArrowDownUp, Plus, Tag } from 'lucide-vue-next'
+import { X, LayoutGrid, FilePlus2, ArrowDownUp } from 'lucide-vue-next'
 
 const store = useChecklistsStore()
 const toast = useUndoToast()
@@ -31,10 +31,10 @@ function cycleSort() {
 }
 const sortLabel = computed(() => sortOptions.find((o) => o.id === sortBy.value)?.label ?? '')
 
-const labelFilter = ref(null)
+const spaceFilter = ref(null)
 const filteredLists = computed(() => {
-  let lists = labelFilter.value
-    ? store.lists.filter((l) => l.labelIds?.includes(labelFilter.value))
+  const lists = spaceFilter.value
+    ? store.lists.filter((l) => l.spaceId === spaceFilter.value)
     : store.lists
   if (sortBy.value === 'name') {
     lists = [...lists].sort((a, b) => a.name.localeCompare(b.name, 'fr'))
@@ -46,17 +46,6 @@ const filteredLists = computed(() => {
   return lists
 })
 
-const spaceFilter = ref(null)
-const listsBySpace = computed(() => {
-  const groups = []
-  for (const space of store.spaces) {
-    const lists = filteredLists.value.filter((l) => l.spaceId === space.id)
-    if (lists.length) groups.push({ space, lists })
-  }
-  const orphans = filteredLists.value.filter((l) => !l.spaceId || !store.spaceById(l.spaceId))
-  if (orphans.length) groups.push({ space: { id: '__none', name: 'Sans espace', emoji: '📂' }, lists: orphans })
-  return groups
-})
 
 async function removeList(list) {
   const payload = await store.removeList(list.id)
@@ -71,7 +60,6 @@ const pickedTemplateId = ref(null)
 const newName = ref('')
 const newEmoji = ref('📋')
 const newSpaceId = ref('')
-const newLabelIds = ref([])
 const newStartDate = ref('')
 const newEndDate = ref('')
 const hasDate = ref(false)
@@ -109,29 +97,19 @@ function pick(id) {
   newName.value = tpl ? tpl.name : ''
   newEmoji.value = tpl ? tpl.emoji : '📋'
   newSpaceId.value = store.spaces[0]?.id ?? ''
-  newLabelIds.value = []
   newStartDate.value = ''
   newEndDate.value = ''
 }
 
-function toggleNewLabel(id) {
-  const i = newLabelIds.value.indexOf(id)
-  if (i === -1) newLabelIds.value.push(id)
-  else newLabelIds.value.splice(i, 1)
-}
 
 function create() {
   const name = newName.value.trim()
   if (!name) return
   const created =
     pickedTemplateId.value === 'blank'
-      ? store.createEmptyList(name, newEmoji.value, newSpaceId.value, newLabelIds.value, listStart(), listEnd())
+      ? store.createEmptyList(name, newEmoji.value, newSpaceId.value, [], listStart(), listEnd())
       : store.createListFromTemplate(pickedTemplateId.value, name, newEmoji.value, newSpaceId.value)
-  if (pickedTemplateId.value !== 'blank') {
-    for (const id of newLabelIds.value) store.toggleListLabel(created.id, id)
-    if (listStart()) store.setListDates(created.id, listStart(), listEnd())
-  }
-  showForm.value = false
+    showForm.value = false
   pickedTemplateId.value = null
   toast.show('Liste créée')
 }
@@ -147,18 +125,6 @@ function closeAll() {
   newEndDate.value = ''
 }
 
-const showNewLabelForm = ref(false)
-const newLabelName = ref('')
-const newLabelColor = ref('#4d8dff')
-const LABEL_COLORS = ['#4d8dff', '#f5a524', '#e5484d', '#3fb950', '#a371f7', '#ea4aaa']
-
-function createLabel() {
-  const name = newLabelName.value.trim()
-  if (!name) return
-  store.addLabel(name, newLabelColor.value)
-  newLabelName.value = ''
-  showNewLabelForm.value = false
-}
 </script>
 
 <template>
@@ -173,46 +139,35 @@ function createLabel() {
     <div class="label-bar">
       <button
         class="label-chip all"
-        :class="{ active: !labelFilter }"
-        @click="labelFilter = null"
+        :class="{ active: !spaceFilter }"
+        @click="spaceFilter = null"
       >
-        <Tag :size="13" /> Tout
+        Tout
       </button>
       <button
-        v-for="label in store.labels"
-        :key="label.id"
+        v-for="space in store.spaces"
+        :key="space.id"
         class="label-chip"
-        :class="{ active: labelFilter === label.id }"
-        :style="{ '--chip-color': label.color }"
-        @click="labelFilter = labelFilter === label.id ? null : label.id"
+        :class="{ active: spaceFilter === space.id }"
+        @click="spaceFilter = spaceFilter === space.id ? null : space.id"
       >
-        {{ label.name }}
-      </button>
-      <button class="label-chip add" @click="showNewLabelForm = true">
-        <Plus :size="13" />
+        {{ space.emoji }} {{ space.name }}
       </button>
     </div>
 
-    <section v-for="group in listsBySpace" :key="group.space.id" class="space-group">
-      <h2 class="space-title">
-        <span class="space-emoji">{{ group.space.emoji }}</span>
-        {{ group.space.name }}
-        <span class="space-count font-mono">{{ group.lists.length }}</span>
-      </h2>
-      <ul class="lists">
-        <li v-for="list in group.lists" :key="list.id">
-          <ItemCard
-            :to="`/list/${list.id}`"
-            :emoji="list.emoji"
-            :name="list.name"
-            :meta="`${progressOf(list)}%`"
-            editable
-            @delete="removeList(list)"
-            @edit="editingList = list"
-          />
-        </li>
-      </ul>
-    </section>
+    <ul class="lists">
+      <li v-for="list in filteredLists" :key="list.id">
+        <ItemCard
+          :to="`/list/${list.id}`"
+          :emoji="list.emoji"
+          :name="list.name"
+          :meta="`${progressOf(list)}%`"
+          editable
+          @delete="removeList(list)"
+          @edit="editingList = list"
+        />
+      </li>
+    </ul>
 
     <ul class="lists">
       <li><AddCard label="Ajouter une liste" @click="showTemplatePicker = true" /></li>
@@ -225,30 +180,7 @@ function createLabel() {
       @saved="toast.show('Liste modifiée')"
     />
 
-    <div v-if="showNewLabelForm" class="overlay" @click.self="showNewLabelForm = false">
-      <div class="dialog">
-        <div class="dialog-head">
-          <span class="font-mono dialog-title">Nouvelle étiquette</span>
-          <button class="icon-btn" aria-label="Fermer" @click="showNewLabelForm = false"><X :size="18" /></button>
-        </div>
-        <form @submit.prevent="createLabel">
-          <input v-model="newLabelName" class="input" type="text" placeholder="Nom de l'étiquette" autofocus />
-          <div class="color-row">
-            <button
-              v-for="c in LABEL_COLORS"
-              :key="c"
-              type="button"
-              class="color-dot"
-              :class="{ active: newLabelColor === c }"
-              :style="{ background: c }"
-              @click="newLabelColor = c"
-            />
-          </div>
-          <button type="submit" class="submit">Créer</button>
-        </form>
-      </div>
-    </div>
-
+    
     <div v-if="showTemplatePicker" class="overlay" @click.self="closeAll">
       <div class="dialog">
         <div class="dialog-head">
@@ -307,20 +239,7 @@ function createLabel() {
 
           <SpacePicker v-model="newSpaceId" />
 
-          <div class="labels-row">
-            <button
-              v-for="label in store.labels"
-              :key="label.id"
-              type="button"
-              class="label-chip"
-              :class="{ active: newLabelIds.includes(label.id) }"
-              :style="{ '--chip-color': label.color }"
-              @click="toggleNewLabel(label.id)"
-            >
-              {{ label.name }}
-            </button>
-          </div>
-
+          
           <div class="dates-block">
             <button type="button" class="date-toggle" :class="{ active: hasDate }" @click="toggleHasDate">
               <span class="toggle-dot" /> Programmer une date
@@ -404,27 +323,6 @@ function createLabel() {
 .label-chip.add {
   border-style: dashed;
   color: var(--ink-faint);
-}
-.space-group {
-  margin-bottom: 1.5rem;
-}
-.space-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0 0 0.6rem;
-  font-size: 0.95rem;
-  font-weight: 700;
-}
-.space-emoji {
-  font-size: 1.1rem;
-}
-.space-count {
-  font-size: 0.65rem;
-  color: var(--ink-faint);
-  background: var(--bg-2);
-  padding: 0.1rem 0.45rem;
-  border-radius: 999px;
 }
 .lists {
   list-style: none;
