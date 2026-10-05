@@ -26,6 +26,7 @@ const mapList = (l) => ({
   type: l.type,
   ownerId: l.user_id ?? null,
   ownerUsername: l.ownerUsername ?? null,
+  isShared: l.isShared ?? false,
   spaceId: l.space_id ?? null,
   labelIds: (l.labelIds ?? []).map(String),
   startDate: l.startDate ?? l.start_date ?? null,

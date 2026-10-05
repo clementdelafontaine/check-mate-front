@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useExclusiveMenu } from '../composables/useExclusiveMenu'
-import { MoreVertical, Trash2, Pencil } from 'lucide-vue-next'
+import { MoreVertical, Trash2, Pencil, Share2 } from 'lucide-vue-next'
 
 defineProps({
   to: { type: String, default: null },
@@ -9,7 +9,8 @@ defineProps({
   name: { type: String, required: true },
   meta: { type: String, default: '' },
   dashed: { type: Boolean, default: false },
-  editable: { type: Boolean, default: false }
+  editable: { type: Boolean, default: false },
+  shared: { type: Boolean, default: false }
 })
 const emit = defineEmits(['delete', 'edit'])
 
@@ -38,6 +39,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
       <span class="card-info">
         <span class="card-name">{{ name }}</span>
         <span v-if="meta" class="card-meta">{{ meta }}</span>
+        <span v-if="shared" class="shared-badge"><Share2 :size="11" /> partagée</span>
       </span>
       <div ref="menuBtn" class="menu-wrap" @click.stop @click.prevent>
         <button class="icon-btn" aria-label="Options" @click="menu.toggle()">
@@ -107,6 +109,22 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.shared-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  width: fit-content;
+  margin-top: 0.2rem;
+  padding: 0.08rem 0.45rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  border: 1px solid var(--accent-dim);
+  border-radius: 999px;
 }
 .menu-wrap {
   position: relative;

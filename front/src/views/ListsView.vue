@@ -36,10 +36,14 @@ function cycleSort() {
 const sortLabel = computed(() => sortOptions.find((o) => o.id === sortBy.value)?.label ?? '')
 
 const spaceFilter = ref(null)
+const sharedFilter = ref(false)
 const filteredLists = computed(() => {
   let lists = spaceFilter.value
     ? store.lists.filter((l) => l.spaceId === spaceFilter.value)
     : store.lists
+  if (sharedFilter.value) {
+    lists = lists.filter((l) => l.isShared)
+  }
   if (sortBy.value === 'name') {
     lists = [...lists].sort((a, b) => a.name.localeCompare(b.name, 'fr'))
   } else if (sortBy.value === 'progress') {
@@ -164,6 +168,13 @@ function closeAll() {
         Tout
       </button>
       <button
+        class="label-chip shared"
+        :class="{ active: sharedFilter }"
+        @click="sharedFilter = !sharedFilter"
+      >
+        Partagées
+      </button>
+      <button
         v-for="space in store.spaces"
         :key="space.id"
         class="label-chip"
@@ -181,6 +192,7 @@ function closeAll() {
           :emoji="list.emoji"
           :name="list.name"
           :meta="`${progressOf(list)}%`"
+          :shared="list.isShared"
           editable
           @delete="removeList(list)"
           @edit="editingList = list"
@@ -573,5 +585,15 @@ html[data-theme='light'] .input {
   margin: 0.35rem 0 0 0.2rem;
   font-size: 0.75rem;
   color: var(--danger, #e5484d);
+}
+
+.label-chip.shared {
+  color: var(--accent);
+}
+
+.label-chip.shared.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-deep);
 }
 </style>

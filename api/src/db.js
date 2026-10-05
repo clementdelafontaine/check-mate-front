@@ -40,7 +40,10 @@ export const listWithSections = async (listId, userId = null) => {
      ) AS sections,
      COALESCE((
        SELECT json_agg(ll.label_id) FROM list_labels ll WHERE ll.list_id = l.id
-     ), '[]') AS label_ids
+     ), '[]') AS label_ids,
+     EXISTS(
+       SELECT 1 FROM list_collaborators lc WHERE lc.list_id = l.id
+     ) AS is_shared
      FROM lists l
      LEFT JOIN sections s ON s.list_id = l.id
      WHERE l.id = $1 AND ($2::text IS NULL OR l.user_id = $2)
@@ -53,6 +56,7 @@ export const listWithSections = async (listId, userId = null) => {
     startDate: normalizeDbDate(list.start_date),
     endDate: normalizeDbDate(list.end_date),
     labelIds: list.label_ids,
+    isShared: list.is_shared,
     sections: list.sections
   }
 }
