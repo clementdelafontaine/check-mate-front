@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue'
 import { useChecklistsStore, LIST_TYPES } from '../stores/checklists'
 import { X } from 'lucide-vue-next'
+import SpacePicker from './SpacePicker.vue'
 
 const props = defineProps({
   list: { type: Object, required: true }
@@ -93,10 +94,7 @@ function save() {
           </button>
         </div>
 
-        <select v-model="spaceId" class="input select">
-          <option value="">Sans espace</option>
-          <option v-for="s in store.spaces" :key="s.id" :value="s.id">{{ s.emoji }} {{ s.name }}</option>
-        </select>
+        <SpacePicker v-model="spaceId" />
 
         <div class="labels-row">
           <button

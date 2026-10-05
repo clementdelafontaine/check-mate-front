@@ -132,7 +132,7 @@ export async function listsRoutes(app) {
         name?.trim() || null,
         emoji || null,
         type || null,
-        spaceId === undefined ? existing.space_id : spaceId,
+        spaceId === undefined ? existing.space_id : (spaceId?.trim() === '' ? null : spaceId),
         startDate === undefined ? existing.start_date : startDate,
         endDate === undefined
           ? existing.end_date ?? startDate ?? existing.start_date
