@@ -238,6 +238,203 @@ async function seedListsForUser(userId) {
 }
 
 
+
+const SEED_TEMPLATES = [
+  {
+    id: 't-seed-courses-semaine',
+    name: 'Courses de la semaine',
+    emoji: '🛒',
+    description: 'Base de courses par rayon pour la semaine.',
+    type: 'grocery',
+    sections: [
+      {
+        name: 'Épicerie',
+        items: [
+          { label: 'Pâtes', quantity: null },
+          { label: 'Riz', quantity: null },
+          { label: 'Café', quantity: null },
+          { label: 'Huile d\u2019olive', quantity: null }
+        ]
+      },
+      {
+        name: 'Produits frais',
+        items: [
+          { label: 'Lait', quantity: '2' },
+          { label: 'Œufs', quantity: '6' },
+          { label: 'Beurre', quantity: null },
+          { label: 'Yaourts', quantity: '4' }
+        ]
+      },
+      {
+        name: 'Fruits & légumes',
+        items: [
+          { label: 'Pommes', quantity: null },
+          { label: 'Tomates', quantity: null },
+          { label: 'Salade', quantity: null }
+        ]
+      }
+    ]
+  },
+  {
+    id: 't-seed-menage',
+    name: 'Ménage du week-end',
+    emoji: '🧹',
+    description: 'Roulement de ménage pièce par pièce.',
+    type: 'checklist',
+    sections: [
+      {
+        name: 'Cuisine',
+        items: [
+          { label: 'Plans de travail', quantity: null },
+          { label: 'Plaque', quantity: null },
+          { label: 'Évier', quantity: null },
+          { label: 'Sol', quantity: null }
+        ]
+      },
+      {
+        name: 'Salle de bain',
+        items: [
+          { label: 'Lavabo', quantity: null },
+          { label: 'Toilettes', quantity: null },
+          { label: 'Miroir', quantity: null }
+        ]
+      },
+      {
+        name: 'Le reste',
+        items: [
+          { label: 'Aspirateur', quantity: null },
+          { label: 'Sols', quantity: null },
+          { label: 'Poussière meubles', quantity: null }
+        ]
+      }
+    ]
+  },
+  {
+    id: 't-seed-voyage',
+    name: 'Voyage',
+    emoji: '🧳',
+    description: 'Base réutilisable pour partir organisé.',
+    type: 'checklist',
+    sections: [
+      {
+        name: 'Vêtements',
+        items: [
+          { label: 'T-shirts (1/jour)', quantity: null },
+          { label: 'Sous-vêtements', quantity: null },
+          { label: 'Pantalon confort', quantity: null },
+          { label: 'Tenue de pluie', quantity: null }
+        ]
+      },
+      {
+        name: 'Hygiène',
+        items: [
+          { label: 'Trousse de toilette', quantity: null },
+          { label: 'Médicaments', quantity: null },
+          { label: 'Protection solaire', quantity: null }
+        ]
+      },
+      {
+        name: 'Documents',
+        items: [
+          { label: 'Papiers d\u2019identité', quantity: null },
+          { label: 'Billets / réservations', quantity: null },
+          { label: 'Assurance voyage', quantity: null }
+        ]
+      }
+    ]
+  },
+  {
+    id: 't-seed-soiree',
+    name: 'Soirée à la maison',
+    emoji: '🎉',
+    description: 'Préparer une soirée : apéro, buffet, maison.',
+    type: 'checklist',
+    sections: [
+      {
+        name: 'À manger',
+        items: [
+          { label: 'Chips / apéro', quantity: null },
+          { label: 'Boissons', quantity: null },
+          { label: 'Dessert', quantity: null }
+        ]
+      },
+      {
+        name: 'Maison',
+        items: [
+          { label: 'Ranger le salon', quantity: null },
+          { label: 'Vider la poubelle', quantity: null },
+          { label: 'Playlist', quantity: null }
+        ]
+      },
+      {
+        name: 'La veille',
+        items: [
+          { label: 'Confirmer les invités', quantity: null },
+          { label: 'Faire les courses', quantity: null }
+        ]
+      }
+    ]
+  },
+  {
+    id: 't-seed-pique-nique',
+    name: 'Pique-nique',
+    emoji: '🧺',
+    description: 'Liste type pour un pique-nique réussi.',
+    type: 'checklist',
+    sections: [
+      {
+        name: 'À manger',
+        items: [
+          { label: 'Sandwichs', quantity: null },
+          { label: 'Fruits', quantity: null },
+          { label: 'Gâteaux', quantity: null },
+          { label: 'Eau', quantity: null }
+        ]
+      },
+      {
+        name: 'Matériel',
+        items: [
+          { label: 'Couverture', quantity: null },
+          { label: 'Gobelets', quantity: null },
+          { label: 'Sac poubelle', quantity: null }
+        ]
+      }
+    ]
+  }
+]
+
+async function seedTemplatesForUser(userId) {
+  const { rowCount } = await query('SELECT 1 FROM templates WHERE user_id = $1 LIMIT 1', [
+    userId
+  ])
+  if (rowCount) return false
+
+  for (const tpl of SEED_TEMPLATES) {
+    await query(
+      `INSERT INTO templates (id, name, emoji, description, type, user_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (id) DO NOTHING`,
+      [tpl.id, tpl.name, tpl.emoji, tpl.description, tpl.type, userId]
+    )
+    for (const [si, section] of tpl.sections.entries()) {
+      const sectionRow = await one(
+        'INSERT INTO template_sections (id, template_id, name, position) VALUES ($1, $2, $3, $4) RETURNING id',
+        [uid('ts'), tpl.id, section.name, si]
+      )
+      for (const [ii, item] of section.items.entries()) {
+        await query(
+          `INSERT INTO template_items (id, section_id, label, kind, quantity, position)
+           VALUES ($1, $2, $3, 'product', $4, $5)`,
+          [uid('ti'), sectionRow.id, item.label, item.quantity, ii]
+        )
+      }
+    }
+  }
+  return true
+}
+
+
+
 export async function seedRecipesForUser(userId) {
   const { rowCount } = await query('SELECT 1 FROM recipes WHERE user_id = $1 LIMIT 1', [
     userId
@@ -296,5 +493,6 @@ export async function seedRecipesForUser(userId) {
 export async function seedDemoDataForUser(userId) {
   const seededRecipes = await seedRecipesForUser(userId)
   const seededLists = await seedListsForUser(userId)
-  return seededRecipes || seededLists
+  const seededTemplates = await seedTemplatesForUser(userId)
+  return seededRecipes || seededLists || seededTemplates
 }
