@@ -10,6 +10,7 @@ import { ChevronLeft, ChevronRight, CalendarX2, Plus, ShoppingBasket, X } from '
 const toast = useUndoToast()
 
 const store = useChecklistsStore()
+const recipesStore = useRecipesStore()
 
 const now = new Date()
 const year = ref(now.getFullYear())
