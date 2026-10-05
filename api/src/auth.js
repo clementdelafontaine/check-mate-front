@@ -1,6 +1,7 @@
 import { verify } from '@node-rs/argon2'
 import { randomBytes } from 'node:crypto'
 import { query, one, uid } from './db.js'
+import { hashPassword } from './password.js'
 
 const SESSION_COOKIE = 'checkmate_session'
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000 // 30 days
