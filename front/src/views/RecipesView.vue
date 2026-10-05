@@ -24,6 +24,28 @@ const EMOJIS = ['🍳', '🥘', '🍝', '🍲', '🥗', '🍛', '🥐', '🍰', 
 
 const weekSelection = ref(new Set())
 
+const RECIPE_TAGS = ['plats', 'desserts', 'soupes', 'vegan', 'végétarien', 'sans gluten', 'express']
+const activeTags = ref(new Set())
+
+const tagOptions = computed(() => {
+  const used = new Set(store.recipes.flatMap((r) => r.tags ?? []))
+  return RECIPE_TAGS.filter((t) => used.has(t))
+})
+
+const filteredRecipes = computed(() => {
+  if (!activeTags.value.size) return store.recipes
+  return store.recipes.filter((r) =>
+    [...activeTags.value].every((t) => (r.tags ?? []).includes(t))
+  )
+})
+
+function toggleTag(tag) {
+  const next = new Set(activeTags.value)
+  if (next.has(tag)) next.delete(tag)
+  else next.add(tag)
+  activeTags.value = next
+}
+
 const groceryRecipes = computed(() =>
   store.recipes.filter((r) => weekSelection.value.has(r.id))
 )
@@ -111,8 +133,19 @@ onMounted(() => store.refresh())
 
     <!-- Bibliothèque -->
     <h2 class="section-label library-label">Toutes mes recettes</h2>
+    <div v-if="tagOptions.length" class="tag-filter">
+      <button
+        v-for="tag in tagOptions"
+        :key="tag"
+        class="tag-chip"
+        :class="{ active: activeTags.has(tag) }"
+        @click="toggleTag(tag)"
+      >
+        {{ tag }}
+      </button>
+    </div>
     <ul class="lists">
-      <li v-for="recipe in store.recipes" :key="recipe.id" class="recipe-row">
+      <li v-for="recipe in filteredRecipes" :key="recipe.id" class="recipe-row">
         <button
           class="select-btn"
           :class="{ active: weekSelection.has(recipe.id) }"
@@ -233,6 +266,25 @@ onMounted(() => store.refresh())
   font-weight: 700;
   border: 1px solid var(--accent-dim);
   border-radius: 0.75rem;
+  color: var(--accent);
+  background: var(--accent-deep);
+}
+.tag-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.tag-chip {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  color: var(--ink-muted);
+}
+.tag-chip.active {
+  border-color: var(--accent);
   color: var(--accent);
   background: var(--accent-deep);
 }

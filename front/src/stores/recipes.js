@@ -63,6 +63,7 @@ export const useRecipesStore = defineStore('recipes', {
         prepMinutes: payload.prepMinutes ?? null,
         cookMinutes: payload.cookMinutes ?? null,
         source: payload.source ?? null,
+        tags: payload.tags ?? [],
         sections: (payload.sections ?? [{ name: 'Ingrédients', items: [] }]).map((s) => ({
           id: `rs-${Math.random().toString(36).slice(2, 8)}`,
           name: s.name,
@@ -85,7 +86,8 @@ export const useRecipesStore = defineStore('recipes', {
       if (idx === -1) return null
       const merged = {
         ...this.recipes[idx],
-        ...Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined))
+        ...Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined)),
+        tags: patch.tags !== undefined ? patch.tags : this.recipes[idx].tags ?? []
       }
       if (patch.sections !== undefined) {
         merged.sections = patch.sections.map((s) => ({

@@ -83,7 +83,7 @@ onMounted(() => checklists.init?.())
       </ul>
       <p v-if="error" class="error">{{ error }}</p>
       <button class="submit" :disabled="!selected.size || busy" @click="push">
-        {{ busy ? 'Ajout…' : `Ajouter (${selected.size})` }}
+        {{ busy ? 'Ajout en cours…' : `Ajouter à ${selected.size} liste${selected.size > 1 ? 's' : ''}` }}
       </button>
     </div>
   </div>
@@ -167,5 +167,18 @@ onMounted(() => checklists.init?.())
   color: var(--danger, #e5484d);
   font-size: 0.8rem;
   margin-bottom: 0.5rem;
+}
+.submit {
+  width: 100%;
+  padding: 0.65rem;
+  margin-top: 0.4rem;
+  border-radius: 0.7rem;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.submit:disabled {
+  opacity: 0.45;
 }
 </style>

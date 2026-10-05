@@ -61,6 +61,7 @@ const mapRecipe = (r) => ({
   prepMinutes: r.prep_minutes ?? null,
   cookMinutes: r.cook_minutes ?? null,
   source: r.source ?? null,
+  tags: r.tags ?? [],
   sections: (r.sections ?? []).map((s) => ({
     id: s.id,
     name: s.name,
