@@ -23,6 +23,8 @@ const mapList = (l) => ({
   name: l.name,
   emoji: l.emoji,
   type: l.type,
+  ownerId: l.user_id ?? null,
+  ownerUsername: l.ownerUsername ?? null,
   spaceId: l.space_id ?? null,
   labelIds: (l.labelIds ?? []).map(String),
   startDate: l.startDate ?? l.start_date ?? null,
@@ -77,6 +79,40 @@ const mapRecipe = (r) => ({
 
 export const api = {
   useApi: import.meta.env.VITE_USE_API === 'true',
+  fetchFriends() {
+    return request('/friends').then((rows) =>
+      rows.map((f) => ({
+        id: f.id,
+        status: f.status,
+        direction: f.direction,
+        userId: f.userId,
+        username: f.username
+      }))
+    )
+  },
+  sendFriendRequest(username) {
+    return request('/friends', { method: 'POST', body: { username } })
+  },
+  acceptFriendRequest(id) {
+    return request(`/friends/${id}/accept`, { method: 'POST' })
+  },
+  removeFriend(id) {
+    return request(`/friends/${id}`, { method: 'DELETE' })
+  },
+  fetchSharedLists() {
+    return request('/shared-lists').then((rows) => rows.map(mapList))
+  },
+  fetchListVersions() {
+    return request('/lists/versions').then((rows) =>
+      rows.map((v) => ({ id: v.id, updatedAt: v.updatedAt }))
+    )
+  },
+  shareList(listId, userId) {
+    return request(`/lists/${listId}/collaborators`, { method: 'POST', body: { userId } })
+  },
+  unshareList(listId, userId) {
+    return request(`/lists/${listId}/collaborators/${userId}`, { method: 'DELETE' })
+  },
 
   async fetchAll() {
     const [lists, templates, spaces, labels] = await Promise.all([

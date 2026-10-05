@@ -11,6 +11,7 @@ import { templatesRoutes } from './routes/templates.js'
 import { suggestionsRoutes } from './routes/suggestions.js'
 import { recipesRoutes } from './routes/recipes.js'
 import { mealPlansRoutes } from './routes/meal-plans.js'
+import { friendsRoutes } from './routes/friends.js'
 import { authRoutes } from './routes/auth.js'
 import { userFromSession } from './auth.js'
 
@@ -45,6 +46,7 @@ export async function buildApp(options = {}) {
         protectedApi.addHook('onRequest', async (req, reply) => {
           if (!req.user) return reply.code(401).send({ error: 'authentication required' })
         })
+        await friendsRoutes(protectedApi)
         await spacesRoutes(protectedApi)
         await labelsRoutes(protectedApi)
         await listsRoutes(protectedApi)

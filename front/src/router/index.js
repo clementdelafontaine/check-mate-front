@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import TodayView from '../views/TodayView.vue'
 import { useAuthStore } from '../stores/auth'
+import { useFriendsStore } from '../stores/friends'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -55,6 +56,11 @@ const router = createRouter({
       component: () => import('../views/SettingsView.vue')
     },
     {
+      path: '/friends',
+      name: 'friends',
+      component: () => import('../views/FriendsView.vue')
+    },
+    {
       path: '/admin',
       name: 'admin',
       component: () => import('../views/AdminView.vue'),
@@ -67,6 +73,12 @@ router.beforeEach(async (to) => {
   const auth = useAuthStore()
   if (!auth.initialized) {
     await auth.init()
+  }
+  if (auth.isAuthenticated) {
+    const friends = useFriendsStore()
+    if (!friends.loaded) {
+      friends.init().catch(() => {})
+    }
   }
   if (!to.meta.public && !auth.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }

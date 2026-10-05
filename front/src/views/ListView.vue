@@ -8,7 +8,8 @@ import CheckedPile from '../components/CheckedPile.vue'
 import AddItemCard from '../components/AddItemCard.vue'
 import UndoToast from '../components/UndoToast.vue'
 import ListEditDialog from '../components/ListEditDialog.vue'
-import { ArrowLeft, RotateCcw, Eraser, Pencil } from 'lucide-vue-next'
+import { useFriendsStore } from '../stores/friends'
+import { ArrowLeft, RotateCcw, Eraser, Pencil, Share2 } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -33,6 +34,26 @@ const checkedItems = computed(() =>
 
 const confirmClear = ref(false)
 const showEdit = ref(false)
+const showShare = ref(false)
+const friends = useFriendsStore()
+const shareBusy = ref(false)
+
+async function openShare() {
+  showShare.value = true
+  await friends.refresh()
+}
+
+async function shareWith(friend) {
+  shareBusy.value = true
+  try {
+    await friends.shareList(list.value.id, friend.userId)
+    toast.show(`Liste partagée avec ${friend.username}`)
+  } catch (err) {
+    toast.show(err.message ?? 'Erreur')
+  } finally {
+    shareBusy.value = false
+  }
+}
 
 async function clearChecked() {
   const removed = await store.clearChecked(list.value.id)
@@ -82,6 +103,9 @@ async function duplicate() {
       <button class="tool-btn" @click="showEdit = true">
         <Pencil :size="14" /> Modifier
       </button>
+      <button class="tool-btn" @click="openShare">
+        <Share2 :size="14" /> Partager
+      </button>
     </div>
 
     <div class="global-progress">
@@ -111,6 +135,25 @@ async function duplicate() {
       @close="showEdit = false"
       @saved="toast.show('Liste modifiée')"
     />
+    <div v-if="showShare" class="overlay" @click.self="showShare = false">
+      <div class="dialog">
+        <p class="dialog-text">Partager <strong>{{ list.name }}</strong> avec un ami</p>
+        <p v-if="!friends.accepted.length" class="dialog-text muted">
+          Aucun ami pour le moment — ajoutez-en depuis la page Amis.
+        </p>
+        <ul v-else class="share-list">
+          <li v-for="friend in friends.accepted" :key="friend.id">
+            <span>{{ friend.username }}</span>
+            <button class="btn ghost" :disabled="shareBusy" @click="shareWith(friend)">
+              Ajouter
+            </button>
+          </li>
+        </ul>
+        <div class="dialog-actions">
+          <button class="btn ghost" @click="showShare = false">Fermer</button>
+        </div>
+      </div>
+    </div>
 
     <div v-if="confirmClear" class="overlay" @click.self="confirmClear = false">
       <div class="dialog">
@@ -248,6 +291,31 @@ async function duplicate() {
   margin: 0 0 1rem;
   font-size: 0.95rem;
   line-height: 1.5;
+}
+
+.share-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.share-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+}
+
+.muted {
+  color: var(--ink-muted);
 }
 .dialog-actions {
   display: flex;

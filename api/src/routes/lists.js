@@ -6,6 +6,20 @@ async function setPosition(table, col, id, value) {
 
 const normalizeDate = (d) => (typeof d === 'string' && d.trim() === '' ? null : d)
 
+const listAccess = (userId) =>
+  `(l.user_id = ${userId} OR EXISTS (SELECT 1 FROM list_collaborators lc WHERE lc.list_id = l.id AND lc.user_id = ${userId}))`
+
+async function touchList(listId) {
+  await query('UPDATE lists SET updated_at = now() WHERE id = $1', [listId])
+}
+
+async function canAccessList(listId, userId) {
+  return one(
+    `SELECT l.id, l.user_id FROM lists l WHERE l.id = $1 AND ${listAccess('$2')}`,
+    [listId, userId]
+  )
+}
+
 export async function listsRoutes(app) {
   app.get('/lists', async (req) => {
     const { rows } = await query(
@@ -17,7 +31,9 @@ export async function listsRoutes(app) {
   })
 
   app.get('/lists/:id', async (req, reply) => {
-    const list = await listWithSections(req.params.id, req.user.id)
+    const accessible = await canAccessList(req.params.id, req.user.id)
+    if (!accessible) return reply.code(404).send({ error: 'not found' })
+    const list = await listWithSections(req.params.id)
     if (!list) return reply.code(404).send({ error: 'not found' })
     return list
   })
@@ -235,7 +251,9 @@ export async function listsRoutes(app) {
   })
 
   app.post('/lists/:id/clear-checked', async (req, reply) => {
-    const list = await listWithSections(req.params.id, req.user.id)
+    const accessible = await canAccessList(req.params.id, req.user.id)
+    if (!accessible) return reply.code(404).send({ error: 'not found' })
+    const list = await listWithSections(req.params.id)
     if (!list) return reply.code(404).send({ error: 'not found' })
     const removed = []
     for (const section of list.sections) {
@@ -244,6 +262,7 @@ export async function listsRoutes(app) {
         await query('DELETE FROM items WHERE id = $1', [item.id])
       }
     }
+    await touchList(req.params.id)
     return { removed }
   })
 
@@ -253,10 +272,11 @@ export async function listsRoutes(app) {
        WHERE section_id IN (
          SELECT s.id FROM sections s
          JOIN lists l ON l.id = s.list_id
-         WHERE s.list_id = $1 AND l.user_id = $2
+         WHERE s.list_id = $1 AND ${listAccess('$2')}
        )`,
       [req.params.id, req.user.id]
     )
+    await touchList(req.params.id)
     return { updated: rowCount }
   })
 
@@ -280,10 +300,7 @@ export async function listsRoutes(app) {
   })
 
   app.post('/lists/:id/sections', async (req, reply) => {
-    const list = await one('SELECT id FROM lists WHERE id = $1 AND user_id = $2', [
-      req.params.id,
-      req.user.id
-    ])
+    const list = await canAccessList(req.params.id, req.user.id)
     if (!list) return reply.code(404).send({ error: 'not found' })
     const { name = 'Divers' } = req.body ?? {}
     const { rows: last } = await query(
@@ -294,6 +311,7 @@ export async function listsRoutes(app) {
       'INSERT INTO sections (id, list_id, name, position) VALUES ($1, $2, $3, $4) RETURNING *',
       [uid('s'), req.params.id, name, last[0].next]
     )
+    await touchList(req.params.id)
     return reply.code(201).send(section)
   })
 
@@ -301,7 +319,7 @@ export async function listsRoutes(app) {
     const section = await one(
       `SELECT s.* FROM sections s
        JOIN lists l ON l.id = s.list_id
-       WHERE s.id = $1 AND l.user_id = $2`,
+       WHERE s.id = $1 AND ${listAccess('$2')}`,
       [req.params.sectionId, req.user.id]
     )
     if (!section) return reply.code(404).send({ error: 'not found' })
@@ -321,6 +339,7 @@ export async function listsRoutes(app) {
        ON CONFLICT (label, user_id) DO UPDATE SET count = item_frequency.count + 1`,
       [label.trim().toLowerCase(), req.user.id]
     )
+    await touchList(section.list_id)
     return reply.code(201).send(item)
   })
 
@@ -330,7 +349,7 @@ export async function listsRoutes(app) {
       `SELECT i.* FROM items i
        JOIN sections s ON s.id = i.section_id
        JOIN lists l ON l.id = s.list_id
-       WHERE i.id = $1 AND l.user_id = $2`,
+       WHERE i.id = $1 AND ${listAccess('$2')}`,
       [req.params.itemId, req.user.id]
     )
     if (!existing) return reply.code(404).send({ error: 'not found' })
@@ -343,7 +362,7 @@ export async function listsRoutes(app) {
        WHERE id = $1 AND section_id IN (
          SELECT s.id FROM sections s
          JOIN lists l ON l.id = s.list_id
-         WHERE l.user_id = $7
+         WHERE ${listAccess('$7')}
        ) RETURNING *`,
       [
         req.params.itemId,
@@ -355,6 +374,10 @@ export async function listsRoutes(app) {
         req.user.id
       ]
     )
+    const listRow = await one('SELECT list_id FROM sections WHERE id = $1', [
+      existing.section_id
+    ])
+    if (listRow) await touchList(listRow.list_id)
     return item
   })
 
@@ -364,20 +387,24 @@ export async function listsRoutes(app) {
        AND section_id IN (
          SELECT s.id FROM sections s
          JOIN lists l ON l.id = s.list_id
-         WHERE l.user_id = $2
+         WHERE ${listAccess('$2')}
        ) RETURNING *`,
       [req.params.itemId, req.user.id]
     )
     if (!item) return reply.code(404).send({ error: 'not found' })
+    const listRow = await one('SELECT list_id FROM sections WHERE id = $1', [
+      item.section_id
+    ])
+    if (listRow) await touchList(listRow.list_id)
     return item
   })
 
   app.post('/items/:itemId/move', async (req, reply) => {
     const { toSectionId } = req.body ?? {}
     const target = await one(
-      `SELECT s.id FROM sections s
+      `SELECT s.id, s.list_id FROM sections s
        JOIN lists l ON l.id = s.list_id
-       WHERE s.id = $1 AND l.user_id = $2`,
+       WHERE s.id = $1 AND ${listAccess('$2')}`,
       [toSectionId, req.user.id]
     )
     if (!target) return reply.code(404).send({ error: 'target section not found' })
@@ -386,11 +413,12 @@ export async function listsRoutes(app) {
        WHERE id = $1 AND section_id IN (
          SELECT s.id FROM sections s
          JOIN lists l ON l.id = s.list_id
-         WHERE l.user_id = $3
+         WHERE ${listAccess('$3')}
        ) RETURNING *`,
       [req.params.itemId, toSectionId, req.user.id]
     )
     if (!item) return reply.code(404).send({ error: 'not found' })
+    await touchList(target.list_id)
     return item
   })
 }

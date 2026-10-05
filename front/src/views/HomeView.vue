@@ -13,7 +13,8 @@ import {
   ArrowRight,
   Clock,
   Settings,
-  Shield
+  Shield,
+  Users
 } from 'lucide-vue-next'
 
 const store = useChecklistsStore()
@@ -91,6 +92,7 @@ function goLists() { router.push('/lists') }
 function goCalendar() { router.push('/calendar') }
 function goTemplates() { router.push('/templates') }
 function goSettings() { router.push('/settings') }
+function goFriends() { router.push('/friends') }
 function goAdmin() { router.push('/admin') }
 </script>
 
@@ -140,6 +142,12 @@ function goAdmin() { router.push('/admin') }
         <span class="tile-label">Terminées</span>
         <span class="tile-value">{{ doneCount }}</span>
         <span class="tile-hint">bel avancement</span>
+      </button>
+      <button class="tile" @click="goFriends">
+        <span class="tile-icon-wrap"><Users :size="20" class="tile-icon" /></span>
+        <span class="tile-label">Amis</span>
+        <span class="tile-value">&mdash;</span>
+        <span class="tile-hint">listes partagées</span>
       </button>
       <button class="tile" @click="goSettings">
         <span class="tile-icon-wrap"><Settings :size="20" class="tile-icon" /></span>
