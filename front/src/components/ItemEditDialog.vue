@@ -194,7 +194,7 @@ html[data-theme='light'] .input {
   padding: 0.65rem;
   border-radius: 0.7rem;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-weight: 700;
   font-size: 0.9rem;
 }

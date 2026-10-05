@@ -61,26 +61,41 @@ const isActive = (item) => {
   right: 0;
   z-index: 30;
   display: flex;
-  border-top: 1px solid var(--line);
-  background: var(--bg-1);
-  padding-bottom: env(safe-area-inset-bottom);
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0 1rem calc(0.75rem + env(safe-area-inset-bottom));
+  pointer-events: none;
 }
 .nav-item {
-  flex: 1;
+  pointer-events: auto;
+}
+.nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.2rem;
-  padding: 0.55rem 0 0.5rem;
+  min-width: 5.2rem;
+  padding: 0.55rem 0.6rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--bg-1) 82%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   font-size: 0.6rem;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--ink-faint);
-  transition: color 0.15s;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.nav-item:hover {
+  color: var(--ink-muted);
 }
 .nav-item.active {
   color: var(--accent);
+  border-color: var(--accent-dim);
+  background: var(--accent-deep);
 }
 .nav-icon-wrap {
   position: relative;

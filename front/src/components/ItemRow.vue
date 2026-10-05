@@ -185,8 +185,9 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   color: var(--accent);
 }
 .checkbox.done {
-  border-color: var(--accent-dim);
+  border-color: var(--accent);
   background: var(--accent-deep);
+  box-shadow: 0 0 10px rgba(137, 180, 250, 0.35);
 }
 .label {
   flex: 1;

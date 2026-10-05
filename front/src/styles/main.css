@@ -1,32 +1,38 @@
 :root {
-  --bg-0: #0a0a0b;
-  --bg-1: #101013;
-  --bg-2: #17171b;
-  --line: #232328;
-  --line-bright: #2e2e35;
-  --ink: #e8e8ea;
-  --ink-muted: #9a9aa2;
-  --ink-faint: #62626b;
-  --accent: #4d8dff;
-  --accent-dim: #24457d;
-  --accent-deep: #14233f;
-  --on-accent: #0a0a0b;
+  --bg-0: #0b0b14;
+  --bg-1: #11111c;
+  --bg-2: #181825;
+  --line: #24243a;
+  --line-bright: #3b3b5c;
+  --ink: #e6e9f0;
+  --ink-muted: #a9adbf;
+  --ink-faint: #6f7391;
+  --accent: #89b4fa;
+  --accent-dim: #45558a;
+  --accent-deep: #1b2340;
+  --on-accent: #0b0b14;
+  --mauve: #cba6f7;
+  --cyan: #94e2d5;
+  --peach: #fab387;
   --radius: 0.85rem;
 }
 
 html[data-theme='light'] {
-  --bg-0: #f5f6f8;
+  --bg-0: #eff1f5;
   --bg-1: #ffffff;
-  --bg-2: #eceef2;
-  --line: #dfe2e8;
-  --line-bright: #c9cdd6;
-  --ink: #17181c;
-  --ink-muted: #5a5d68;
-  --ink-faint: #949aa8;
+  --bg-2: #e6e9f0;
+  --line: #d5d9e2;
+  --line-bright: #b8bece;
+  --ink: #1c1c2a;
+  --ink-muted: #565a72;
+  --ink-faint: #9095ad;
   --accent: #2f6fe4;
   --accent-dim: #a8c4f2;
   --accent-deep: #dbe7fb;
   --on-accent: #ffffff;
+  --mauve: #7a4fd0;
+  --cyan: #1d9d8a;
+  --peach: #d9702a;
 }
 
 html[data-theme='light'] {
@@ -42,10 +48,6 @@ html {
   color-scheme: dark;
 }
 
-html[data-theme='light'] body {
-  background: var(--bg-0);
-}
-
 body {
   margin: 0;
   min-height: 100dvh;
@@ -53,9 +55,20 @@ body {
   font-size: 15px;
   line-height: 1.45;
   color: var(--ink);
-  background: var(--bg-0);
+  background:
+    radial-gradient(1100px 500px at 85% -10%, rgba(203, 166, 247, 0.09), transparent 60%),
+    radial-gradient(900px 450px at -10% 110%, rgba(137, 180, 250, 0.08), transparent 55%),
+    var(--bg-0);
+  background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
+}
+
+html[data-theme='light'] body {
+  background:
+    radial-gradient(1100px 500px at 85% -10%, rgba(203, 166, 247, 0.12), transparent 60%),
+    radial-gradient(900px 450px at -10% 110%, rgba(137, 180, 250, 0.10), transparent 55%),
+    var(--bg-0);
 }
 
 #app {
@@ -92,8 +105,8 @@ input {
 }
 
 .glow-text {
-  color: var(--accent);
-  text-shadow: 0 0 14px rgba(77, 141, 255, 0.55);
+  color: var(--mauve);
+  text-shadow: 0 0 16px rgba(203, 166, 247, 0.6);
 }
 
 .view {

@@ -139,7 +139,7 @@ async function createSpace() {
   padding: 0 0.9rem;
   border-radius: 0.7rem;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-weight: 700;
   font-size: 0.8rem;
 }

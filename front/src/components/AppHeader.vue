@@ -52,7 +52,9 @@ async function logout() {
   top: 0;
   z-index: 30;
   border-bottom: 1px solid var(--line);
-  background: var(--bg-0);
+  background: color-mix(in srgb, var(--bg-0) 72%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 .header-inner {
   max-width: 640px;
@@ -78,11 +80,16 @@ async function logout() {
   justify-content: center;
   width: 2.25rem;
   height: 2.25rem;
+  border: 1px solid transparent;
   border-radius: 0.6rem;
   color: var(--ink-muted);
-  transition: color 0.15s;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.theme-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent-dim);
 }
 .theme-btn:active {
-  background: var(--bg-2);
+  background: var(--accent-deep);
 }
 </style>
