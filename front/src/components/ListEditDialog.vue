@@ -3,6 +3,8 @@ import { ref, watch } from 'vue'
 import { useChecklistsStore } from '../stores/checklists'
 import { X } from 'lucide-vue-next'
 import SpacePicker from './SpacePicker.vue'
+import FriendPicker from './FriendPicker.vue'
+import { api } from '../services/api'
 
 const props = defineProps({
   list: { type: Object, required: true }
@@ -19,6 +21,8 @@ const startDate = ref('')
 const endDate = ref('')
 const hasDate = ref(false)
 const hasRange = ref(false)
+const sharedWith = ref([])
+const initialSharedWith = ref([])
 
 const EMOJIS = ['📋', '🛒', '🧳', '🏠', '✈️', '🎒', '🎁', '📝', '🌟', '🧹', '🔧', '💊']
 
@@ -34,6 +38,14 @@ watch(
     endDate.value = l.endDate && l.endDate !== l.startDate ? l.endDate : ''
     hasDate.value = Boolean(l.startDate)
     hasRange.value = Boolean(l.startDate && l.endDate && l.endDate !== l.startDate)
+    sharedWith.value = []
+    initialSharedWith.value = []
+    if (api.useApi) {
+      api.fetchCollaborators(l.id).then((rows) => {
+        sharedWith.value = rows.map((c) => c.userId)
+        initialSharedWith.value = [...sharedWith.value]
+      }).catch(() => {})
+    }
   },
   { immediate: true }
 )
@@ -58,7 +70,7 @@ function toggleHasRange() {
   endDate.value = ''
 }
 
-function save() {
+async function save() {
   const trimmed = name.value.trim()
   if (!trimmed) return
   store.updateList(props.list.id, {
@@ -69,6 +81,16 @@ function save() {
     startDate: hasDate.value && startDate.value ? startDate.value : null,
     endDate: hasRange.value && endDate.value ? endDate.value : hasDate.value && startDate.value ? startDate.value : null
   })
+  if (api.useApi) {
+    const added = sharedWith.value.filter((id) => !initialSharedWith.value.includes(id))
+    const removed = initialSharedWith.value.filter((id) => !sharedWith.value.includes(id))
+    for (const userId of added) {
+      await api.shareList(props.list.id, userId).catch(() => {})
+    }
+    for (const userId of removed) {
+      await api.unshareList(props.list.id, userId).catch(() => {})
+    }
+  }
   emit('saved')
   emit('close')
 }
@@ -98,6 +120,7 @@ function save() {
 
         
         <SpacePicker v-model="spaceId" />
+        <FriendPicker v-model="sharedWith" />
 
         <div class="labels-row">
           <button

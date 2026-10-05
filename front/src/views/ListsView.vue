@@ -2,11 +2,13 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useChecklistsStore } from '../stores/checklists'
+import { api } from '../services/api'
 import { useUndoToast } from '../composables/useUndoToast'
 import ItemCard from '../components/ItemCard.vue'
 import AddCard from '../components/AddCard.vue'
 import ListEditDialog from '../components/ListEditDialog.vue'
 import SpacePicker from '../components/SpacePicker.vue'
+import FriendPicker from '../components/FriendPicker.vue'
 import { X, LayoutGrid, FilePlus2, ArrowDownUp } from 'lucide-vue-next'
 
 const store = useChecklistsStore()
@@ -66,6 +68,7 @@ const newStartDate = ref('')
 const newEndDate = ref('')
 const hasDate = ref(false)
 const hasRange = ref(false)
+const newSharedWith = ref([])
 
 function toggleHasDate() {
   hasDate.value = !hasDate.value
@@ -104,15 +107,23 @@ function pick(id) {
 }
 
 
-function create() {
+async function create() {
   const name = newName.value.trim()
   if (!name) return
   const created =
     pickedTemplateId.value === 'blank'
-      ? store.createEmptyList(name, newEmoji.value, newSpaceId.value, [], listStart(), listEnd())
-      : store.createListFromTemplate(pickedTemplateId.value, name, newEmoji.value, newSpaceId.value)
+      ? await store.createEmptyList(name, newEmoji.value, newSpaceId.value, [], listStart(), listEnd())
+      : await store.createListFromTemplate(pickedTemplateId.value, name, newEmoji.value, newSpaceId.value)
+  if (created && newSharedWith.value.length) {
+    for (const userId of newSharedWith.value) {
+      try {
+        await api.shareList(created.id, userId)
+      } catch { /* sharing is best-effort */ }
+    }
+  }
     showForm.value = false
   pickedTemplateId.value = null
+  newSharedWith.value = []
   toast.show('Liste créée')
 }
 
@@ -120,6 +131,7 @@ function closeAll() {
   showTemplatePicker.value = false
   showForm.value = false
   pickedTemplateId.value = null
+  newSharedWith.value = []
   newName.value = ''
   hasDate.value = false
   hasRange.value = false
@@ -245,6 +257,7 @@ function closeAll() {
           <input v-model="newName" class="input" type="text" placeholder="Nom de la liste" autofocus />
 
           <SpacePicker v-model="newSpaceId" />
+          <FriendPicker v-model="newSharedWith" />
 
           
           <div class="dates-block">

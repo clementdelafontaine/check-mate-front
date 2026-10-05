@@ -111,6 +111,11 @@ export const api = {
   shareList(listId, userId) {
     return request(`/lists/${listId}/collaborators`, { method: 'POST', body: { userId } })
   },
+  fetchCollaborators(listId) {
+    return request(`/lists/${listId}/collaborators`).then((rows) =>
+      rows.map((c) => ({ userId: c.userId, username: c.username }))
+    )
+  },
   unshareList(listId, userId) {
     return request(`/lists/${listId}/collaborators/${userId}`, { method: 'DELETE' })
   },

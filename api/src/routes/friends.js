@@ -97,6 +97,21 @@ export async function friendsRoutes(app) {
     return reply.code(204).send()
   })
 
+  app.get('/lists/:id/collaborators', async (req, reply) => {
+    const list = await one('SELECT id FROM lists WHERE id = $1 AND user_id = $2', [
+      req.params.id,
+      req.user.id
+    ])
+    if (!list) return reply.code(404).send({ error: 'list not found' })
+    const { rows } = await query(
+      `SELECT lc.user_id, u.username FROM list_collaborators lc
+       JOIN users u ON u.id = lc.user_id
+       WHERE lc.list_id = $1`,
+      [req.params.id]
+    )
+    return rows.map((r) => ({ userId: r.user_id, username: r.username }))
+  })
+
   app.post('/lists/:id/collaborators', async (req, reply) => {
     const { userId } = req.body ?? {}
     if (!userId) return reply.code(400).send({ error: 'userId required' })
