@@ -30,6 +30,24 @@ const done = computed(() =>
 )
 const progress = computed(() => (total.value === 0 ? 0 : Math.round((done.value / total.value) * 100)))
 
+const fmtDate = (isoStr) => {
+  if (!isoStr || typeof isoStr !== 'string') return null
+  const [y, m, d] = isoStr.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  if (Number.isNaN(date.getTime())) return null
+  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+}
+
+const dateLabel = computed(() => {
+  const start = list.value?.startDate
+  const end = list.value?.endDate
+  const s = fmtDate(start)
+  if (!s) return null
+  const e = fmtDate(end)
+  if (e && end !== start) return `${s} → ${e}`
+  return s
+})
+
 const checkedItems = computed(() =>
   list.value ? list.value.sections.flatMap((s) => s.items.filter((i) => i.checked)) : []
 )
@@ -135,7 +153,10 @@ async function duplicate() {
       </button>
       <div class="title-block">
         <h1 class="view-title font-display">{{ list.emoji }} {{ list.name }}</h1>
-        <span class="font-mono meta">{{ done }}/{{ total }} · {{ progress }}%</span>
+        <span class="font-mono meta">
+          <span v-if="dateLabel" class="date-chip">{{ dateLabel }}</span>
+          {{ done }}/{{ total }} · {{ progress }}%
+        </span>
       </div>
       <button class="clear" @click="confirmClear = true">
         <Eraser :size="16" /> Vider
@@ -278,6 +299,16 @@ async function duplicate() {
 .meta {
   font-size: 0.7rem;
   color: var(--ink-faint);
+}
+.date-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  margin-right: 0.4rem;
+  border: 1px solid var(--accent-dim);
+  border-radius: 999px;
+  color: var(--accent);
+  background: var(--accent-deep);
 }
 .toolbar {
   display: flex;
