@@ -145,6 +145,99 @@ const SEED_MEAL_PLANS = [
   { id: 'mp-seed-4', offset: 5, meal: 'dinner', recipeId: 'r-seed-crumble' }
 ]
 
+
+const isoInDays2 = (n) => isoInDays(n)
+
+const SEED_LISTS = [
+  {
+    id: 'l-seed-courses',
+    name: 'Courses de la semaine',
+    emoji: '🛒',
+    type: 'grocery',
+    startDateOffset: null,
+    sections: [
+      {
+        name: 'Épicerie',
+        items: [
+          { label: 'Pâtes', quantity: null },
+          { label: 'Riz', quantity: '1' },
+          { label: 'Café', quantity: null }
+        ]
+      },
+      {
+        name: 'Produits frais',
+        items: [
+          { label: 'Lait', quantity: '2' },
+          { label: 'Œufs', quantity: '6' },
+          { label: 'Beurre', quantity: null }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'l-seed-menage',
+    name: 'Ménage du week-end',
+    emoji: '🧹',
+    type: 'checklist',
+    startDateOffset: 5,
+    sections: [
+      {
+        name: 'Cuisine',
+        items: [
+          { label: 'Plans de travail', quantity: null },
+          { label: 'Plaque', quantity: null },
+          { label: 'Sol', quantity: null }
+        ]
+      },
+      {
+        name: 'Salle de bain',
+        items: [
+          { label: 'Lavabo', quantity: null },
+          { label: 'Toilettes', quantity: null }
+        ]
+      }
+    ]
+  }
+]
+
+async function seedListsForUser(userId) {
+  const { rowCount } = await query('SELECT 1 FROM lists WHERE user_id = $1 LIMIT 1', [
+    userId
+  ])
+  if (rowCount) return false
+
+  for (const list of SEED_LISTS) {
+    await query(
+      `INSERT INTO lists (id, name, emoji, type, start_date, end_date, user_id)
+       VALUES ($1, $2, $3, $4, $5, $5, $6)
+       ON CONFLICT (id) DO NOTHING`,
+      [
+        list.id,
+        list.name,
+        list.emoji,
+        list.type,
+        list.startDateOffset === null ? null : isoInDays2(list.startDateOffset),
+        userId
+      ]
+    )
+    for (const [si, section] of list.sections.entries()) {
+      const sectionRow = await one(
+        'INSERT INTO sections (id, list_id, name, position) VALUES ($1, $2, $3, $4) RETURNING id',
+        [uid('s'), list.id, section.name, si]
+      )
+      for (const [ii, item] of section.items.entries()) {
+        await query(
+          `INSERT INTO items (id, section_id, label, kind, quantity, position)
+           VALUES ($1, $2, $3, 'product', $4, $5)`,
+          [uid('i'), sectionRow.id, item.label, item.quantity, ii]
+        )
+      }
+    }
+  }
+  return true
+}
+
+
 export async function seedRecipesForUser(userId) {
   const { rowCount } = await query('SELECT 1 FROM recipes WHERE user_id = $1 LIMIT 1', [
     userId
@@ -198,4 +291,10 @@ export async function seedRecipesForUser(userId) {
     )
   }
   return true
+}
+
+export async function seedDemoDataForUser(userId) {
+  const seededRecipes = await seedRecipesForUser(userId)
+  const seededLists = await seedListsForUser(userId)
+  return seededRecipes || seededLists
 }
