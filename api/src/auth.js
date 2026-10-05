@@ -13,14 +13,17 @@ export async function ensureAdmin(email, password) {
   const existing = await one('SELECT * FROM users WHERE email = $1', [normalizedEmail])
   if (existing) return existing
   const user = await one(
-    `INSERT INTO users (id, email, password_hash, role) VALUES ($1, $2, $3, 'admin') RETURNING *`,
-    [uid('u'), normalizedEmail, await hashPassword(password)]
+    `INSERT INTO users (id, email, username, password_hash, role) VALUES ($1, $2, $3, $4, 'admin') RETURNING *`,
+    [uid('u'), normalizedEmail, normalizedEmail.split('@')[0], await hashPassword(password)]
   )
   return user
 }
 
-export async function authenticate(email, password) {
-  const user = await one('SELECT * FROM users WHERE email = $1', [email])
+export async function authenticate(identifier, password) {
+  const user = await one(
+    'SELECT * FROM users WHERE username = $1 OR email = $1',
+    [String(identifier).trim().toLowerCase()]
+  )
   if (!user) return null
   const ok = await verify(user.password_hash, password)
   return ok ? user : null
@@ -69,7 +72,7 @@ export async function userFromSession(app, req) {
 
 export function publicUser(user) {
   return user
-    ? { id: user.id, email: user.email, role: user.role }
+    ? { id: user.id, username: user.username, email: user.email, role: user.role, createdAt: user.created_at }
     : null
 }
 

@@ -21,8 +21,11 @@ export const authApi = {
   me() {
     return request('/auth/me')
   },
-  login(email, password) {
-    return request('/auth/login', { method: 'POST', body: { email, password } })
+  login(username, password) {
+    return request('/auth/login', { method: 'POST', body: { username, password } })
+  },
+  changePassword(currentPassword, newPassword) {
+    return request('/auth/me/password', { method: 'PATCH', body: { currentPassword, newPassword } })
   },
   logout() {
     return request('/auth/logout', { method: 'POST' })
@@ -30,8 +33,8 @@ export const authApi = {
   listUsers() {
     return request('/auth/users')
   },
-  createUser(email, password, role) {
-    return request('/auth/users', { method: 'POST', body: { email, password, role } })
+  createUser(username, password, role) {
+    return request('/auth/users', { method: 'POST', body: { username, password, role } })
   },
   deleteUser(userId) {
     return request(`/auth/users/${userId}`, { method: 'DELETE' })

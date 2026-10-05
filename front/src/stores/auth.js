@@ -13,7 +13,7 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     async init() {
       if (import.meta.env.VITE_USE_API !== 'true') {
-        this.user = { id: 'local', email: 'local@checkmate', role: 'admin' }
+        this.user = { id: 'local', username: 'local', email: 'local@checkmate', role: 'admin' }
         this.initialized = true
         return
       }
@@ -25,12 +25,12 @@ export const useAuthStore = defineStore('auth', {
         this.initialized = true
       }
     },
-    async login(email, password) {
+    async login(username, password) {
       if (import.meta.env.VITE_USE_API !== 'true') {
-        this.user = { id: 'local', email, role: 'admin' }
+        this.user = { id: 'local', username: email, email, role: 'admin' }
         return this.user
       }
-      this.user = await authApi.login(email, password)
+      this.user = await authApi.login(username, password)
       return this.user
     },
     async logout() {

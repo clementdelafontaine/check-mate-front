@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useChecklistsStore } from '../stores/checklists'
+import { useAuthStore } from '../stores/auth'
 import {
   Sun,
   ClipboardList,
@@ -10,10 +11,13 @@ import {
   CheckCircle2,
   AlertTriangle,
   ArrowRight,
-  Clock
+  Clock,
+  Settings,
+  Shield
 } from 'lucide-vue-next'
 
 const store = useChecklistsStore()
+const auth = useAuthStore()
 const router = useRouter()
 
 const today = new Date().toISOString().slice(0, 10)
@@ -86,6 +90,8 @@ function goToday() { router.push('/today') }
 function goLists() { router.push('/lists') }
 function goCalendar() { router.push('/calendar') }
 function goTemplates() { router.push('/templates') }
+function goSettings() { router.push('/settings') }
+function goAdmin() { router.push('/admin') }
 </script>
 
 <template>
@@ -134,6 +140,18 @@ function goTemplates() { router.push('/templates') }
         <span class="tile-label">Terminées</span>
         <span class="tile-value">{{ doneCount }}</span>
         <span class="tile-hint">bel avancement</span>
+      </button>
+      <button class="tile" @click="goSettings">
+        <span class="tile-icon-wrap"><Settings :size="20" class="tile-icon" /></span>
+        <span class="tile-label">Paramètres</span>
+        <span class="tile-value">{{ auth.user?.username ?? '—' }}</span>
+        <span class="tile-hint">compte et mot de passe</span>
+      </button>
+      <button v-if="auth.isAdmin" class="tile" @click="goAdmin">
+        <span class="tile-icon-wrap"><Shield :size="20" class="tile-icon" /></span>
+        <span class="tile-label">Admin</span>
+        <span class="tile-value">—</span>
+        <span class="tile-hint">gestion des utilisateurs</span>
       </button>
     </div>
 

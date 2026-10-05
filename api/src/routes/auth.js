@@ -1,4 +1,5 @@
 import { query, one, uid } from '../db.js'
+import { verify } from '@node-rs/argon2'
 import {
   authenticate,
   createSession,
@@ -13,11 +14,11 @@ export async function authRoutes(app) {
   app.get('/auth/me', async (req) => publicUser(req.user))
 
   app.post('/auth/login', async (req, reply) => {
-    const { email, password } = req.body ?? {}
-    if (!email || !password) {
-      return reply.code(400).send({ error: 'email and password required' })
+    const { username, password } = req.body ?? {}
+    if (!username || !password) {
+      return reply.code(400).send({ error: 'username and password required' })
     }
-    const user = await authenticate(String(email).trim().toLowerCase(), String(password))
+    const user = await authenticate(String(username), String(password))
     if (!user) return reply.code(401).send({ error: 'invalid credentials' })
     createSession(app, reply, user.id)
     return publicUser(user)
@@ -32,16 +33,20 @@ export async function authRoutes(app) {
   app.get('/auth/users', async (req, reply) => {
     if (req.user?.role !== 'admin') return reply.code(403).send({ error: 'admin only' })
     const { rows } = await query(
-      'SELECT id, email, role, created_at FROM users ORDER BY created_at'
+      'SELECT id, username, email, role, created_at FROM users ORDER BY created_at'
     )
     return rows
   })
 
   app.post('/auth/users', async (req, reply) => {
     if (req.user?.role !== 'admin') return reply.code(403).send({ error: 'admin only' })
-    const { email, password, role = 'user' } = req.body ?? {}
-    if (!email || !password) {
-      return reply.code(400).send({ error: 'email and password required' })
+    const { username, password, role = 'user' } = req.body ?? {}
+    if (!username || !password) {
+      return reply.code(400).send({ error: 'username and password required' })
+    }
+    const normalizedUsername = String(username).trim().toLowerCase()
+    if (!/^[a-z0-9._-]{3,24}$/.test(normalizedUsername)) {
+      return reply.code(400).send({ error: 'invalid username (3-24 chars, letters, digits, . _ -)' })
     }
     if (String(password).length < 8) {
       return reply.code(400).send({ error: 'password must be at least 8 characters' })
@@ -50,19 +55,20 @@ export async function authRoutes(app) {
       return reply.code(400).send({ error: 'invalid role' })
     }
     const user = await one(
-      `INSERT INTO users (id, email, password_hash, role) VALUES ($1, $2, $3, $4)
-       RETURNING id, email, role, created_at`,
+      `INSERT INTO users (id, email, username, password_hash, role) VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, username, email, role, created_at`,
       [
         uid('u'),
-        String(email).trim().toLowerCase(),
+        `${normalizedUsername}@local`,
+        normalizedUsername,
         await hashPassword(String(password)),
         role
       ]
     ).catch(() => null)
-    if (!user) return reply.code(409).send({ error: 'email already used' })
+    if (!user) return reply.code(409).send({ error: 'username already used' })
     try {
       const seeded = await seedDemoDataForUser(user.id)
-      if (seeded) console.log(`demo data seeded for ${user.email}`)
+      if (seeded) console.log(`demo data seeded for ${user.username}`)
     } catch (err) {
       console.error('seeding failed for new user', err.message)
     }
@@ -77,6 +83,24 @@ export async function authRoutes(app) {
     const { rowCount } = await query('DELETE FROM users WHERE id = $1', [req.params.id])
     if (!rowCount) return reply.code(404).send({ error: 'not found' })
     return reply.code(204).send()
+  })
+
+  app.patch('/auth/me/password', async (req, reply) => {
+    const { currentPassword, newPassword } = req.body ?? {}
+    if (!currentPassword || !newPassword) {
+      return reply.code(400).send({ error: 'currentPassword and newPassword required' })
+    }
+    if (String(newPassword).length < 8) {
+      return reply.code(400).send({ error: 'password must be at least 8 characters' })
+    }
+    const ok = await verify(req.user.password_hash, String(currentPassword))
+    if (!ok) return reply.code(401).send({ error: 'invalid current password' })
+    await query('UPDATE users SET password_hash = $2 WHERE id = $1', [
+      req.user.id,
+      await hashPassword(String(newPassword))
+    ])
+    await query('DELETE FROM sessions WHERE user_id = $1', [req.user.id])
+    return { ok: true }
   })
 
   app.patch('/auth/users/:id/password', async (req, reply) => {

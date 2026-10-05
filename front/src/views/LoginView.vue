@@ -7,7 +7,7 @@ const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 
-const email = ref('')
+const username = ref('')
 const password = ref('')
 const error = ref('')
 const loading = ref(false)
@@ -16,11 +16,11 @@ async function submit() {
   error.value = ''
   loading.value = true
   try {
-    await auth.login(email.value.trim(), password.value)
+    await auth.login(username.value.trim(), password.value)
     router.push(route.query.redirect ?? '/')
   } catch (err) {
     error.value =
-      err.status === 401 ? 'Email ou mot de passe incorrect.' : 'Erreur de connexion.'
+      err.status === 401 ? 'Pseudo ou mot de passe incorrect.' : 'Erreur de connexion.'
   } finally {
     loading.value = false
   }
@@ -34,8 +34,8 @@ async function submit() {
       <p class="login-sub">Connectez-vous pour accéder à vos listes.</p>
 
       <label class="field">
-        <span class="field-label">Email</span>
-        <input v-model="email" type="email" autocomplete="email" required />
+        <span class="field-label">Pseudo</span>
+        <input v-model="username" type="text" autocomplete="username" required />
       </label>
 
       <label class="field">

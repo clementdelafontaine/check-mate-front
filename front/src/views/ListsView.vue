@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useChecklistsStore } from '../stores/checklists'
 import { useUndoToast } from '../composables/useUndoToast'
 import ItemCard from '../components/ItemCard.vue'
@@ -9,6 +10,7 @@ import SpacePicker from '../components/SpacePicker.vue'
 import { X, LayoutGrid, FilePlus2, ArrowDownUp } from 'lucide-vue-next'
 
 const store = useChecklistsStore()
+const router = useRouter()
 const toast = useUndoToast()
 
 const progressOf = (list) => {
@@ -131,9 +133,14 @@ function closeAll() {
   <div class="view">
     <div class="view-header">
       <h1 class="view-title font-display">Mes listes</h1>
-      <button class="sort-btn" @click="cycleSort">
-        <ArrowDownUp :size="14" /> {{ sortLabel }}
-      </button>
+      <div class="header-actions">
+        <button class="sort-btn" @click="cycleSort">
+          <ArrowDownUp :size="14" /> {{ sortLabel }}
+        </button>
+        <button class="sort-btn" @click="router.push('/templates')">
+          <LayoutGrid :size="14" /> Templates
+        </button>
+      </div>
     </div>
 
     <div class="label-bar">
@@ -281,6 +288,10 @@ function closeAll() {
 <style scoped>
 .view-header {
   justify-content: space-between;
+}
+.header-actions {
+  display: flex;
+  gap: 0.4rem;
 }
 .sort-btn {
   display: flex;

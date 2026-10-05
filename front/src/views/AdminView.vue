@@ -9,7 +9,7 @@ const users = ref([])
 const loading = ref(true)
 const error = ref('')
 
-const newEmail = ref('')
+const newUsername = ref('')
 const newPassword = ref('')
 const newRole = ref('user')
 const creating = ref(false)
@@ -35,8 +35,8 @@ async function createUser() {
   error.value = ''
   creating.value = true
   try {
-    await authApi.createUser(newEmail.value.trim(), newPassword.value, newRole.value)
-    newEmail.value = ''
+    await authApi.createUser(newUsername.value.trim(), newPassword.value, newRole.value)
+    newUsername.value = ''
     newPassword.value = ''
     newRole.value = 'user'
     await refresh()
@@ -84,7 +84,7 @@ onMounted(refresh)
       <ul v-else class="user-list">
         <li v-for="user in users" :key="user.id" class="user-row">
           <div class="user-info">
-            <span class="user-email">{{ user.email }}</span>
+            <span class="user-email">{{ user.username ?? user.email }}</span>
             <span class="user-role" :class="{ admin: user.role === 'admin' }">
               {{ user.role }}
             </span>
@@ -116,7 +116,7 @@ onMounted(refresh)
           </div>
 
           <div v-if="confirmDelete?.id === user.id" class="confirm-box">
-            <p>Supprimer {{ user.email }} ? Toutes ses listes seront définitivement supprimées.</p>
+            <p>Supprimer {{ user.username ?? user.email }} ? Toutes ses listes seront définitivement supprimées.</p>
             <button class="btn-danger" @click="deleteUser(user)">Supprimer</button>
             <button class="btn-ghost" @click="confirmDelete = null">Annuler</button>
           </div>
@@ -127,13 +127,12 @@ onMounted(refresh)
     <section class="panel admin-card">
       <h2>Créer un utilisateur</h2>
       <p class="admin-muted">
-        Les utilisateurs ne peuvent créer un compte que depuis ici : l'inscription
-        publique est désactivée.
+        L'inscription publique est désactivée : créez les comptes ici avec un pseudo unique (vérifié en base).
       </p>
 
       <label class="field">
-        <span class="field-label">Email</span>
-        <input v-model="newEmail" type="email" />
+        <span class="field-label">Pseudo</span>
+        <input v-model="newUsername" type="text" placeholder="3-24 caractères : lettres, chiffres, . _ -" />
       </label>
 
       <label class="field">
@@ -151,7 +150,7 @@ onMounted(refresh)
 
       <button
         class="btn-primary"
-        :disabled="creating || !newEmail || newPassword.length < 8"
+        :disabled="creating || !newUsername || newPassword.length < 8"
         @click="createUser"
       >
         {{ creating ? 'Création…' : 'Créer' }}
