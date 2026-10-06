@@ -244,3 +244,23 @@ test('list isolation between users', async () => {
   const patch = await mallory.json('PATCH', `/api/lists/${list.data.id}`, { name: 'Stolen' })
   assert.equal(patch.status, 404)
 })
+test('reorder lists persists custom order', async () => {
+  const a = await createList({ name: 'ReorderA' })
+  const b = await createList({ name: 'ReorderB' })
+  const c = await createList({ name: 'ReorderC' })
+  const order = [c.data.id, a.data.id, b.data.id]
+  const res = await alice.json('PATCH', '/api/lists/reorder', { listIds: order })
+  assert.equal(res.status, 200)
+  const after = await alice.json('GET', '/api/lists')
+  const ids = after.data.map((l) => l.id)
+  assert.ok(ids.indexOf(c.data.id) < ids.indexOf(a.data.id))
+  assert.ok(ids.indexOf(a.data.id) < ids.indexOf(b.data.id))
+})
+
+test('reorder rejects lists of another user', async () => {
+  await createUser(app, { username: 'reordermallory' })
+  const mallory = await login(app, 'reordermallory', 'password123')
+  const own = await createList({ name: 'AlicesOwn' })
+  const res = await mallory.json('PATCH', '/api/lists/reorder', { listIds: [own.data.id] })
+  assert.equal(res.status, 404)
+})

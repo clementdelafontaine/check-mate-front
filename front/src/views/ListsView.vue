@@ -26,8 +26,9 @@ const progressOf = (list) => {
 }
 const isActive = (list) => list.sections.some((s) => s.items.some((i) => !i.checked))
 
-const sortBy = ref('smart')
+const sortBy = ref('custom')
 const sortOptions = [
+  { id: 'custom', label: 'Custom' },
   { id: 'smart', label: 'Smart' },
   { id: 'name', label: 'A→Z' },
   { id: 'progress', label: 'Prog.' }
@@ -51,11 +52,50 @@ const filteredLists = computed(() => {
     lists = [...lists].sort((a, b) => a.name.localeCompare(b.name, 'fr'))
   } else if (sortBy.value === 'progress') {
     lists = [...lists].sort((a, b) => progressOf(b) - progressOf(a))
-  } else {
+  } else if (sortBy.value === 'smart') {
     lists = [...lists].sort((a, b) => Number(isActive(b)) - Number(isActive(a)))
   }
   return lists
 })
+
+const dragListId = ref(null)
+
+function onListDragStart(list, e) {
+  dragListId.value = list.id
+  e.dataTransfer.effectAllowed = 'move'
+  e.dataTransfer.setData('text/plain', list.id)
+}
+
+function onListDragOver(list) {
+  if (dragListId.value === null || dragListId.value === list.id) return
+  const ids = store.lists.map((l) => l.id)
+  const from = ids.indexOf(dragListId.value)
+  const to = ids.indexOf(list.id)
+  if (from === -1 || to === -1) return
+  const next = [...store.lists]
+  const [moved] = next.splice(from, 1)
+  next.splice(to, 0, moved)
+  store.lists = next
+}
+
+async function onListDrop() {
+  const wasDragging = dragListId.value !== null
+  dragListId.value = null
+  if (!wasDragging) return
+  const ownIds = store.lists.filter((l) => isOwnList(l) && l.ownerId !== null).map((l) => l.id)
+  if (!ownIds.length) return
+  try {
+    await api.reorderLists(ownIds)
+  } catch {
+    await store.refresh()
+  }
+}
+
+async function leaveList(list) {
+  await api.unshareList(list.id, 'me')
+  await store.refresh()
+  toast.show(`« ${list.name} » quittée`)
+}
 
 
 async function removeList(list) {
@@ -189,7 +229,16 @@ function closeAll() {
     </div>
 
     <ul class="lists">
-      <li v-for="list in filteredLists" :key="list.id">
+      <li
+        v-for="list in filteredLists"
+        :key="list.id"
+        :class="{ draggable: sortBy === 'custom' }"
+        :draggable="sortBy === 'custom'"
+        @dragstart="onListDragStart(list, $event)"
+        @dragover.prevent="onListDragOver(list)"
+        @drop.prevent="onListDrop"
+        @dragend="dragListId = null"
+      >
         <ItemCard
           :to="`/list/${list.id}`"
           :emoji="list.emoji"
@@ -376,6 +425,9 @@ function closeAll() {
 }
 .lists.add-list {
   margin-top: 0.6rem;
+}
+.lists li.draggable {
+  cursor: grab;
 }
 .overlay {
   position: fixed;

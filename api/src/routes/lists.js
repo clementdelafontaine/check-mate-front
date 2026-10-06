@@ -29,6 +29,38 @@ export async function listsRoutes(app) {
     const lists = await Promise.all(rows.map((r) => listWithSections(r.id, req.user.id)))
     return lists
   })
+  app.patch(
+    '/lists/reorder',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['listIds'],
+          properties: {
+            listIds: { type: 'array', items: { type: 'string' } }
+          }
+        }
+      }
+    },
+    async (req, reply) => {
+      const { listIds } = req.body
+      const { rows } = await query(
+        'SELECT id FROM lists WHERE id = ANY($1::text[]) AND user_id = $2',
+        [listIds, req.user.id]
+      )
+      const ownedIds = new Set(rows.map((r) => r.id))
+      for (const [idx, id] of listIds.entries()) {
+        if (!ownedIds.has(id)) {
+          return reply.code(404).send({ error: 'list not found' })
+        }
+      }
+      const position = listIds.length
+      for (const [idx, id] of listIds.entries()) {
+        await query('UPDATE lists SET position = $2 WHERE id = $1', [id, position - idx])
+      }
+      return { ok: true }
+    }
+  )
 
   app.get('/lists/:id', async (req, reply) => {
     const accessible = await canAccessList(req.params.id, req.user.id)

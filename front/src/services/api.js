@@ -104,6 +104,9 @@ export const api = {
   fetchSharedLists() {
     return request('/shared-lists').then((rows) => rows.map(mapList))
   },
+  reorderLists(listIds) {
+    return request('/lists/reorder', { method: 'PATCH', body: { listIds } })
+  },
   fetchListVersions() {
     return request('/lists/versions').then((rows) =>
       rows.map((v) => ({ id: v.id, updatedAt: v.updatedAt }))
