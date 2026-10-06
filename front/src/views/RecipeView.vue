@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useRecipesStore } from '../stores/recipes'
 import { useUndoToast } from '../composables/useUndoToast'
@@ -90,12 +90,20 @@ function onStepDragOver(idx) {
 }
 
 async function onStepDrop() {
-  const from = dragStepIdx.value
   dragStepIdx.value = null
-  if (from === null || !recipe.value) return
-  await store.updateRecipe(recipe.value.id, {
-    steps: recipe.value.steps.map((s) => s.text)
-  })
+  if (!recipe.value) return
+  const stepIds = recipe.value.steps.map((s) => s.id).filter(Boolean)
+  if (!stepIds.length || stepIds.length !== recipe.value.steps.length) {
+    await store.updateRecipe(recipe.value.id, {
+      steps: recipe.value.steps.map((s) => s.text)
+    })
+    return
+  }
+  try {
+    await store.reorderSteps(recipe.value.id, stepIds)
+  } catch {
+    await store.refresh()
+  }
 }
 
 function openMeta() {
@@ -223,6 +231,17 @@ function toggleIngredientMenu(si, ii) {
   ingredientMenu.value = ingredientMenu.value === key ? null : key
 }
 
+const view = ref(null)
+
+function onDocClick(e) {
+  if (ingredientMenu.value && view.value && !view.value.contains(e.target)) {
+    ingredientMenu.value = null
+  }
+}
+
+onMounted(() => document.addEventListener('click', onDocClick))
+onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
+
 const dragIngredient = ref(null)
 
 function onIngredientDragStart(si, ii, e) {
@@ -284,9 +303,20 @@ async function doRemoveStep() {
   const idx = confirmRemoveStep.value
   confirmRemoveStep.value = null
   if (idx === null || !recipe.value) return
-  await store.updateRecipe(recipe.value.id, {
-    steps: recipe.value.steps.filter((_, i) => i !== idx).map((s) => s.text)
-  })
+  const step = recipe.value.steps[idx]
+  if (step?.id) {
+    try {
+      await store.removeStepById(step.id)
+      await store.refresh()
+    } catch {
+      toast.show('Impossible de supprimer l\u00e9tape')
+      return
+    }
+  } else {
+    await store.updateRecipe(recipe.value.id, {
+      steps: recipe.value.steps.filter((_, i) => i !== idx).map((s) => s.text)
+    })
+  }
   toast.show('Étape supprimée')
 }
 
@@ -324,7 +354,7 @@ onMounted(() => store.refresh())
 </script>
 
 <template>
-  <div v-if="recipe" class="view">
+  <div v-if="recipe" ref="view" class="view">
     <div class="view-header">
       <div class="head-row">
         <span class="emoji">{{ recipe.emoji }}</span>
@@ -383,7 +413,7 @@ onMounted(() => store.refresh())
             >
               <MoreVertical :size="14" />
             </button>
-            <div v-if="ingredientMenu === `${si}-${ii}`" class="menu" @click.stop>
+            <div v-if="ingredientMenu === `${si}-${ii}`" class="menu">
               <button class="menu-item" @click="ingredientMenu = null; openIngredientEdit(si, ii)">
                 <Pencil :size="14" /> Modifier
               </button>
