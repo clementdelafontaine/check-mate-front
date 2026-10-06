@@ -223,6 +223,12 @@ export const useChecklistsStore = defineStore('checklists', {
 
     async addItem(listId, sectionId, label, quantity = null, kind = 'task') {
       if (api.useApi) {
+        if (!sectionId) {
+          const list = this.lists.find((l) => l.id === listId)
+          const generic = list?.sections.find((s) => s.name === GENERIC_SECTION)
+          sectionId = generic?.id ?? (await this.addSection(listId, GENERIC_SECTION))?.id
+        }
+        if (!sectionId) return
         await api.addItem(sectionId, { label, kind, quantity })
         const fresh = await api.fetchAll()
         this.lists = fresh.lists

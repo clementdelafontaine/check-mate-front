@@ -1,4 +1,5 @@
 import { query, one, uid, listWithSections } from '../db.js'
+import { sumQuantityTexts } from '../quantity.js'
 
 async function setPosition(table, id, value) {
   await query(`UPDATE ${table} SET position = $2 WHERE id = $1`, [id, value])
@@ -388,6 +389,27 @@ export async function listsRoutes(app) {
     if (!section) return reply.code(404).send({ error: 'not found' })
     const { label, kind = 'task', quantity = null } = req.body ?? {}
     if (!label?.trim()) return reply.code(400).send({ error: 'label required' })
+    if (kind === 'product') {
+      const existing = await one(
+        `SELECT id, quantity FROM items
+         WHERE section_id = $1 AND lower(label) = lower($2)`,
+        [req.params.sectionId, label.trim()]
+      )
+      if (existing) {
+        const sum = sumQuantityTexts(existing.quantity, quantity)
+        if (sum.merged) {
+          if (sum.value !== null) {
+            await query('UPDATE items SET quantity = $2 WHERE id = $1', [
+              existing.id,
+              sum.value
+            ])
+          }
+          await touchList(section.list_id)
+          const updated = await one('SELECT * FROM items WHERE id = $1', [existing.id])
+          return reply.code(201).send(updated)
+        }
+      }
+    }
     const { rows: last } = await query(
       'SELECT COALESCE(MAX(position), -1) + 1 AS next FROM items WHERE section_id = $1',
       [req.params.sectionId]
