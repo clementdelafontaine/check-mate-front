@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useChecklistsStore } from '../stores/checklists'
 import { api } from '../services/api'
+import { stepQuantity } from '../services/quantity'
 import { useUndoToast } from '../composables/useUndoToast'
 import ItemRow from './ItemRow.vue'
 import ItemEditDialog from './ItemEditDialog.vue'
@@ -93,15 +94,11 @@ function onSectionDragOver(e) {
 }
 
 function increment(item) {
-  const n = Number(item.quantity)
-  store.setQuantity(props.listId, props.section.id, item.id, (Number.isFinite(n) && n > 0 ? n : 1) + 1)
+  store.setQuantity(props.listId, props.section.id, item.id, stepQuantity(item.quantity || '1', 1))
 }
 
 function decrement(item) {
-  const n = Number(item.quantity)
-  if (Number.isFinite(n) && n > 1) {
-    store.setQuantity(props.listId, props.section.id, item.id, n - 1)
-  }
+  store.setQuantity(props.listId, props.section.id, item.id, stepQuantity(item.quantity || '1', -1))
 }
 
 const editingItem = ref(null)

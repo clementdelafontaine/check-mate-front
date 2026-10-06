@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { X } from 'lucide-vue-next'
+import { parseQuantity, stepQuantity, UNITS } from '../services/quantity'
 
 const props = defineProps({
   item: { type: Object, required: true }
@@ -28,17 +29,24 @@ watch(
 )
 
 const quantityNum = computed(() => {
-  const n = Number(quantity.value)
-  return Number.isFinite(n) && n > 0 ? n : null
+  const { n } = parseQuantity(quantity.value)
+  return n !== null && n > 0 ? n : null
 })
+const unitChoice = computed(() => parseQuantity(quantity.value).unit ?? '')
+
+function setUnit(u) {
+  const { n } = parseQuantity(quantity.value)
+  quantity.value = u ? `${n ?? 1} ${u}` : String(n ?? 1)
+}
 
 function incQuantity() {
-  quantity.value = String((quantityNum.value ?? 0) + 1)
+  quantity.value = stepQuantity(quantity.value || '1', 1)
 }
 
 function decQuantity() {
-  const n = quantityNum.value
-  if (n !== null && n > 1) quantity.value = String(n - 1)
+  if (quantityNum.value !== null && quantityNum.value > 1) {
+    quantity.value = stepQuantity(quantity.value, -1)
+  }
 }
 
 function save() {
@@ -78,6 +86,10 @@ function save() {
           <button type="button" class="step" :disabled="!quantityNum || quantityNum <= 1" @click="decQuantity">−</button>
           <input v-model="quantity" class="input qty-input" type="text" inputmode="numeric" placeholder="1" />
           <button type="button" class="step" @click="incQuantity">+</button>
+          <select :value="unitChoice" class="input select unit-select" @change="setUnit($event.target.value)">
+            <option value="">sans unité</option>
+            <option v-for="u in UNITS" :key="u" :value="u">{{ u }}</option>
+          </select>
         </div>
         <button type="submit" class="submit">Enregistrer</button>
       </form>
@@ -199,3 +211,10 @@ html[data-theme='light'] .input {
   font-size: 0.9rem;
 }
 </style>
+
+.unit-select {
+  width: auto;
+  min-width: 4.5rem;
+  margin-bottom: 0;
+  flex-shrink: 0;
+}

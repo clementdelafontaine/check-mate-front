@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useSwipe } from '../composables/useSwipe'
 import { useExclusiveMenu } from '../composables/useExclusiveMenu'
 import { MoreVertical, Trash2, ArrowRightLeft, Pencil } from 'lucide-vue-next'
+import { parseQuantity, stepQuantity } from '../services/quantity'
 
 const props = defineProps({
   label: { type: String, required: true },
@@ -18,9 +19,13 @@ const props = defineProps({
 const isProduct = computed(() => props.kind === 'product')
 
 const quantityNum = computed(() => {
-  const n = Number(props.quantity)
-  return Number.isFinite(n) && n > 0 ? n : null
+  const { n } = parseQuantity(props.quantity)
+  return n !== null && n > 0 ? n : null
 })
+const quantityUnit = computed(() => parseQuantity(props.quantity).unit ?? '')
+const quantityDisplay = computed(() =>
+  quantityUnit.value ? `${quantityNum.value ?? 1} ${quantityUnit.value}` : (quantityNum.value ?? 1)
+)
 
 const emit = defineEmits(['toggle', 'delete', 'move', 'increment', 'decrement', 'edit'])
 
@@ -55,7 +60,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         <span v-if="!isProduct && quantity" class="qty font-mono">×{{ quantity }}</span>
         <span v-if="isProduct" class="stepper">
           <button class="step" :disabled="!quantityNum || quantityNum <= 1" @click.stop="emit('decrement')">−</button>
-          <span class="step-value font-mono">{{ quantityNum ?? 1 }}</span>
+          <span class="step-value font-mono">{{ quantityDisplay }}</span>
           <button class="step" @click.stop="emit('increment')">+</button>
         </span>
         <div class="menu-wrap" @click.stop>
@@ -84,7 +89,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
       <span v-if="!isProduct && quantity" class="qty font-mono">×{{ quantity }}</span>
       <span v-if="isProduct" class="stepper">
         <button class="step" :disabled="!quantityNum || quantityNum <= 1" @click.stop="emit('decrement')">−</button>
-        <span class="step-value font-mono">{{ quantityNum ?? 1 }}</span>
+        <span class="step-value font-mono">{{ quantityDisplay }}</span>
         <button class="step" @click.stop="emit('increment')">+</button>
       </span>
       <div class="menu-wrap" @click.stop>

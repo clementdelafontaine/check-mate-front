@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { X } from 'lucide-vue-next'
 import { useChecklistsStore, GENERIC_SECTION, ITEM_KINDS } from '../stores/checklists'
+import { parseQuantity, stepQuantity, UNITS } from '../services/quantity'
 
 const props = defineProps({
   listId: { type: String, default: null },
@@ -16,18 +17,25 @@ const quantity = ref('1')
 const sectionChoice = ref('')
 const newSectionName = ref('')
 
+const unitChoice = ref('')
 const quantityNum = computed(() => {
-  const n = Number(quantity.value)
-  return Number.isFinite(n) && n > 0 ? n : null
+  const { n } = parseQuantity(quantity.value)
+  return n !== null && n > 0 ? n : null
 })
 
 function incQuantity() {
-  quantity.value = String((quantityNum.value ?? 0) + 1)
+  quantity.value = stepQuantity(quantity.value || '1', 1)
 }
 
 function decQuantity() {
-  const n = quantityNum.value
-  if (n !== null && n > 1) quantity.value = String(n - 1)
+  if (quantityNum.value !== null && quantityNum.value > 1) {
+    quantity.value = stepQuantity(quantity.value, -1)
+  }
+}
+
+function applyUnitChoice() {
+  const { n } = parseQuantity(quantity.value)
+  quantity.value = unitChoice.value ? `${n ?? 1} ${unitChoice.value}` : String(n ?? 1)
 }
 
 const KINDS = [
@@ -86,6 +94,7 @@ function close() {
   label.value = ''
   kind.value = 'task'
   quantity.value = '1'
+  unitChoice.value = ''
   sectionChoice.value = ''
   newSectionName.value = ''
   suggestionsDismissed.value = false
@@ -94,7 +103,9 @@ function close() {
 async function submit() {
   const value = label.value.trim()
   if (!value) return
-  const qty = kind.value === 'product' ? (quantityNum.value ?? 1) : null
+  const qty = kind.value === 'product'
+    ? (unitChoice.value ? `${quantityNum.value ?? 1} ${unitChoice.value}` : String(quantityNum.value ?? 1))
+    : null
 
   let sectionId = sectionChoice.value
   if (isNewSection.value) {
@@ -150,6 +161,10 @@ async function submit() {
           <button type="button" class="step" :disabled="!quantityNum || quantityNum <= 1" @click="decQuantity">−</button>
           <span class="step-value font-mono">{{ quantityNum ?? 1 }}</span>
           <button type="button" class="step" @click="incQuantity">+</button>
+          <select v-model="unitChoice" class="input select unit-select" @change="applyUnitChoice">
+            <option value="">sans unité</option>
+            <option v-for="u in UNITS" :key="u" :value="u">{{ u }}</option>
+          </select>
         </div>
         <select v-model="sectionChoice" class="input select">
           <option value="" disabled>Catégorie… ({{ GENERIC_SECTION }} si vide)</option>
@@ -337,3 +352,10 @@ async function submit() {
   font-weight: 600;
 }
 </style>
+
+.unit-select {
+  width: auto;
+  min-width: 4.5rem;
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
