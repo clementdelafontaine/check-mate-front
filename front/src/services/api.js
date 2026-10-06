@@ -211,6 +211,12 @@ export const api = {
       itemCount: Number(r.item_count ?? 0)
     })))
   },
+  fetchWeeklyRecipeIds() {
+    return request('/weekly-recipes')
+  },
+  saveWeeklyRecipeIds(recipeIds) {
+    return request('/weekly-recipes', { method: 'PUT', body: { recipeIds } })
+  },
   fetchRecipe(id) {
     return request(`/recipes/${id}`).then(mapRecipe)
   },

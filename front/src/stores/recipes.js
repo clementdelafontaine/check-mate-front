@@ -16,11 +16,12 @@ function loadLocal() {
 
 export const useRecipesStore = defineStore('recipes', {
   state: () => {
-    if (api.useApi) return { recipes: [], mealPlans: [] }
+    if (api.useApi) return { recipes: [], mealPlans: [], weeklyRecipeIds: [] }
     const saved = loadLocal()
     return {
       recipes: saved?.recipes ?? initialRecipes(),
-      mealPlans: saved?.mealPlans ?? initialMealPlans()
+      mealPlans: saved?.mealPlans ?? initialMealPlans(),
+      weeklyRecipeIds: saved?.weeklyRecipeIds ?? []
     }
   },
   getters: {
@@ -33,7 +34,7 @@ export const useRecipesStore = defineStore('recipes', {
       try {
         localStorage.setItem(
           STORAGE_KEY,
-          JSON.stringify({ recipes: this.recipes, mealPlans: this.mealPlans })
+          JSON.stringify({ recipes: this.recipes, mealPlans: this.mealPlans, weeklyRecipeIds: this.weeklyRecipeIds })
         )
       } catch {
         /* storage unavailable */
@@ -41,12 +42,26 @@ export const useRecipesStore = defineStore('recipes', {
     },
     async refresh() {
       if (!api.useApi) return
-      const [recipes, mealPlans] = await Promise.all([
+      const [recipes, mealPlans, weeklyRecipeIds] = await Promise.all([
         api.fetchRecipes(),
-        api.fetchMealPlans()
+        api.fetchMealPlans(),
+        api.fetchWeeklyRecipeIds().catch(() => [])
       ])
       this.recipes = recipes
       this.mealPlans = mealPlans
+      this.weeklyRecipeIds = weeklyRecipeIds
+    },
+    async saveWeeklyRecipeIds(recipeIds) {
+      this.weeklyRecipeIds = recipeIds
+      if (api.useApi) {
+        try {
+          await api.saveWeeklyRecipeIds(recipeIds)
+        } catch {
+          await this.refresh()
+        }
+      } else {
+        this.persist()
+      }
     },
     async createRecipe(payload) {
       if (api.useApi) {

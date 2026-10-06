@@ -1,6 +1,47 @@
 import { query, one, uid, recipeWithSections } from '../db.js'
 
 export async function recipesRoutes(app) {
+  app.get('/weekly-recipes', async (req) => {
+    const { rows } = await query(
+      `SELECT wr.recipe_id FROM weekly_recipes wr
+       JOIN recipes r ON r.id = wr.recipe_id
+       WHERE wr.user_id = $1
+       ORDER BY wr.position, r.created_at`,
+      [req.user.id]
+    )
+    return rows.map((r) => r.recipe_id)
+  })
+  app.put(
+    '/weekly-recipes',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['recipeIds'],
+          properties: {
+            recipeIds: { type: 'array', items: { type: 'string' } }
+          }
+        }
+      }
+    },
+    async (req) => {
+      const { recipeIds } = req.body
+      const { rows } = await query(
+        'SELECT id FROM recipes WHERE id = ANY($1::text[]) AND user_id = $2',
+        [recipeIds, req.user.id]
+      )
+      const owned = new Set(rows.map((r) => r.id))
+      await query('DELETE FROM weekly_recipes WHERE user_id = $1', [req.user.id])
+      for (const [idx, id] of recipeIds.entries()) {
+        if (!owned.has(id)) continue
+        await query(
+          'INSERT INTO weekly_recipes (user_id, recipe_id, position) VALUES ($1, $2, $3)',
+          [req.user.id, id, idx]
+        )
+      }
+      return { ok: true }
+    }
+  )
   app.get('/recipes', async (req) => {
     const { rows } = await query(
       'SELECT id FROM recipes WHERE user_id = $1 ORDER BY position DESC, created_at DESC',

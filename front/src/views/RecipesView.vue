@@ -18,7 +18,7 @@ const showGrocerySelection = ref(false)
 const selection = ref(new Set())
 
 
-const weekSelection = ref(new Set())
+const weekSelection = computed(() => new Set(store.weeklyRecipeIds))
 
 const RECIPE_TAGS = [
   'plats', 'desserts', 'entrées', 'soupes', 'salades', 'petit-déjeuner', 'brunch',
@@ -55,7 +55,7 @@ function toggleWeek(recipeId) {
   const next = new Set(weekSelection.value)
   if (next.has(recipeId)) next.delete(recipeId)
   else next.add(recipeId)
-  weekSelection.value = next
+  store.saveWeeklyRecipeIds([...next])
 }
 
 function toggleSelect(recipeId) {

@@ -189,3 +189,32 @@ test('move item to another section at position', async () => {
   const divers = after2.data.sections.find((s) => s.name === 'Divers')
   assert.deepEqual(divers.items.map((i) => i.label), ['BBB', 'AAA'])
 })
+
+test('weekly recipes selection persists per user', async () => {
+  const a = await alice.json('POST', '/api/recipes', { name: 'WeekRecipeA' })
+  const b = await alice.json('POST', '/api/recipes', { name: 'WeekRecipeB' })
+  const save = await alice.json('PUT', '/api/weekly-recipes', {
+    recipeIds: [b.data.id, a.data.id]
+  })
+  assert.equal(save.status, 200)
+  const ids = await alice.json('GET', '/api/weekly-recipes')
+  assert.deepEqual(ids.data, [b.data.id, a.data.id])
+  const replace = await alice.json('PUT', '/api/weekly-recipes', {
+    recipeIds: [a.data.id]
+  })
+  assert.equal(replace.status, 200)
+  const after = await alice.json('GET', '/api/weekly-recipes')
+  assert.deepEqual(after.data, [a.data.id])
+})
+
+test('weekly recipes ignores recipes of another user', async () => {
+  await createUser(app, { username: 'weekmallory' })
+  const mallory = await login(app, 'weekmallory', 'password123')
+  const own = await alice.json('POST', '/api/recipes', { name: 'AlicesWeek' })
+  const save = await mallory.json('PUT', '/api/weekly-recipes', {
+    recipeIds: [own.data.id]
+  })
+  assert.equal(save.status, 200)
+  const ids = await mallory.json('GET', '/api/weekly-recipes')
+  assert.deepEqual(ids.data, [])
+})
