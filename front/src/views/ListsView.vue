@@ -11,6 +11,7 @@ import ListEditDialog from '../components/ListEditDialog.vue'
 import SpacePicker from '../components/SpacePicker.vue'
 import FriendPicker from '../components/FriendPicker.vue'
 import { X, LayoutGrid, FilePlus2, ArrowDownUp } from 'lucide-vue-next'
+import { useTouchDrag } from '../composables/useTouchDrag'
 
 const store = useChecklistsStore()
 const auth = useAuthStore()
@@ -59,6 +60,29 @@ const filteredLists = computed(() => {
 })
 
 const dragListId = ref(null)
+const touchDrag = useTouchDrag({
+  getItems: () => filteredLists.value,
+  onMove(fromIdx, toIdx) {
+    const next = [...store.lists]
+    const fromId = filteredLists.value[fromIdx]?.id
+    const toId = filteredLists.value[toIdx]?.id
+    const from = next.findIndex((l) => l.id === fromId)
+    const to = next.findIndex((l) => l.id === toId)
+    if (from === -1 || to === -1) return
+    const [moved] = next.splice(from, 1)
+    next.splice(to, 0, moved)
+    store.lists = next
+  },
+  async onDrop() {
+    const ownIds = store.lists.filter((l) => isOwnList(l) && l.ownerId !== null).map((l) => l.id)
+    if (!ownIds.length) return
+    try {
+      await api.reorderLists(ownIds)
+    } catch {
+      await store.refresh()
+    }
+  }
+})
 
 function onListDragStart(list, e) {
   dragListId.value = list.id
@@ -228,12 +252,13 @@ function closeAll() {
       </button>
     </div>
 
-    <ul class="lists">
+    <ul class="lists" data-drag-root>
       <li
-        v-for="list in filteredLists"
+        v-for="(list, li) in filteredLists"
         :key="list.id"
-        :class="{ draggable: sortBy === 'custom' }"
+        :class="{ 'draggable-item': sortBy === 'custom', dragging: touchDrag.dragging.value === list.id }"
         :draggable="sortBy === 'custom'"
+        :data-drag-index="li"
         @dragstart="onListDragStart(list, $event)"
         @dragover.prevent="onListDragOver(list)"
         @drop.prevent="onListDrop"
@@ -247,6 +272,10 @@ function closeAll() {
           :shared="list.isShared"
           :editable="isOwnList(list)"
           :can-delete="isOwnList(list)"
+          :draggable="sortBy === 'custom'"
+          @touchstart="touchDrag.onTouchStart(list.id, $event)"
+          @touchmove="touchDrag.onTouchMove($event)"
+          @touchend="touchDrag.onTouchEnd"
           @delete="removeList(list)"
           @edit="editingList = list"
           @leave="leaveList(list)"
@@ -425,6 +454,9 @@ function closeAll() {
 }
 .lists.add-list {
   margin-top: 0.6rem;
+}
+.lists li.dragging {
+  opacity: 0.45;
 }
 .lists li.draggable {
   cursor: grab;
