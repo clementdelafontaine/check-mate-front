@@ -14,7 +14,10 @@ export function sumQuantityTexts(a, b) {
   if (pa.n === null && pb.n === null) return { merged: true, value: null }
   if (pa.n === null) return { merged: true, value: b }
   if (pb.n === null) return { merged: true, value: a }
-  if (pa.unit && pb.unit && pa.unit.toLowerCase() !== pb.unit.toLowerCase()) {
+  const unitsCompatible =
+    (pa.unit === '' && pb.unit === '') ||
+    (pa.unit !== '' && pb.unit !== '' && pa.unit.toLowerCase() === pb.unit.toLowerCase())
+  if (!unitsCompatible) {
     return { merged: false }
   }
   const unit = pa.unit || pb.unit
