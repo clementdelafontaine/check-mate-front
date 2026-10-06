@@ -70,13 +70,15 @@ export async function mealPlansRoutes(app) {
             listId: { type: 'string' },
             from: { type: 'string', format: 'date', nullable: true },
             to: { type: 'string', format: 'date', nullable: true },
-            planIds: { type: 'array', items: { type: 'string' }, nullable: true }
+            planIds: { type: 'array', items: { type: 'string' }, nullable: true },
+            itemIds: { type: 'array', items: { type: 'string' }, nullable: true }
           }
         }
       }
     },
     async (req, reply) => {
-      const { listId, from = null, to = null, planIds = null } = req.body ?? {}
+      const { listId, from = null, to = null, planIds = null, itemIds = null } = req.body ?? {}
+      const include = itemIds === null ? null : new Set(itemIds)
       const list = await one(
         'SELECT id FROM lists WHERE id = $1 AND user_id = $2 AND type = \'grocery\'',
         [listId, req.user.id]
@@ -98,6 +100,9 @@ export async function mealPlansRoutes(app) {
         const recipe = await recipeWithSections(plan.recipe_id, req.user.id)
         if (!recipe) continue
         for (const section of recipe.sections) {
+          if (include !== null) {
+            section.items = section.items.filter((it) => include.has(it.id))
+          }
           if (!section.items?.length) continue
           let target = await one(
             'SELECT id FROM sections WHERE list_id = $1 AND lower(name) = lower($2)',

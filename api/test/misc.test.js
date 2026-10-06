@@ -117,3 +117,29 @@ test('suggestions are isolated per user', async () => {
   const res = await bob.json('GET', '/api/suggestions?prefix=la')
   assert.deepEqual(res.data, [])
 })
+
+test('add recipe to list honors itemIds selection', async () => {
+  const recipeRes = await alice.json('POST', '/api/recipes', {
+    name: 'SelectRecipe',
+    sections: [
+      {
+        name: 'Frais',
+        items: [
+          { label: 'Beurre', quantity: '100 g' },
+          { label: 'Œufs', quantity: '2' }
+        ]
+      }
+    ]
+  })
+  assert.equal(recipeRes.status, 201)
+  const section = recipeRes.data.sections[0]
+  const listRes = await alice.json('POST', '/api/lists', { name: 'SelList', type: 'grocery' })
+  const res = await alice.json('POST', `/api/recipes/${recipeRes.data.id}/add-to-list`, {
+    listId: listRes.data.id,
+    itemIds: [section.items[0].id]
+  })
+  assert.equal(res.status, 201)
+  const after = await alice.json('GET', `/api/lists/${listRes.data.id}`)
+  const labels = after.data.sections.flatMap((s) => s.items.map((i) => i.label))
+  assert.deepEqual(labels.sort(), ['Beurre'])
+})

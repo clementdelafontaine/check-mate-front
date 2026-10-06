@@ -204,11 +204,16 @@ export async function recipesRoutes(app) {
         body: {
           type: 'object',
           required: ['listId'],
-          properties: { listId: { type: 'string' } }
+          properties: {
+            listId: { type: 'string' },
+            itemIds: { type: 'array', items: { type: 'string' }, nullable: true }
+          }
         }
       }
     },
     async (req, reply) => {
+      const { itemIds = null } = req.body ?? {}
+      const include = itemIds === null ? null : new Set(itemIds)
       const recipe = await recipeWithSections(req.params.id, req.user.id)
       if (!recipe) return reply.code(404).send({ error: 'recipe not found' })
       const list = await one(
@@ -223,7 +228,10 @@ export async function recipesRoutes(app) {
       let added = 0
       for (const section of recipe.sections) {
         const items = (section.items ?? []).filter(
-          (it) => typeof it.label === 'string' && it.label.trim() !== ''
+          (it) =>
+            typeof it.label === 'string' &&
+            it.label.trim() !== '' &&
+            (include === null || include.has(it.id))
         )
         if (!items.length) continue
         let target = await one(

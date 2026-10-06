@@ -181,17 +181,17 @@ export const useRecipesStore = defineStore('recipes', {
       }
       return removed
     },
-    async addRecipeToList(recipeId, listId) {
+    async addRecipeToList(recipeId, listId, itemIds = null) {
       const checklists = (await import('./checklists.js')).useChecklistsStore()
       if (!api.useApi) {
-        this.pushIngredientsToLocalList([this.recipeById(recipeId)], listId, checklists)
+        this.pushIngredientsToLocalList([this.recipeById(recipeId)], listId, checklists, itemIds)
         return { added: true }
       }
-      const result = await api.addRecipeToList(recipeId, listId)
+      const result = await api.addRecipeToList(recipeId, listId, itemIds)
       await checklists.refresh?.()
       return result
     },
-    async addMealPlansToList(listId, { from, to, planIds } = {}) {
+    async addMealPlansToList(listId, { from, to, planIds, itemIds } = {}) {
       const checklists = (await import('./checklists.js')).useChecklistsStore()
       if (!api.useApi) {
         const plans = this.mealPlans.filter(
@@ -203,16 +203,17 @@ export const useRecipesStore = defineStore('recipes', {
         const recipes = plans
           .map((p) => this.recipeById(p.recipeId))
           .filter(Boolean)
-        this.pushIngredientsToLocalList(recipes, listId, checklists)
+        this.pushIngredientsToLocalList(recipes, listId, checklists, itemIds)
         return { added: true, meals: plans.length }
       }
-      const result = await api.addMealPlansToList(listId, { from, to, planIds })
+      const result = await api.addMealPlansToList(listId, { from, to, planIds, itemIds })
       await checklists.refresh?.()
       return result
     },
-    pushIngredientsToLocalList(recipes, listId, checklists) {
+    pushIngredientsToLocalList(recipes, listId, checklists, itemIds = null) {
       const list = checklists.lists.find((l) => l.id === listId)
       if (!list) return
+      const include = itemIds === null ? null : new Set(itemIds)
       const seen = new Set()
       for (const recipe of recipes) {
         for (const section of recipe.sections ?? []) {
@@ -228,6 +229,7 @@ export const useRecipesStore = defineStore('recipes', {
             list.sections.push(target)
           }
           for (const item of section.items ?? []) {
+            if (include !== null && !include.has(item.id)) continue
             const key = `${section.name.toLowerCase()}::${item.label.toLowerCase()}`
             if (seen.has(key)) continue
             seen.add(key)

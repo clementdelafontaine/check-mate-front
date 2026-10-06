@@ -220,8 +220,11 @@ export const api = {
   removeRecipe(id) {
     return request(`/recipes/${id}`, { method: 'DELETE' })
   },
-  addRecipeToList(recipeId, listId) {
-    return request(`/recipes/${recipeId}/add-to-list`, { method: 'POST', body: { listId } })
+  addRecipeToList(recipeId, listId, itemIds = null) {
+    return request(`/recipes/${recipeId}/add-to-list`, {
+      method: 'POST',
+      body: itemIds ? { listId, itemIds } : { listId }
+    })
   },
   fetchMealPlans() {
     return request('/meal-plans').then((rows) =>
@@ -242,8 +245,11 @@ export const api = {
   removeMealPlan(id) {
     return request(`/meal-plans/${id}`, { method: 'DELETE' })
   },
-  addMealPlansToList(listId, { from, to, planIds } = {}) {
-    return request('/meal-plans/add-to-list', { method: 'POST', body: { listId, from, to, planIds } })
+  addMealPlansToList(listId, { from, to, planIds, itemIds } = {}) {
+    return request('/meal-plans/add-to-list', {
+      method: 'POST',
+      body: { listId, from, to, planIds, itemIds }
+    })
   },
   addSpace(name, emoji) {
     return request('/spaces', { method: 'POST', body: { name, emoji } })
