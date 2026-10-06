@@ -355,7 +355,7 @@ onMounted(() => store.refresh())
 
 <template>
   <div v-if="recipe" ref="view" class="view">
-    <div class="view-header">
+    <div class="view-header recipe-header">
       <div class="head-row">
         <span class="emoji">{{ recipe.emoji }}</span>
         <h1 class="view-title font-display">{{ recipe.name }}</h1>
@@ -549,6 +549,12 @@ onMounted(() => store.refresh())
 </template>
 
 <style scoped>
+.recipe-header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
 .head-row {
   display: flex;
   align-items: center;
@@ -559,9 +565,13 @@ onMounted(() => store.refresh())
 }
 .head-actions {
   display: flex;
+  flex-direction: row;
   gap: 0.5rem;
-  flex-wrap: wrap;
   margin-top: 0.6rem;
+}
+.head-actions .action {
+  flex: 1;
+  justify-content: center;
 }
 .action {
   display: flex;
