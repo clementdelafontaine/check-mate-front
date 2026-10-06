@@ -9,7 +9,17 @@ const MIGRATIONS_DIR = path.join(__dirname, 'migrations')
 
 async function main() {
   const client = new pg.Client({ connectionString: config.databaseUrl })
-  await client.connect()
+  let connected = false
+  for (let attempt = 1; attempt <= 30 && !connected; attempt++) {
+    try {
+      await client.connect()
+      connected = true
+    } catch (err) {
+      console.log(`waiting for database (${attempt}/30): ${err.message}`)
+      await new Promise((r) => setTimeout(r, 2000))
+    }
+  }
+  if (!connected) throw new Error('could not connect to the database')
   try {
     await client.query(`
       CREATE TABLE IF NOT EXISTS schema_migrations (
