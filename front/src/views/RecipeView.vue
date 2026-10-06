@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useRecipesStore } from '../stores/recipes'
 import { useUndoToast } from '../composables/useUndoToast'
 import AddToGroceryDialog from '../components/AddToGroceryDialog.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 import RecipeMetaDialog from '../components/RecipeMetaDialog.vue'
 import { X, Plus, ArrowRight, Pencil, Trash2, CalendarPlus, MoreVertical } from 'lucide-vue-next'
 
@@ -313,11 +314,15 @@ async function onIngredientDrop() {
   await store.updateRecipe(recipe.value.id, { sections })
 }
 
+const confirmRemoveSection = ref(null)
+
 async function removeSection(si) {
   if (!recipe.value) return
   const sections = sectionsPayload()
   sections.splice(si, 1)
   await store.updateRecipe(recipe.value.id, { sections })
+  confirmRemoveSection.value = null
+  toast.show('Rayon supprimé')
 }
 
 async function removeStep(idx) {
@@ -412,7 +417,7 @@ onMounted(() => store.refresh())
     <section v-for="(section, si) in recipe.sections" :key="section.id ?? si" class="block">
       <div class="section-head">
         <h2 class="section-label">{{ section.name }}</h2>
-        <button class="icon-btn" aria-label="Supprimer le rayon" @click="removeSection(si)">
+        <button class="icon-btn" aria-label="Supprimer le rayon" @click="confirmRemoveSection = si">
           <X :size="14" />
         </button>
       </div>
@@ -500,6 +505,13 @@ onMounted(() => store.refresh())
           ><X :size="14" /></button>
         </li>
       </ol>
+
+      <ConfirmDialog
+        v-if="confirmRemoveSection !== null"
+        :message="`Supprimer le rayon « ${recipe.sections[confirmRemoveSection]?.name ?? ''} » et ses ${recipe.sections[confirmRemoveSection]?.items?.length ?? 0} ingrédient(s) ?`"
+        @cancel="confirmRemoveSection = null"
+        @confirm="removeSection(confirmRemoveSection)"
+      />
 
       <div v-if="confirmRemoveStep !== null" class="overlay" @click.self="confirmRemoveStep = null">
         <div class="dialog">

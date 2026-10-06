@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useFriendsStore } from '../stores/friends'
 import { UserPlus, Check, X, Share2 } from 'lucide-vue-next'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 
 const friends = useFriendsStore()
 const newFriendUsername = ref('')
@@ -29,8 +30,11 @@ async function accept(friend) {
   await friends.acceptRequest(friend.id)
 }
 
+const friendToRemove = ref(null)
+
 async function remove(friend) {
   await friends.removeFriend(friend.id)
+  friendToRemove.value = null
 }
 </script>
 
@@ -115,7 +119,7 @@ async function remove(friend) {
       <ul v-else class="rows">
         <li v-for="friend in friends.accepted" :key="friend.id" class="row">
           <span class="row-name">{{ friend.username }}</span>
-          <button class="icon-btn danger" aria-label="Retirer" @click="remove(friend)">
+          <button class="icon-btn danger" aria-label="Retirer" @click="friendToRemove = friend">
             <X :size="15" />
           </button>
         </li>
@@ -141,6 +145,14 @@ async function remove(friend) {
         </li>
       </ul>
     </section>
+
+    <ConfirmDialog
+      v-if="friendToRemove"
+      :message="`Retirer ${friendToRemove.username} de vos amis ? Vos listes partagées avec lui ne seront plus accessibles.`"
+      confirm-label="Retirer"
+      @cancel="friendToRemove = null"
+      @confirm="remove(friendToRemove)"
+    />
   </div>
 </template>
 

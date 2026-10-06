@@ -5,6 +5,7 @@ import { useRecipesStore } from '../stores/recipes'
 import { useUndoToast } from '../composables/useUndoToast'
 import AddListForDayDialog from '../components/AddListForDayDialog.vue'
 import AddToGroceryDialog from '../components/AddToGroceryDialog.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 import { ChevronLeft, ChevronRight, CalendarX2, Plus, ShoppingBasket, X } from 'lucide-vue-next'
 
 const toast = useUndoToast()
@@ -82,8 +83,11 @@ const groceryRange = computed(() => {
   const fmt = (x) => x.toISOString().slice(0, 10)
   return { from: fmt(monday), to: fmt(sunday) }
 })
+const mealToRemove = ref(null)
+
 async function removeMeal(plan) {
   await recipesStore.removeMealPlan(plan.id)
+  mealToRemove.value = null
 }
 onMounted(() => recipesStore.refresh())
 
@@ -161,7 +165,7 @@ const fmtDate = (isoStr) => {
                 <span class="list-dates font-mono">{{ meal.meal === 'lunch' ? 'midi' : 'soir' }}</span>
               </span>
             </router-link>
-            <button class="icon-btn" aria-label="Retirer le repas" @click="removeMeal(meal)">
+            <button class="icon-btn" aria-label="Retirer le repas" @click="mealToRemove = meal">
               <X :size="14" />
             </button>
           </li>
@@ -191,6 +195,14 @@ const fmtDate = (isoStr) => {
       :date="selected"
       @close="showAdd = false"
       @created="(l) => toast.show(`« ${l.name} » créée le ${selected.split('-').reverse().join('/')}`)"
+    />
+
+    <ConfirmDialog
+      v-if="mealToRemove"
+      :message="`Retirer « ${mealToRemove.recipeName} » du planning ?`"
+      confirm-label="Retirer"
+      @cancel="mealToRemove = null"
+      @confirm="removeMeal(mealToRemove)"
     />
   </div>
 </template>
