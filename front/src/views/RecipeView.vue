@@ -72,6 +72,31 @@ const showSectionForm = ref(false)
 const sectionName = ref('')
 const showStepForm = ref(false)
 const stepText = ref('')
+const dragStepIdx = ref(null)
+
+function onStepDragStart(idx, e) {
+  dragStepIdx.value = idx
+  e.dataTransfer.effectAllowed = 'move'
+  e.dataTransfer.setData('text/plain', String(idx))
+}
+
+function onStepDragOver(idx) {
+  if (dragStepIdx.value === null || dragStepIdx.value === idx) return
+  const steps = [...recipe.value.steps]
+  const [moved] = steps.splice(dragStepIdx.value, 1)
+  steps.splice(idx, 0, moved)
+  recipe.value.steps = steps
+  dragStepIdx.value = idx
+}
+
+async function onStepDrop() {
+  const from = dragStepIdx.value
+  dragStepIdx.value = null
+  if (from === null || !recipe.value) return
+  await store.updateRecipe(recipe.value.id, {
+    steps: recipe.value.steps.map((s) => s.text)
+  })
+}
 
 function openMeta() {
   if (!recipe.value) return
@@ -264,7 +289,16 @@ onMounted(() => store.refresh())
     <section class="block steps-block">
       <h2 class="section-label">Préparation</h2>
       <ol class="steps">
-        <li v-for="(step, idx) in recipe.steps" :key="step.id ?? idx" class="step">
+        <li
+          v-for="(step, idx) in recipe.steps"
+          :key="step.id ?? idx"
+          class="step"
+          draggable="true"
+          @dragstart="onStepDragStart(idx, $event)"
+          @dragover.prevent="onStepDragOver(idx)"
+          @drop.prevent="onStepDrop"
+          @dragend="dragStepIdx = null"
+        >
           <span class="step-num font-mono">{{ idx + 1 }}</span>
           <span class="step-text">{{ step.text }}</span>
           <button class="icon-btn" aria-label="Retirer" @click="removeStep(idx)"><X :size="14" /></button>
@@ -395,6 +429,12 @@ onMounted(() => store.refresh())
   gap: 0.4rem;
 }
 .item,
+.step[draggable='true'] {
+  cursor: grab;
+}
+.step.dragging {
+  opacity: 0.5;
+}
 .step {
   display: flex;
   align-items: center;
@@ -443,6 +483,10 @@ onMounted(() => store.refresh())
   border-radius: 0.9rem;
   color: var(--accent);
   background: var(--accent-deep);
+}
+.block .add-inline,
+.block .form-card {
+  margin-top: 0.6rem;
 }
 .add-inline {
   width: 100%;

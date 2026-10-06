@@ -206,7 +206,7 @@ function closeAll() {
       </li>
     </ul>
 
-    <ul class="lists">
+    <ul class="lists add-list">
       <li><AddCard label="Ajouter une liste" @click="showTemplatePicker = true" /></li>
     </ul>
 
@@ -373,6 +373,9 @@ function closeAll() {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+}
+.lists.add-list {
+  margin-top: 0.6rem;
 }
 .overlay {
   position: fixed;
