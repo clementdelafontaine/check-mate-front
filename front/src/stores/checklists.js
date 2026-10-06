@@ -61,7 +61,7 @@ const defaultState = () => ({
 
 export const useChecklistsStore = defineStore('checklists', {
   state: () => (api.useApi
-    ? { lists: [], templates: [], spaces: [], labels: [], itemFrequency: {} }
+    ? { lists: [], templates: [], spaces: [], labels: [], itemFrequency: {}, loaded: false }
     : loadState() || defaultState()),
 
   getters: {
@@ -123,6 +123,7 @@ export const useChecklistsStore = defineStore('checklists', {
       this.templates = data.templates
       this.spaces = data.spaces
       this.labels = data.labels
+      this.loaded = true
     },
 
     persist() {

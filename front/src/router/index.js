@@ -3,6 +3,7 @@ import HomeView from '../views/HomeView.vue'
 import TodayView from '../views/TodayView.vue'
 import { useAuthStore } from '../stores/auth'
 import { useFriendsStore } from '../stores/friends'
+import { useChecklistsStore } from '../stores/checklists'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -75,6 +76,10 @@ router.beforeEach(async (to) => {
     await auth.init()
   }
   if (auth.isAuthenticated) {
+    const checklists = useChecklistsStore()
+    if (!checklists.loaded) {
+      await checklists.refresh().catch(() => {})
+    }
     const friends = useFriendsStore()
     if (!friends.loaded) {
       friends.init().catch(() => {})
