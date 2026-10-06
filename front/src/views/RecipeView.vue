@@ -191,6 +191,24 @@ async function submitSection() {
   showSectionForm.value = false
 }
 
+const editingSectionIdx = ref(null)
+const sectionDraft = ref('')
+function startSectionEdit(si) {
+  editingSectionIdx.value = si
+  sectionDraft.value = recipe.value?.sections?.[si]?.name ?? ''
+}
+async function saveSectionEdit(si) {
+  editingSectionIdx.value = null
+  const name = sectionDraft.value.trim()
+  if (!name || !recipe.value) return
+  if (name === recipe.value.sections[si]?.name) return
+  const sections = sectionsPayload()
+  if (!sections[si]) return
+  sections[si].name = name
+  await store.updateRecipe(recipe.value.id, { sections })
+  toast.show('Rayon modifié')
+}
+
 async function submitStep() {
   const text = stepText.value.trim()
   if (!text || !recipe.value) return
@@ -416,7 +434,16 @@ onMounted(() => store.refresh())
 
     <section v-for="(section, si) in recipe.sections" :key="section.id ?? si" class="block">
       <div class="section-head">
-        <h2 class="section-label">{{ section.name }}</h2>
+        <input
+          v-if="editingSectionIdx === si"
+          v-model="sectionDraft"
+          class="section-edit-input"
+          type="text"
+          @keyup.enter="saveSectionEdit(si)"
+          @keyup.escape="editingSectionIdx = null"
+          @vue:mounted="($event) => $event.el?.focus?.()"
+        />
+        <h2 v-else class="section-label" @click="startSectionEdit(si)">{{ section.name }}</h2>
         <button class="icon-btn" aria-label="Supprimer le rayon" @click="confirmRemoveSection = si">
           <X :size="14" />
         </button>
@@ -659,6 +686,20 @@ onMounted(() => store.refresh())
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+.section-label {
+  cursor: pointer;
+}
+.section-edit-input {
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--accent);
+  border-radius: 0.5rem;
+  background: var(--bg-1);
+  color: inherit;
+  min-width: 0;
+  flex: 1;
 }
 .items,
 .steps {

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useExclusiveMenu } from '../composables/useExclusiveMenu'
-import { MoreVertical, Trash2, Pencil, Share2, LogOut } from 'lucide-vue-next'
+import { MoreVertical, Trash2, Pencil, Share2, LogOut, GripVertical } from 'lucide-vue-next'
 
 const props = defineProps({
   to: { type: String, default: null },
@@ -11,9 +11,10 @@ const props = defineProps({
   dashed: { type: Boolean, default: false },
   editable: { type: Boolean, default: false },
   shared: { type: Boolean, default: false },
-  canDelete: { type: Boolean, default: true }
+  canDelete: { type: Boolean, default: true },
+  draggable: { type: Boolean, default: false }
 })
-const emit = defineEmits(['delete', 'edit', 'leave', 'share'])
+const emit = defineEmits(['delete', 'edit', 'leave', 'share', 'dragstart', 'touchstart', 'touchmove', 'touchend'])
 
 const menu = useExclusiveMenu()
 const confirm = ref(false)
@@ -29,7 +30,17 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 </script>
 
 <template>
-  <div ref="root" class="card-row">
+  <div ref="root" class="card-row" :class="{ 'drag-source': draggable }">
+    <span
+      v-if="draggable"
+      class="drag-handle"
+      aria-label="Déplacer"
+      @touchstart="$emit('touchstart', $event)"
+      @touchmove="$emit('touchmove', $event)"
+      @touchend="$emit('touchend', $event)"
+    >
+      <GripVertical :size="18" />
+    </span>
     <component
       :is="to ? 'router-link' : 'div'"
       :to="to"
@@ -81,6 +92,28 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 <style scoped>
 .card-row {
   position: relative;
+  display: flex;
+  align-items: stretch;
+}
+.card-row.drag-source > .card {
+  flex: 1;
+  min-width: 0;
+}
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  flex-shrink: 0;
+  margin-right: -0.35rem;
+  color: var(--ink-faint);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.drag-handle:active {
+  color: var(--accent);
 }
 .card {
   display: flex;

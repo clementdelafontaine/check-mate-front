@@ -177,6 +177,12 @@ export const api = {
   addSection(listId, name) {
     return request(`/lists/${listId}/sections`, { method: 'POST', body: { name } })
   },
+  renameSection(sectionId, name) {
+    return request(`/sections/${sectionId}`, { method: 'PATCH', body: { name } })
+  },
+  removeSection(sectionId) {
+    return request(`/sections/${sectionId}`, { method: 'DELETE' })
+  },
 
   addItem(sectionId, { label, kind, quantity }) {
     return request(`/sections/${sectionId}/items`, {

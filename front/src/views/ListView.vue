@@ -5,13 +5,14 @@ import { useChecklistsStore } from '../stores/checklists'
 import { api } from '../services/api'
 import { useUndoToast } from '../composables/useUndoToast'
 import ChecklistSection from '../components/ChecklistSection.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 import CheckedPile from '../components/CheckedPile.vue'
 import AddItemCard from '../components/AddItemCard.vue'
 import UndoToast from '../components/UndoToast.vue'
 import ListEditDialog from '../components/ListEditDialog.vue'
 import { useFriendsStore } from '../stores/friends'
 import { useAuthStore } from '../stores/auth'
-import { ArrowLeft, RotateCcw, Eraser, Pencil, Share2 } from 'lucide-vue-next'
+import { ArrowLeft, RotateCcw, Eraser, Pencil, Share2, X } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -147,6 +148,34 @@ async function duplicate() {
     store.removeList(copy.id)
   })
 }
+const editingSection = ref(null)
+const sectionDraft = ref('')
+const confirmRemoveSection = ref(null)
+function startSectionEdit(section) {
+  editingSection.value = section.id
+  sectionDraft.value = section.name
+}
+async function saveSectionEdit(section) {
+  const name = sectionDraft.value.trim()
+  editingSection.value = null
+  if (!name || name === section.name) return
+  try {
+    await store.renameSection(list.value.id, section.id, name)
+  } catch {
+    toast.show('Impossible de renommer la catégorie')
+  }
+}
+async function removeSection(section) {
+  confirmRemoveSection.value = null
+  const payload = await store.removeSection(list.value.id, section.id)
+  if (!payload) {
+    toast.show('Impossible de supprimer la catégorie')
+    return
+  }
+  toast.show(`« ${payload.section.name} » supprimée`, () =>
+    store.restoreSection(list.value.id, payload)
+  )
+}
 </script>
 
 <template>
@@ -187,13 +216,31 @@ async function duplicate() {
 
     <section v-for="section in list.sections" :key="section.id" class="section-block">
       <div class="section-head">
+        <input
+          v-if="editingSection === section.id"
+          v-model="sectionDraft"
+          class="section-edit-input"
+          type="text"
+          @keyup.enter="saveSectionEdit(section)"
+          @keyup.escape="editingSection = null"
+          @vue:mounted="($event) => $event.el?.focus?.()"
+        />
         <h3
+          v-else
           class="section-name"
           :class="{ empty: section.items.filter((i) => !i.checked).length === 0 }"
+          @click="startSectionEdit(section)"
         >{{ section.name }}</h3>
         <span class="section-count font-mono">
           {{ section.items.filter((i) => !i.checked).length }}/{{ section.items.length }}
         </span>
+        <button
+          class="section-remove"
+          aria-label="Supprimer la catégorie"
+          @click="confirmRemoveSection = section"
+        >
+          <X :size="14" />
+        </button>
       </div>
       <ChecklistSection :list-id="list.id" :section="section" :all-sections="list.sections" />
     </section>
@@ -201,6 +248,12 @@ async function duplicate() {
     <AddItemCard :list-id="list.id" />
 
     <CheckedPile v-if="checkedItems.length" :list-id="list.id" :items="checkedItems" />
+    <ConfirmDialog
+      v-if="confirmRemoveSection"
+      :message="`Supprimer la catégorie « ${confirmRemoveSection.name} » et ses ${confirmRemoveSection.items.length} item(s) ?`"
+      @cancel="confirmRemoveSection = null"
+      @confirm="removeSection(confirmRemoveSection)"
+    />
 
     <ListEditDialog
       v-if="showEdit && list"
@@ -387,7 +440,32 @@ async function duplicate() {
   gap: 0.5rem;
   margin-bottom: 0.5rem;
 }
+.section-edit-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--accent);
+  border-radius: 0.5rem;
+  background: var(--bg-1);
+  color: inherit;
+}
+.section-remove {
+  border: none;
+  background: none;
+  color: var(--ink-muted);
+  cursor: pointer;
+  padding: 0.2rem;
+  border-radius: 0.4rem;
+  display: flex;
+  align-items: center;
+}
+.section-remove:hover {
+  color: #e5484d;
+}
 .section-name {
+  cursor: pointer;
   margin: 0;
   font-size: 0.95rem;
   font-weight: 700;

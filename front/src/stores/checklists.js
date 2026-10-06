@@ -253,6 +253,43 @@ export const useChecklistsStore = defineStore('checklists', {
       return section
     },
 
+    async renameSection(listId, sectionId, name) {
+      const list = this.lists.find((l) => l.id === listId)
+      const section = list?.sections.find((s) => s.id === sectionId)
+      if (!section) return null
+      const previous = section.name
+      section.name = name
+      if (api.useApi) {
+        try {
+          await api.renameSection(sectionId, name)
+        } catch (e) {
+          section.name = previous
+          throw e
+        }
+      }
+      return section
+    },
+    async removeSection(listId, sectionId) {
+      const list = this.lists.find((l) => l.id === listId)
+      if (!list) return null
+      const index = list.sections.findIndex((s) => s.id === sectionId)
+      if (index === -1) return null
+      const [removed] = list.sections.splice(index, 1)
+      if (api.useApi) {
+        try {
+          await api.removeSection(sectionId)
+        } catch {
+          list.sections.splice(index, 0, removed)
+          return null
+        }
+      }
+      return { section: removed, index }
+    },
+    restoreSection(listId, payload) {
+      const list = this.lists.find((l) => l.id === listId)
+      if (!list || !payload) return
+      list.sections.splice(Math.min(payload.index, list.sections.length), 0, payload.section)
+    },
     async addTemplateSection(templateId, name) {
       if (api.useApi) {
         const section = await api.addTemplateSection(templateId, name)

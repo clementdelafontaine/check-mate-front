@@ -347,6 +347,37 @@ export async function listsRoutes(app) {
     return reply.code(201).send(section)
   })
 
+  app.patch('/sections/:sectionId', async (req, reply) => {
+    const section = await one(
+      `SELECT s.* FROM sections s
+       JOIN lists l ON l.id = s.list_id
+       WHERE s.id = $1 AND ${listAccess('$2')}`,
+      [req.params.sectionId, req.user.id]
+    )
+    if (!section) return reply.code(404).send({ error: 'not found' })
+    const { name } = req.body ?? {}
+    if (!name?.trim()) return reply.code(400).send({ error: 'name required' })
+    const updated = await one(
+      'UPDATE sections SET name = $2 WHERE id = $1 RETURNING *',
+      [req.params.sectionId, name.trim()]
+    )
+    await touchList(section.list_id)
+    return updated
+  })
+
+  app.delete('/sections/:sectionId', async (req, reply) => {
+    const section = await one(
+      `SELECT s.* FROM sections s
+       JOIN lists l ON l.id = s.list_id
+       WHERE s.id = $1 AND ${listAccess('$2')}`,
+      [req.params.sectionId, req.user.id]
+    )
+    if (!section) return reply.code(404).send({ error: 'not found' })
+    await query('DELETE FROM sections WHERE id = $1', [req.params.sectionId])
+    await touchList(section.list_id)
+    return { deleted: true }
+  })
+
   app.post('/sections/:sectionId/items', async (req, reply) => {
     const section = await one(
       `SELECT s.* FROM sections s
