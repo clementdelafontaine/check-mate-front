@@ -31,16 +31,6 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 
 <template>
   <div ref="root" class="card-row" :class="{ 'drag-source': draggable }">
-    <span
-      v-if="draggable"
-      class="drag-handle"
-      aria-label="Déplacer"
-      @touchstart="$emit('touchstart', $event)"
-      @touchmove="$emit('touchmove', $event)"
-      @touchend="$emit('touchend', $event)"
-    >
-      <GripVertical :size="18" />
-    </span>
     <component
       :is="to ? 'router-link' : 'div'"
       :to="to"
@@ -72,6 +62,17 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           </button>
         </div>
       </div>
+      <span
+        v-if="draggable"
+        class="drag-handle"
+        aria-label="Déplacer"
+        @click.prevent
+        @touchstart="$emit('touchstart', $event)"
+        @touchmove="$emit('touchmove', $event)"
+        @touchend="$emit('touchend')"
+      >
+        <GripVertical :size="18" />
+      </span>
     </component>
 
     <div v-if="confirm" class="overlay" @click.self="confirm = false">
@@ -95,7 +96,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   display: flex;
   align-items: stretch;
 }
-.card-row.drag-source > .card {
+.card-row > .card {
   flex: 1;
   min-width: 0;
 }
@@ -105,7 +106,6 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   justify-content: center;
   width: 2rem;
   flex-shrink: 0;
-  margin-right: -0.35rem;
   color: var(--ink-faint);
   cursor: grab;
   touch-action: none;
