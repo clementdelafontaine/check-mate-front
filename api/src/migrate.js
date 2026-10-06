@@ -8,18 +8,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const MIGRATIONS_DIR = path.join(__dirname, 'migrations')
 
 async function main() {
-  const client = new pg.Client({ connectionString: config.databaseUrl })
-  let connected = false
-  for (let attempt = 1; attempt <= 30 && !connected; attempt++) {
+  let client = null
+  for (let attempt = 1; attempt <= 30; attempt++) {
+    client = new pg.Client({ connectionString: config.databaseUrl })
     try {
       await client.connect()
-      connected = true
+      break
     } catch (err) {
       console.log(`waiting for database (${attempt}/30): ${err.message}`)
+      try { await client.end() } catch {}
+      if (attempt === 30) throw new Error('could not connect to the database')
       await new Promise((r) => setTimeout(r, 2000))
     }
   }
-  if (!connected) throw new Error('could not connect to the database')
   try {
     await client.query(`
       CREATE TABLE IF NOT EXISTS schema_migrations (

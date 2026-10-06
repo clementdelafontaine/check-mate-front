@@ -1,10 +1,5 @@
 name: checkmate
 
-networks:
-  checkmate:
-    driver: bridge
-    name: checkmate-net
-
 # CasaOS-style compose, same pattern as npmplus.
 # Data under /DATA/AppData/checkmate (covered by CasaOS backups).
 
@@ -29,8 +24,6 @@ services:
     restart: unless-stopped
     cpu_shares: 90
     privileged: false
-    networks:
-      - checkmate
     environment:
       - POSTGRES_USER=checkmate
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-checkmate}
@@ -59,8 +52,6 @@ services:
     restart: unless-stopped
     cpu_shares: 90
     privileged: false
-    networks:
-      - checkmate
     environment:
       - DATABASE_URL=postgres://checkmate:${POSTGRES_PASSWORD:-checkmate}@postgres:5432/checkmate
       - PORT=3000
@@ -72,6 +63,8 @@ services:
       postgres:
         condition: service_healthy
         required: true
+    links:
+      - postgres
     ports:
       - host_ip: 127.0.0.1
         target: 3000
@@ -79,12 +72,6 @@ services:
         protocol: tcp
     devices: []
     cap_add: []
-    healthcheck:
-      test: ["CMD-SHELL", "node -e 'fetch(\"http://127.0.0.1:3000/api/health\").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))'"]
-      interval: 10s
-      timeout: 3s
-      retries: 12
-      start_period: 15s
 
   front:
     container_name: checkmate-front
@@ -92,12 +79,10 @@ services:
     restart: unless-stopped
     cpu_shares: 90
     privileged: false
-    networks:
-      - checkmate
     depends_on:
-      api:
-        condition: service_healthy
-        required: true
+      - api
+    links:
+      - api
     ports:
       - host_ip: 127.0.0.1
         target: 80
