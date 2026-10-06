@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useChecklistsStore } from '../stores/checklists'
 import { api } from '../services/api'
@@ -12,7 +12,7 @@ import UndoToast from '../components/UndoToast.vue'
 import ListEditDialog from '../components/ListEditDialog.vue'
 import { useFriendsStore } from '../stores/friends'
 import { useAuthStore } from '../stores/auth'
-import { ArrowLeft, RotateCcw, Eraser, Pencil, Share2, X } from 'lucide-vue-next'
+import { ArrowLeft, RotateCcw, Eraser, Pencil, Share2, MoreVertical, Trash2 } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -148,6 +148,15 @@ async function duplicate() {
     store.removeList(copy.id)
   })
 }
+const sectionMenu = ref(null)
+const listView = ref(null)
+function onDocClick(e) {
+  if (sectionMenu.value !== null && listView.value && !listView.value.contains(e.target)) {
+    sectionMenu.value = null
+  }
+}
+onMounted(() => document.addEventListener('click', onDocClick))
+onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 const editingSection = ref(null)
 const sectionDraft = ref('')
 const confirmRemoveSection = ref(null)
@@ -179,7 +188,7 @@ async function removeSection(section) {
 </script>
 
 <template>
-  <div v-if="list" class="view">
+  <div v-if="list" ref="listView" class="view">
     <div class="view-header">
       <button class="back" aria-label="Retour" @click="router.back()">
         <ArrowLeft :size="20" />
@@ -231,16 +240,24 @@ async function removeSection(section) {
           :class="{ empty: section.items.filter((i) => !i.checked).length === 0 }"
           @click="startSectionEdit(section)"
         >{{ section.name }}</h3>
-        <span class="section-count font-mono">
-          {{ section.items.filter((i) => !i.checked).length }}/{{ section.items.length }}
-        </span>
-        <button
-          class="section-remove"
-          aria-label="Supprimer la catégorie"
-          @click="confirmRemoveSection = section"
-        >
-          <X :size="14" />
-        </button>
+        <div class="section-actions">
+          <span class="section-count font-mono">
+            {{ section.items.filter((i) => !i.checked).length }}/{{ section.items.length }}
+          </span>
+          <div class="menu-wrap" @click.stop>
+            <button class="icon-btn" aria-label="Options de la catégorie" @click="sectionMenu = sectionMenu === section.id ? null : section.id">
+              <MoreVertical :size="16" />
+            </button>
+            <div v-if="sectionMenu === section.id" class="menu">
+              <button class="menu-item" @click="sectionMenu = null; startSectionEdit(section)">
+                <Pencil :size="14" /> Éditer
+              </button>
+              <button class="menu-item danger" @click="sectionMenu = null; confirmRemoveSection = section">
+                <Trash2 :size="14" /> Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
       <ChecklistSection :list-id="list.id" :section="section" :all-sections="list.sections" />
     </section>
@@ -451,17 +468,63 @@ async function removeSection(section) {
   background: var(--bg-1);
   color: inherit;
 }
-.section-remove {
-  border: none;
-  background: none;
-  color: var(--ink-muted);
-  cursor: pointer;
-  padding: 0.2rem;
-  border-radius: 0.4rem;
+.section-actions {
   display: flex;
   align-items: center;
+  gap: 0.15rem;
+  flex-shrink: 0;
+  margin-left: auto;
+  position: relative;
 }
-.section-remove:hover {
+.menu-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  background: none;
+  border-radius: 0.5rem;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+.icon-btn:active {
+  background: var(--bg-2);
+}
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.3rem);
+  z-index: 50;
+  min-width: 9rem;
+  padding: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--bg-1);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+.menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  border: none;
+  background: none;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+.menu-item:active {
+  background: var(--bg-2);
+}
+.menu-item.danger {
   color: #e5484d;
 }
 .section-name {
@@ -492,6 +555,7 @@ async function removeSection(section) {
 .section-count {
   font-size: 0.7rem;
   color: var(--ink-faint);
+  white-space: nowrap;
 }
 .overlay {
   position: fixed;

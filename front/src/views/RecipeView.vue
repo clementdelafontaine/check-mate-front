@@ -6,7 +6,7 @@ import { useUndoToast } from '../composables/useUndoToast'
 import AddToGroceryDialog from '../components/AddToGroceryDialog.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import RecipeMetaDialog from '../components/RecipeMetaDialog.vue'
-import { X, Plus, ArrowRight, Pencil, Trash2, CalendarPlus, MoreVertical } from 'lucide-vue-next'
+import { Plus, ArrowRight, Pencil, Trash2, CalendarPlus, MoreVertical } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -192,6 +192,7 @@ async function submitSection() {
 }
 
 const editingSectionIdx = ref(null)
+const sectionMenu = ref(null)
 const sectionDraft = ref('')
 function startSectionEdit(si) {
   editingSectionIdx.value = si
@@ -273,6 +274,9 @@ const view = ref(null)
 function onDocClick(e) {
   if (ingredientMenu.value && view.value && !view.value.contains(e.target)) {
     ingredientMenu.value = null
+  }
+  if (sectionMenu.value !== null && view.value && !view.value.contains(e.target)) {
+    sectionMenu.value = null
   }
 }
 
@@ -444,9 +448,19 @@ onMounted(() => store.refresh())
           @vue:mounted="($event) => $event.el?.focus?.()"
         />
         <h2 v-else class="section-label" @click="startSectionEdit(si)">{{ section.name }}</h2>
-        <button class="icon-btn" aria-label="Supprimer le rayon" @click="confirmRemoveSection = si">
-          <X :size="14" />
-        </button>
+        <div class="menu-wrap" @click.stop>
+          <button class="icon-btn" aria-label="Options du rayon" @click="sectionMenu = sectionMenu === si ? null : si">
+            <MoreVertical :size="16" />
+          </button>
+          <div v-if="sectionMenu === si" class="menu">
+            <button class="menu-item" @click="sectionMenu = null; startSectionEdit(si)">
+              <Pencil :size="14" /> Éditer
+            </button>
+            <button class="menu-item danger" @click="sectionMenu = null; confirmRemoveSection = si">
+              <Trash2 :size="14" /> Supprimer
+            </button>
+          </div>
+        </div>
       </div>
       <ul
         class="items"
@@ -686,6 +700,42 @@ onMounted(() => store.refresh())
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+.menu-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.3rem);
+  z-index: 50;
+  min-width: 9rem;
+  padding: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--bg-1);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+.menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  border: none;
+  background: none;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+.menu-item:active {
+  background: var(--bg-2);
+}
+.menu-item.danger {
+  color: #e5484d;
 }
 .section-label {
   cursor: pointer;
