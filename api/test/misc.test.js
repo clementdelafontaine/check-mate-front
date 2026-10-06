@@ -143,3 +143,49 @@ test('add recipe to list honors itemIds selection', async () => {
   const labels = after.data.sections.flatMap((s) => s.items.map((i) => i.label))
   assert.deepEqual(labels.sort(), ['Beurre'])
 })
+
+test('recipe step toggle and reorder', async () => {
+  const recipeRes = await alice.json('POST', '/api/recipes', {
+    name: 'StepRecipe',
+    steps: ['Première', 'Deuxième', 'Troisième']
+  })
+  assert.equal(recipeRes.status, 201)
+  const steps = recipeRes.data.steps
+  assert.equal(steps.length, 3)
+  const toggle = await alice.json('PATCH', `/api/recipe-steps/${steps[0].id}`, { checked: true })
+  assert.equal(toggle.status, 200)
+  const afterToggle = await alice.json('GET', `/api/recipes/${recipeRes.data.id}`)
+  assert.equal(afterToggle.data.steps[0].checked, true)
+  const reorder = await alice.json('POST', `/api/recipes/${recipeRes.data.id}/steps/reorder`, {
+    stepIds: [steps[2].id, steps[0].id, steps[1].id]
+  })
+  assert.equal(reorder.status, 200)
+  const after = await alice.json('GET', `/api/recipes/${recipeRes.data.id}`)
+  assert.deepEqual(after.data.steps.map((s) => s.text), ['Troisième', 'Première', 'Deuxième'])
+  const del = await alice.json('DELETE', `/api/recipe-steps/${steps[1].id}`)
+  assert.ok([200, 204].includes(del.status))
+})
+
+test('move item to another section at position', async () => {
+  const listRes = await alice.json('POST', '/api/lists', { name: 'MoveList' })
+  const s1 = listRes.data.sections[0]
+  const s2 = await alice.json('POST', `/api/lists/${listRes.data.id}/sections`, { name: 'Rayon 2' })
+  const i1 = await alice.json('POST', `/api/sections/${s1.id}/items`, { label: 'AAA' })
+  const i2 = await alice.json('POST', `/api/sections/${s1.id}/items`, { label: 'BBB' })
+  const moved = await alice.json('POST', `/api/items/${i2.data.id}/move`, {
+    toSectionId: s2.data.id,
+    position: 0
+  })
+  assert.equal(moved.status, 200)
+  const after = await alice.json('GET', `/api/lists/${listRes.data.id}`)
+  const rayon2 = after.data.sections.find((s) => s.name === 'Rayon 2')
+  assert.deepEqual(rayon2.items.map((i) => i.label), ['BBB'])
+  const movedBack = await alice.json('POST', `/api/items/${i2.data.id}/move`, {
+    toSectionId: s1.id,
+    position: 0
+  })
+  assert.equal(movedBack.status, 200)
+  const after2 = await alice.json('GET', `/api/lists/${listRes.data.id}`)
+  const divers = after2.data.sections.find((s) => s.name === 'Divers')
+  assert.deepEqual(divers.items.map((i) => i.label), ['BBB', 'AAA'])
+})

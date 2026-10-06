@@ -5,7 +5,7 @@ import { useRecipesStore } from '../stores/recipes'
 import { useUndoToast } from '../composables/useUndoToast'
 import AddToGroceryDialog from '../components/AddToGroceryDialog.vue'
 import RecipeMetaDialog from '../components/RecipeMetaDialog.vue'
-import { X, Plus, ArrowRight, Pencil, Trash2, CalendarPlus } from 'lucide-vue-next'
+import { X, Plus, ArrowRight, Pencil, Trash2, CalendarPlus, MoreVertical } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -179,6 +179,91 @@ async function removeIngredient(si, ii) {
   const sections = sectionsPayload()
   sections[si].items.splice(ii, 1)
   await store.updateRecipe(recipe.value.id, { sections })
+  toast.show('Ingrédient supprimé')
+}
+
+async function saveIngredientEdit(si, ii, { label, quantity }) {
+  if (!recipe.value) return
+  const sections = sectionsPayload()
+  const item = sections[si].items[ii]
+  if (!item) return
+  item.label = label
+  item.quantity = quantity ?? null
+  await store.updateRecipe(recipe.value.id, { sections })
+  editingIngredient.value = null
+  toast.show('Ingrédient modifié')
+}
+
+const editingIngredient = ref(null)
+const editLabel = ref('')
+const editQuantity = ref('')
+const editingIndexes = ref(null)
+
+function openIngredientEdit(si, ii) {
+  const item = recipe.value?.sections?.[si]?.items?.[ii]
+  if (!item) return
+  editingIndexes.value = { si, ii }
+  editLabel.value = item.label
+  editQuantity.value = item.quantity ?? ''
+  editingIngredient.value = item
+}
+
+async function submitIngredientEdit() {
+  if (!editingIndexes.value || !editLabel.value.trim()) return
+  await saveIngredientEdit(editingIndexes.value.si, editingIndexes.value.ii, {
+    label: editLabel.value.trim(),
+    quantity: editQuantity.value.trim() || null
+  })
+}
+
+const ingredientMenu = ref(null)
+
+function toggleIngredientMenu(si, ii) {
+  const key = `${si}-${ii}`
+  ingredientMenu.value = ingredientMenu.value === key ? null : key
+}
+
+const dragIngredient = ref(null)
+
+function onIngredientDragStart(si, ii, e) {
+  dragIngredient.value = { si, ii }
+  e.dataTransfer.effectAllowed = 'move'
+  e.dataTransfer.setData('text/plain', `${si}-${ii}`)
+}
+
+function onIngredientDragOver(si, ii) {
+  if (!dragIngredient.value || !recipe.value) return
+  const from = dragIngredient.value
+  if (from.si === si && from.ii === ii) return
+  const sections = recipe.value.sections
+  const [moved] = sections[from.si].items.splice(from.ii, 1)
+  if (from.si === si) {
+    const idx = sections[si].items.findIndex((i) => i.id === moved.id)
+    const target = idx !== -1 && from.ii < ii ? idx + 1 : idx
+    sections[si].items.splice(ii > from.ii ? target : ii, 0, moved)
+    if (sections[si].items.indexOf(moved) === -1) sections[si].items.splice(ii, 0, moved)
+  } else {
+    sections[si].items.splice(ii, 0, moved)
+  }
+  dragIngredient.value = { si, ii: sections[si].items.indexOf(moved) }
+}
+
+function onSectionDragOver(si) {
+  if (!dragIngredient.value || !recipe.value) return
+  const from = dragIngredient.value
+  if (from.si === si) return
+  const sections = recipe.value.sections
+  if (sections[si].items.length) return
+  const [moved] = sections[from.si].items.splice(from.ii, 1)
+  sections[si].items.push(moved)
+  dragIngredient.value = { si, ii: sections[si].items.length - 1 }
+}
+
+async function onIngredientDrop() {
+  if (!dragIngredient.value || !recipe.value) return
+  dragIngredient.value = null
+  const sections = sectionsPayload()
+  await store.updateRecipe(recipe.value.id, { sections })
 }
 
 async function removeSection(si) {
@@ -190,9 +275,29 @@ async function removeSection(si) {
 
 async function removeStep(idx) {
   if (!recipe.value) return
+  confirmRemoveStep.value = idx
+}
+
+const confirmRemoveStep = ref(null)
+
+async function doRemoveStep() {
+  const idx = confirmRemoveStep.value
+  confirmRemoveStep.value = null
+  if (idx === null || !recipe.value) return
   await store.updateRecipe(recipe.value.id, {
     steps: recipe.value.steps.filter((_, i) => i !== idx).map((s) => s.text)
   })
+  toast.show('Étape supprimée')
+}
+
+async function toggleStepChecked(step) {
+  if (!recipe.value || !step.id) return
+  step.checked = !step.checked
+  try {
+    await store.toggleStep(step.id, step.checked)
+  } catch {
+    step.checked = !step.checked
+  }
 }
 
 async function plan() {
@@ -253,13 +358,40 @@ onMounted(() => store.refresh())
           <X :size="14" />
         </button>
       </div>
-      <ul class="items">
-        <li v-for="(item, ii) in section.items" :key="item.id ?? ii" class="item">
+      <ul
+        class="items"
+        @dragover="onSectionDragOver(si)"
+        @drop.prevent="onIngredientDrop"
+      >
+        <li
+          v-for="(item, ii) in section.items"
+          :key="item.id ?? ii"
+          class="item"
+          draggable="true"
+          @dragstart="onIngredientDragStart(si, ii, $event)"
+          @dragover.prevent="onIngredientDragOver(si, ii)"
+          @drop.prevent.stop="onIngredientDrop"
+          @dragend="dragIngredient = null"
+        >
           <span class="item-label">{{ item.label }}</span>
           <span v-if="item.quantity" class="item-qty font-mono">{{ item.quantity }}</span>
-          <button class="icon-btn" aria-label="Retirer" @click="removeIngredient(si, ii)">
-            <X :size="14" />
-          </button>
+          <div class="menu-wrap" @click.stop>
+            <button
+              class="icon-btn"
+              aria-label="Options"
+              @click="toggleIngredientMenu(si, ii)"
+            >
+              <MoreVertical :size="14" />
+            </button>
+            <div v-if="ingredientMenu === `${si}-${ii}`" class="menu" @click.stop>
+              <button class="menu-item" @click="ingredientMenu = null; openIngredientEdit(si, ii)">
+                <Pencil :size="14" /> Modifier
+              </button>
+              <button class="menu-item danger" @click="ingredientMenu = null; removeIngredient(si, ii)">
+                <Trash2 :size="14" /> Supprimer
+              </button>
+            </div>
+          </div>
         </li>
       </ul>
       <div v-if="openItemFor === section.id" class="form-card">
@@ -293,17 +425,46 @@ onMounted(() => store.refresh())
           v-for="(step, idx) in recipe.steps"
           :key="step.id ?? idx"
           class="step"
+          :class="{ done: step.checked, dragging: dragStepIdx === idx }"
           draggable="true"
           @dragstart="onStepDragStart(idx, $event)"
           @dragover.prevent="onStepDragOver(idx)"
           @drop.prevent="onStepDrop"
           @dragend="dragStepIdx = null"
+          @click="toggleStepChecked(step)"
         >
           <span class="step-num font-mono">{{ idx + 1 }}</span>
           <span class="step-text">{{ step.text }}</span>
-          <button class="icon-btn" aria-label="Retirer" @click="removeStep(idx)"><X :size="14" /></button>
+          <button
+            class="icon-btn"
+            aria-label="Retirer"
+            @click.stop="removeStep(idx)"
+          ><X :size="14" /></button>
         </li>
       </ol>
+
+      <div v-if="confirmRemoveStep !== null" class="overlay" @click.self="confirmRemoveStep = null">
+        <div class="dialog">
+          <p class="dialog-text">
+            Supprimer l'étape {{ confirmRemoveStep + 1 }} ?
+          </p>
+          <div class="dialog-actions">
+            <button class="btn ghost" @click="confirmRemoveStep = null">Annuler</button>
+            <button class="btn danger" @click="doRemoveStep">Supprimer</button>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="editingIngredient" class="overlay" @click.self="editingIngredient = null">
+        <div class="dialog">
+          <p class="dialog-text font-mono dialog-title">Modifier l'ingrédient</p>
+          <form @submit.prevent="submitIngredientEdit">
+            <input v-model="editLabel" class="input" type="text" placeholder="Ingrédient" autofocus />
+            <input v-model="editQuantity" class="input" type="text" placeholder="Quantité (ex : 200 g)" />
+            <button type="submit" class="submit">Enregistrer</button>
+          </form>
+        </div>
+      </div>
       <div v-if="showStepForm" class="form-card">
         <form @submit.prevent="submitStep">
           <input v-model="stepText" class="input" type="text" placeholder="Nouvelle étape" autofocus />
@@ -433,6 +594,70 @@ onMounted(() => store.refresh())
 }
 .step.dragging {
   opacity: 0.5;
+}
+.step.done {
+  background: var(--bg-2);
+}
+.step.done .step-text {
+  text-decoration: line-through;
+  color: var(--ink-muted);
+}
+.menu-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.25rem);
+  z-index: 50;
+  min-width: 9rem;
+  padding: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--bg-1);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+.menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.55rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+.menu-item:active {
+  background: var(--bg-2);
+}
+.menu-item.danger {
+  color: #ff6b6b;
+}
+.dialog-text {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.dialog-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+}
+.btn {
+  padding: 0.55rem 1rem;
+  border-radius: 0.7rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.btn.ghost {
+  border: 1px solid var(--line);
+  color: var(--ink-muted);
+}
+.btn.danger {
+  background: #e5484d;
+  color: #fff;
 }
 .item,
 .step {

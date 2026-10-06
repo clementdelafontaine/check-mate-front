@@ -1,6 +1,6 @@
 import { query, one, uid, listWithSections } from '../db.js'
 
-async function setPosition(table, col, id, value) {
+async function setPosition(table, id, value) {
   await query(`UPDATE ${table} SET position = $2 WHERE id = $1`, [id, value])
 }
 
@@ -432,7 +432,7 @@ export async function listsRoutes(app) {
   })
 
   app.post('/items/:itemId/move', async (req, reply) => {
-    const { toSectionId } = req.body ?? {}
+    const { toSectionId, position = null } = req.body ?? {}
     const target = await one(
       `SELECT s.id, s.list_id FROM sections s
        JOIN lists l ON l.id = s.list_id
@@ -450,6 +450,19 @@ export async function listsRoutes(app) {
       [req.params.itemId, toSectionId, req.user.id]
     )
     if (!item) return reply.code(404).send({ error: 'not found' })
+    const { rows: sectionItems } = await query(
+      'SELECT id FROM items WHERE section_id = $1 ORDER BY position, created_at',
+      [toSectionId]
+    )
+    const ids = sectionItems.map((r) => r.id).filter((id) => id !== req.params.itemId)
+    const idx =
+      position === null || position < 0 || position > ids.length
+        ? ids.length
+        : position
+    ids.splice(idx, 0, req.params.itemId)
+    for (const [i, id] of ids.entries()) {
+      await setPosition('items', id, i)
+    }
     await touchList(target.list_id)
     return item
   })

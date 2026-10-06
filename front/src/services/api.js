@@ -75,7 +75,7 @@ const mapRecipe = (r) => ({
       quantity: i.quantity ?? null
     }))
   })),
-  steps: (r.steps ?? []).map((s) => ({ id: s.id, text: s.text }))
+  steps: (r.steps ?? []).map((s) => ({ id: s.id, text: s.text, checked: s.checked ?? false }))
 })
 
 
@@ -193,8 +193,11 @@ export const api = {
     return request(`/items/${itemId}`, { method: 'DELETE' })
   },
 
-  moveItem(itemId, toSectionId) {
-    return request(`/items/${itemId}/move`, { method: 'POST', body: { toSectionId } })
+  moveItem(itemId, toSectionId, position = null) {
+    return request(`/items/${itemId}/move`, {
+      method: 'POST',
+      body: { toSectionId, position }
+    })
   },
 
   suggestions(prefix, limit = 5) {
@@ -219,6 +222,18 @@ export const api = {
   },
   removeRecipe(id) {
     return request(`/recipes/${id}`, { method: 'DELETE' })
+  },
+  toggleRecipeStep(stepId, checked) {
+    return request(`/recipe-steps/${stepId}`, { method: 'PATCH', body: { checked } })
+  },
+  removeRecipeStep(stepId) {
+    return request(`/recipe-steps/${stepId}`, { method: 'DELETE' })
+  },
+  reorderRecipeSteps(recipeId, stepIds) {
+    return request(`/recipes/${recipeId}/steps/reorder`, {
+      method: 'POST',
+      body: { stepIds }
+    })
   },
   addRecipeToList(recipeId, listId, itemIds = null) {
     return request(`/recipes/${recipeId}/add-to-list`, {

@@ -563,7 +563,7 @@ export const useChecklistsStore = defineStore('checklists', {
       return tpl
     },
 
-    async moveItem(listId, fromSectionId, itemId, toSectionId) {
+    async moveItem(listId, fromSectionId, itemId, toSectionId, position = null) {
       const list = this.lists.find((l) => l.id === listId)
       if (!list) return
       const from = list.sections.find((s) => s.id === fromSectionId)
@@ -572,14 +572,17 @@ export const useChecklistsStore = defineStore('checklists', {
       const index = from.items.findIndex((i) => i.id === itemId)
       if (index === -1) return
       const [item] = from.items.splice(index, 1)
-      item.checked = false
-      to.items.push(item)
+      const targetIdx =
+        position === null || position < 0 || position > to.items.length
+          ? to.items.length
+          : position
+      to.items.splice(targetIdx, 0, item)
       if (api.useApi) {
         try {
-          await api.moveItem(itemId, toSectionId)
+          await api.moveItem(itemId, toSectionId, targetIdx)
         } catch {
+          to.items.splice(targetIdx, 1)
           from.items.splice(index, 0, item)
-          to.items.splice(to.items.indexOf(item), 1)
         }
       }
     },

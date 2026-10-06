@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useChecklistsStore } from '../stores/checklists'
+import { api } from '../services/api'
 import { useUndoToast } from '../composables/useUndoToast'
 import ItemRow from './ItemRow.vue'
 import ItemEditDialog from './ItemEditDialog.vue'
@@ -25,6 +26,55 @@ function moveItem(itemId, toSectionId) {
   store.moveItem(props.listId, props.section.id, itemId, toSectionId)
 }
 
+const drag = ref(null)
+
+function onDragStart(item, e) {
+  drag.value = { itemId: item.id, fromSectionId: props.section.id }
+  e.dataTransfer.effectAllowed = 'move'
+  e.dataTransfer.setData('text/plain', item.id)
+}
+
+function onDragOver(item, e) {
+  if (!drag.value) return
+  const list = store.listById(props.listId)
+  if (!list) return
+  const from = list.sections.find((s) => s.id === drag.value.fromSectionId)
+  const to = list.sections.find((s) => s.id === props.section.id)
+  if (!from || !to) return
+  const targetIdx = item ? to.items.findIndex((i) => i.id === item.id) : to.items.length
+  if (targetIdx === -1) return
+  const fromIdx = from.items.findIndex((i) => i.id === drag.value.itemId)
+  if (fromIdx === -1) return
+  const [moved] = from.items.splice(fromIdx, 1)
+  if (from === to && fromIdx < targetIdx) {
+    to.items.splice(targetIdx - 1, 0, moved)
+  } else {
+    to.items.splice(targetIdx, 0, moved)
+  }
+  drag.value.fromSectionId = to.id
+}
+
+async function onDrop() {
+  if (!drag.value) return
+  const { itemId, fromSectionId } = drag.value
+  drag.value = null
+  const list = store.listById(props.listId)
+  if (!list) return
+  const to = list.sections.find((s) => s.id === props.section.id)
+  if (!to) return
+  const position = to.items.findIndex((i) => i.id === itemId)
+  if (position === -1) return
+  try {
+    await api.moveItem(itemId, to.id, position)
+  } catch {
+    await store.refresh()
+  }
+}
+
+function onSectionDragOver(e) {
+  if (drag.value && !props.section.items.length) onDragOver(null, e)
+}
+
 function increment(item) {
   const n = Number(item.quantity)
   store.setQuantity(props.listId, props.section.id, item.id, (Number.isFinite(n) && n > 0 ? n : 1) + 1)
@@ -47,10 +97,15 @@ function saveEdit(payload) {
 </script>
 
 <template>
-  <ul class="items">
+  <ul class="items" @dragover="onSectionDragOver($event)" @drop.prevent="onDrop">
     <ItemRow
       v-for="item in unchecked"
       :key="item.id"
+      draggable="true"
+      @dragstart="onDragStart(item, $event)"
+      @dragover.prevent="onDragOver(item, $event)"
+      @drop.prevent.stop="onDrop"
+      @dragend="drag = null"
       :label="item.label"
       :quantity="item.quantity"
       :kind="item.kind ?? 'task'"

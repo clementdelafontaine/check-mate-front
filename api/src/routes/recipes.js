@@ -188,6 +188,60 @@ export async function recipesRoutes(app) {
     return recipeWithSections(req.params.id, req.user.id)
   })
 
+  app.patch('/recipe-steps/:stepId', async (req, reply) => {
+    const { checked } = req.body ?? {}
+    const { rows } = await query(
+      `UPDATE recipe_steps s SET checked = $2
+       WHERE s.id = $1 AND EXISTS (
+         SELECT 1 FROM recipes r WHERE r.id = s.recipe_id AND r.user_id = $3
+       )
+       RETURNING (SELECT user_id FROM recipes WHERE id = s.recipe_id) AS owner_id`,
+      [req.params.stepId, checked === true, req.user.id]
+    )
+    if (!rows.length) return reply.code(404).send({ error: 'not found' })
+    return { ok: true }
+  })
+  app.delete('/recipe-steps/:stepId', async (req, reply) => {
+    const { rowCount } = await query(
+      `DELETE FROM recipe_steps s
+       WHERE s.id = $1 AND EXISTS (
+         SELECT 1 FROM recipes r WHERE r.id = s.recipe_id AND r.user_id = $2
+       )`,
+      [req.params.stepId, req.user.id]
+    )
+    if (!rowCount) return reply.code(404).send({ error: 'not found' })
+    return reply.code(204).send()
+  })
+  app.post(
+    '/recipes/:id/steps/reorder',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['stepIds'],
+          properties: {
+            stepIds: { type: 'array', items: { type: 'string' } }
+          }
+        }
+      }
+    },
+    async (req, reply) => {
+      const { stepIds } = req.body
+      const { rows } = await query(
+        `SELECT s.id FROM recipe_steps s
+         JOIN recipes r ON r.id = s.recipe_id
+         WHERE s.id = ANY($1::text[]) AND r.user_id = $2`,
+        [stepIds, req.user.id]
+      )
+      if (rows.length !== stepIds.length) {
+        return reply.code(404).send({ error: 'step not found' })
+      }
+      for (const [idx, id] of stepIds.entries()) {
+        await query('UPDATE recipe_steps SET position = $2 WHERE id = $1', [id, idx])
+      }
+      return { ok: true }
+    }
+  )
   app.delete('/recipes/:id', async (req, reply) => {
     const { rowCount } = await query('DELETE FROM recipes WHERE id = $1 AND user_id = $2', [
       req.params.id,

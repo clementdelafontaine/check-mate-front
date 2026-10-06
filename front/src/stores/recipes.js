@@ -79,6 +79,18 @@ export const useRecipesStore = defineStore('recipes', {
       this.persist()
       return recipe
     },
+    async toggleStep(stepId, checked) {
+      if (!api.useApi) return
+      await api.toggleRecipeStep(stepId, checked)
+    },
+    async removeStepById(stepId) {
+      if (!api.useApi) return
+      await api.removeRecipeStep(stepId)
+    },
+    async reorderSteps(recipeId, stepIds) {
+      if (!api.useApi) return
+      await api.reorderRecipeSteps(recipeId, stepIds)
+    },
     async updateRecipe(id, patch) {
       if (api.useApi) {
         const recipe = await api.updateRecipe(id, patch)

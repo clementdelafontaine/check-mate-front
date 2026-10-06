@@ -92,7 +92,7 @@ export const recipeWithSections = async (recipeId, userId = null) => {
   const recipe = await one(
     `SELECT r.*,
        COALESCE((
-         SELECT json_agg(json_build_object('id', s.id, 'text', s.text) ORDER BY s.position, s.id)
+         SELECT json_agg(json_build_object('id', s.id, 'text', s.text, 'checked', s.checked) ORDER BY s.position, s.id)
          FROM recipe_steps s WHERE s.recipe_id = r.id
        ), '[]') AS steps
      FROM recipes r
