@@ -1,4 +1,5 @@
 import { query, one, uid, recipeWithSections } from '../db.js'
+import { sumQuantityTexts } from '../quantity.js'
 
 export async function mealPlansRoutes(app) {
   app.get('/meal-plans', async (req) => {
@@ -121,6 +122,25 @@ export async function mealPlansRoutes(app) {
           for (const item of section.items) {
             const key = `${section.name.toLowerCase()}::${item.label.toLowerCase()}`
             if (seen.has(key)) continue
+            const existing = await one(
+              `SELECT id, quantity FROM items
+               WHERE section_id = $1 AND lower(label) = lower($2)`,
+              [target.id, item.label]
+            )
+            if (existing) {
+              const sum = sumQuantityTexts(existing.quantity, item.quantity)
+              if (sum.merged) {
+                if (sum.value !== null) {
+                  await query('UPDATE items SET quantity = $2 WHERE id = $1', [
+                    existing.id,
+                    sum.value
+                  ])
+                }
+                seen.set(key, true)
+                added++
+                continue
+              }
+            }
             const { rows: last } = await query(
               'SELECT COALESCE(MAX(position), -1) + 1 AS next FROM items WHERE section_id = $1',
               [target.id]
