@@ -80,13 +80,31 @@ function onStepDragStart(idx, e) {
   e.dataTransfer.setData('text/plain', String(idx))
 }
 
-function onStepDragOver(idx) {
+function onStepDragOver(idx, e) {
   if (dragStepIdx.value === null || dragStepIdx.value === idx) return
+  const rect = e.currentTarget.getBoundingClientRect()
+  const after = e.clientY > rect.top + rect.height / 2
   const steps = [...recipe.value.steps]
   const [moved] = steps.splice(dragStepIdx.value, 1)
-  steps.splice(idx, 0, moved)
+  const target = dragStepIdx.value < idx && after ? idx : idx + (after ? 1 : 0)
+  steps.splice(Math.max(0, Math.min(target, steps.length)), 0, moved)
   recipe.value.steps = steps
-  dragStepIdx.value = idx
+  dragStepIdx.value = steps.indexOf(moved)
+}
+
+function onStepsDragOver(e) {
+  if (dragStepIdx.value === null) return
+  const ol = e.currentTarget
+  const last = ol.lastElementChild
+  if (!last) return
+  const lastRect = last.getBoundingClientRect()
+  if (e.clientY <= lastRect.bottom) return
+  if (dragStepIdx.value === recipe.value.steps.length - 1) return
+  const steps = [...recipe.value.steps]
+  const [moved] = steps.splice(dragStepIdx.value, 1)
+  steps.push(moved)
+  recipe.value.steps = steps
+  dragStepIdx.value = steps.length - 1
 }
 
 async function onStepDrop() {
@@ -245,37 +263,47 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 const dragIngredient = ref(null)
 
 function onIngredientDragStart(si, ii, e) {
-  dragIngredient.value = { si, ii }
+  const item = recipe.value?.sections?.[si]?.items?.[ii]
+  if (!item) return
+  dragIngredient.value = { itemId: item.id }
   e.dataTransfer.effectAllowed = 'move'
-  e.dataTransfer.setData('text/plain', `${si}-${ii}`)
+  e.dataTransfer.setData('text/plain', item.id)
 }
 
-function onIngredientDragOver(si, ii) {
+function moveIngredientTo(si, targetIdx) {
   if (!dragIngredient.value || !recipe.value) return
-  const from = dragIngredient.value
-  if (from.si === si && from.ii === ii) return
   const sections = recipe.value.sections
-  const [moved] = sections[from.si].items.splice(from.ii, 1)
-  if (from.si === si) {
-    const idx = sections[si].items.findIndex((i) => i.id === moved.id)
-    const target = idx !== -1 && from.ii < ii ? idx + 1 : idx
-    sections[si].items.splice(ii > from.ii ? target : ii, 0, moved)
-    if (sections[si].items.indexOf(moved) === -1) sections[si].items.splice(ii, 0, moved)
-  } else {
-    sections[si].items.splice(ii, 0, moved)
+  const fromSi = sections.findIndex((s) =>
+    s.items.some((i) => i.id === dragIngredient.value.itemId)
+  )
+  if (fromSi === -1) return
+  const fromIdx = sections[fromSi].items.findIndex(
+    (i) => i.id === dragIngredient.value.itemId
+  )
+  const [moved] = sections[fromSi].items.splice(fromIdx, 1)
+  if (fromSi === si && fromIdx < targetIdx) targetIdx -= 1
+  const idx = Math.max(0, Math.min(targetIdx, sections[si].items.length))
+  sections[si].items.splice(idx, 0, moved)
+}
+
+function onIngredientDragOver(si, ii, e) {
+  if (!dragIngredient.value || !recipe.value) return
+  const item = recipe.value.sections[si]?.items[ii]
+  if (!item) return
+  const rect = e.currentTarget.getBoundingClientRect()
+  const after = e.clientY > rect.top + rect.height / 2
+  moveIngredientTo(si, ii + (after ? 1 : 0))
+}
+
+function onSectionDragOver(si, e) {
+  if (!dragIngredient.value || !recipe.value) return
+  const ul = e.currentTarget
+  const last = ul.lastElementChild
+  if (last) {
+    const lastRect = last.getBoundingClientRect()
+    if (e.clientY <= lastRect.bottom) return
   }
-  dragIngredient.value = { si, ii: sections[si].items.indexOf(moved) }
-}
-
-function onSectionDragOver(si) {
-  if (!dragIngredient.value || !recipe.value) return
-  const from = dragIngredient.value
-  if (from.si === si) return
-  const sections = recipe.value.sections
-  if (sections[si].items.length) return
-  const [moved] = sections[from.si].items.splice(from.ii, 1)
-  sections[si].items.push(moved)
-  dragIngredient.value = { si, ii: sections[si].items.length - 1 }
+  moveIngredientTo(si, recipe.value.sections[si].items.length)
 }
 
 async function onIngredientDrop() {
@@ -390,7 +418,7 @@ onMounted(() => store.refresh())
       </div>
       <ul
         class="items"
-        @dragover="onSectionDragOver(si)"
+        @dragover="onSectionDragOver(si, $event)"
         @drop.prevent="onIngredientDrop"
       >
         <li
@@ -399,7 +427,7 @@ onMounted(() => store.refresh())
           class="item"
           draggable="true"
           @dragstart="onIngredientDragStart(si, ii, $event)"
-          @dragover.prevent="onIngredientDragOver(si, ii)"
+          @dragover.prevent="onIngredientDragOver(si, ii, $event)"
           @drop.prevent.stop="onIngredientDrop"
           @dragend="dragIngredient = null"
         >
@@ -450,7 +478,7 @@ onMounted(() => store.refresh())
 
     <section class="block steps-block">
       <h2 class="section-label">Préparation</h2>
-      <ol class="steps">
+      <ol class="steps" @dragover="onStepsDragOver($event)" @drop.prevent="onStepDrop">
         <li
           v-for="(step, idx) in recipe.steps"
           :key="step.id ?? idx"
@@ -458,7 +486,7 @@ onMounted(() => store.refresh())
           :class="{ done: step.checked, dragging: dragStepIdx === idx }"
           draggable="true"
           @dragstart="onStepDragStart(idx, $event)"
-          @dragover.prevent="onStepDragOver(idx)"
+          @dragover.prevent="onStepDragOver(idx, $event)"
           @drop.prevent="onStepDrop"
           @dragend="dragStepIdx = null"
           @click="toggleStepChecked(step)"

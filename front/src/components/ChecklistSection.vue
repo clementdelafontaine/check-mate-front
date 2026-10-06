@@ -41,8 +41,16 @@ function onDragOver(item, e) {
   const from = list.sections.find((s) => s.id === drag.value.fromSectionId)
   const to = list.sections.find((s) => s.id === props.section.id)
   if (!from || !to) return
-  const targetIdx = item ? to.items.findIndex((i) => i.id === item.id) : to.items.length
-  if (targetIdx === -1) return
+  let targetIdx
+  if (!item) {
+    targetIdx = to.items.length
+  } else {
+    const itemIdx = to.items.findIndex((i) => i.id === item.id)
+    if (itemIdx === -1) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const after = e.clientY > rect.top + rect.height / 2
+    targetIdx = itemIdx + (after ? 1 : 0)
+  }
   const fromIdx = from.items.findIndex((i) => i.id === drag.value.itemId)
   if (fromIdx === -1) return
   const [moved] = from.items.splice(fromIdx, 1)
@@ -72,7 +80,16 @@ async function onDrop() {
 }
 
 function onSectionDragOver(e) {
-  if (drag.value && !props.section.items.length) onDragOver(null, e)
+  if (!drag.value) return
+  const ul = e.currentTarget
+  const rect = ul.getBoundingClientRect()
+  const last = ul.lastElementChild
+  if (last) {
+    const lastRect = last.getBoundingClientRect()
+    if (e.clientY > lastRect.bottom) onDragOver(null, e)
+  } else {
+    onDragOver(null, e)
+  }
 }
 
 function increment(item) {
