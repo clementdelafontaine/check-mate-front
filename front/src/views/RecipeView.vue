@@ -428,13 +428,13 @@ onMounted(() => store.refresh())
   flex-direction: column;
   gap: 0.4rem;
 }
-.item,
 .step[draggable='true'] {
   cursor: grab;
 }
 .step.dragging {
   opacity: 0.5;
 }
+.item,
 .step {
   display: flex;
   align-items: center;
