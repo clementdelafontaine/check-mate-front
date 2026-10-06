@@ -164,17 +164,23 @@ const SEED_LISTS = [
       {
         name: 'Épicerie',
         items: [
-          { label: 'Pâtes', quantity: null },
-          { label: 'Riz', quantity: '1' },
-          { label: 'Café', quantity: null }
+          { label: 'Pâtes', quantity: '500 g' },
+          { label: 'Riz', quantity: '1 kg' },
+          { label: 'Café', quantity: '250 g' },
+          { label: 'Farine', quantity: '1 kg' },
+          { label: "Huile d'olive", quantity: '75 cL' },
+          { label: 'Lait de coco', quantity: '400 mL' }
         ]
       },
       {
         name: 'Produits frais',
         items: [
-          { label: 'Lait', quantity: '2' },
+          { label: 'Lait', quantity: '2 L' },
           { label: 'Œufs', quantity: '6' },
-          { label: 'Beurre', quantity: null }
+          { label: 'Beurre', quantity: '250 g' },
+          { label: 'Courgettes', quantity: '3' },
+          { label: 'Jambon', quantity: '4 tranches' },
+          { label: 'Pommes', quantity: '1 kg' }
         ]
       }
     ]
