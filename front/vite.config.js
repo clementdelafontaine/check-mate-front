@@ -6,6 +6,14 @@ export default defineConfig({
   test: {
     environment: 'jsdom'
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: process.env.VITE_DEV_API_URL || 'http://127.0.0.1:3100',
+        changeOrigin: true
+      }
+    }
+  },
   plugins: [
     vue(),
     VitePWA({
