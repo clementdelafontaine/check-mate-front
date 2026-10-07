@@ -323,13 +323,14 @@ export async function recipesRoutes(app) {
       if (!list) return reply.code(404).send({ error: 'list not found' })
       let added = 0
       for (const section of recipe.sections) {
-        const items = (section.items ?? []).filter(
+        const allItems = section.items ?? []
+        const items = allItems.filter(
           (it) =>
             typeof it.label === 'string' &&
             it.label.trim() !== '' &&
             (include === null || include.has(it.id))
         )
-        if (!items.length) continue
+        if (!items.length && allItems.length) continue
         let target = await one(
           'SELECT id FROM sections WHERE list_id = $1 AND lower(name) = lower($2)',
           [list.id, section.name]

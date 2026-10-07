@@ -101,10 +101,11 @@ export async function mealPlansRoutes(app) {
         const recipe = await recipeWithSections(plan.recipe_id, req.user.id)
         if (!recipe) continue
         for (const section of recipe.sections) {
+          const allItems = section.items ?? []
           if (include !== null) {
             section.items = section.items.filter((it) => include.has(it.id))
           }
-          if (!section.items?.length) continue
+          if (!section.items?.length && allItems.length) continue
           let target = await one(
             'SELECT id FROM sections WHERE list_id = $1 AND lower(name) = lower($2)',
             [list.id, section.name]
