@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { parseQuantity, stepQuantity } from '../services/quantity'
+import { parseQuantity, formatQuantity } from '../services/quantity'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -12,6 +12,7 @@ const quantityNum = computed(() => {
   const { n } = parseQuantity(props.modelValue)
   return n !== null && n > 0 ? n : null
 })
+const inputWidth = computed(() => `${Math.max(2.5, String(quantityNum.value ?? 1).length + 1.2)}rem`)
 const unitChoice = computed(() => parseQuantity(props.modelValue).unit ?? '')
 
 function commit(n, unit) {
@@ -30,13 +31,24 @@ function dec() {
     commit(quantityNum.value - 1, unitChoice.value)
   }
 }
+function onInput(e) {
+  const { n } = parseQuantity(e.target.value)
+  emit('update:modelValue', n !== null ? formatQuantity(n, unitChoice.value) : e.target.value)
+}
 </script>
 
 <template>
   <div class="qty-field">
     <div class="qty-row">
       <button type="button" class="step" :disabled="!quantityNum || quantityNum <= 1" @click="dec">−</button>
-      <span class="qty-value font-mono">{{ quantityNum ?? 1 }}</span>
+      <input
+        class="qty-value font-mono"
+        type="text"
+        inputmode="decimal"
+        :value="quantityNum ?? 1"
+        :style="{ width: inputWidth }"
+        @input="onInput"
+      />
       <button type="button" class="step" @click="inc">+</button>
     </div>
     <div class="unit-tags">
@@ -95,6 +107,11 @@ function dec() {
   text-align: center;
   font-size: 0.95rem;
   font-weight: 700;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.qty-value:focus {
+  border-color: var(--accent-dim);
 }
 .unit-tags {
   display: flex;
