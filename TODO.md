@@ -7,6 +7,10 @@
 - Les quantités des ingrédients se multiplient proportionnellement (ex : recette 4 pers. → 6 pers. : 200 g de farine devient 300 g).
 - Réflexions préalables : quantités fractionnées (arrondi ?), persistance du multiplicateur (par utilisateur ?), interaction avec l'envoi vers la liste de courses (c'est la quantité multipliée qui doit être envoyée).
 
+### Sécurisation de la base de données
+- Mettre en place un système de sécurisation de la BDD : sauvegardes automatiques régulières (pg_dump programmé, rétention), et restauration testée.
+- Points à couvrir : chiffrement au repos si pertinent, gestion fine des droits SQL (rôle applicatif limité, pas de superuser), durcissement `pg_hba.conf`, secret du `DATABASE_URL` hors image/compose (fichier env non versionné), et monitoring/backup du volume CasaOS.
+
 ### Rubrique Dépenses (clone Splitwise)
 - Nouvelle rubrique avec un logo dans le menu footer.
 - L'utilisateur crée des "groupes de dépenses" (ex : vacances entre amis, colocation) avec ses amis — même mécanique de partage que les listes (users/amis, propriétaire, partagés).

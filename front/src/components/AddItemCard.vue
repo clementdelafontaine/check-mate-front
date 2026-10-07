@@ -46,7 +46,9 @@ watch(open, (isOpen) => {
 const sections = computed(() => props.sections ?? target.value?.sections ?? [])
 const isNewSection = computed(() => sectionChoice.value === '__new__')
 watch(open, (isOpen) => {
-  if (isOpen && props.recipe && props.openSectionId) sectionChoice.value = props.openSectionId
+  if (isOpen && props.recipe) {
+    sectionChoice.value = props.openSectionId || sections.value[0]?.id || ''
+  }
 })
 const newSectionPlaceholder = computed(
   () => `Nom de la catégorie ("${GENERIC_SECTION}" si vide)`

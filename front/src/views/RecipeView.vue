@@ -511,16 +511,15 @@ onMounted(() => store.refresh())
           </div>
         </li>
       </ul>
-      <AddItemCard
-        class="add-item-card"
-        :recipe="true"
-        :units="RECIPE_UNIT_CHOICES"
-        :sections="recipe.sections"
-        :open-section-id="section.id"
-        @added="submitItem"
-      />
     </section>
 
+    <AddItemCard
+      class="add-item-card"
+      :recipe="true"
+      :units="RECIPE_UNIT_CHOICES"
+      :sections="recipe.sections"
+      @added="submitItem"
+    />
     <div v-if="showSectionForm" class="form-card">
       <form @submit.prevent="submitSection">
         <input v-model="sectionName" class="input" type="text" placeholder="Nouveau rayon (ex : Frais, Épicerie)" autofocus />
