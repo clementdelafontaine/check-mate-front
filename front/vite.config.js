@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
+import vueDevTools from 'vite-plugin-vue-devtools'
 
 export default defineConfig({
   test: {
@@ -16,6 +17,7 @@ export default defineConfig({
   },
   plugins: [
     vue(),
+    ['true', 'dev'].includes(process.env.VITE_DEVTOOLS) ? vueDevTools() : false,
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
