@@ -522,13 +522,13 @@ onMounted(() => store.refresh())
     />
     <div v-if="showSectionForm" class="form-card">
       <form @submit.prevent="submitSection">
-        <input v-model="sectionName" class="input" type="text" placeholder="Nouveau rayon (ex : Frais, Épicerie)" autofocus />
-        <button type="submit" class="submit">Ajouter le rayon</button>
+        <input v-model="sectionName" class="input" type="text" placeholder="Nouvelle catégorie (ex : Frais, Épicerie)" autofocus />
+        <button type="submit" class="submit">Ajouter la catégorie</button>
       </form>
     </div>
-    <button v-else class="add-inline" @click="showSectionForm = true">
+    <button v-else class="add-inline add-section-inline" @click="showSectionForm = true">
       <span class="plus-circle">+</span>
-      <span class="add-label">Ajouter un rayon</span>
+      <span class="add-label">Ajouter une catégorie</span>
     </button>
 
     <section class="block steps-block">
@@ -777,6 +777,9 @@ onMounted(() => store.refresh())
 }
 .add-item-card {
   margin-top: 1rem;
+}
+.add-section-inline {
+  margin-top: 0.75rem;
 }
 .step[draggable='true'] {
   cursor: grab;

@@ -159,6 +159,16 @@ onMounted(() => document.addEventListener('click', onDocClick))
 onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 const editingSection = ref(null)
 const sectionDraft = ref('')
+const showSectionForm = ref(false)
+const newSectionName = ref('')
+
+async function submitSection() {
+  const name = newSectionName.value.trim()
+  if (!name || !list.value) return
+  await store.addSection(list.value.id, name)
+  newSectionName.value = ''
+  showSectionForm.value = false
+}
 const confirmRemoveSection = ref(null)
 function startSectionEdit(section) {
   editingSection.value = section.id
@@ -263,6 +273,16 @@ async function removeSection(section) {
     </section>
 
     <AddItemCard :list-id="list.id" />
+    <div v-if="showSectionForm" class="form-card">
+      <form @submit.prevent="submitSection">
+        <input v-model="newSectionName" class="input" type="text" placeholder="Nouvelle catégorie" autofocus />
+        <button type="submit" class="submit">Ajouter la catégorie</button>
+      </form>
+    </div>
+    <button v-else class="add-inline add-section-inline" @click="showSectionForm = true">
+      <span class="plus-circle">+</span>
+      <span class="add-label">Ajouter une catégorie</span>
+    </button>
 
     <CheckedPile v-if="checkedItems.length" :list-id="list.id" :items="checkedItems" />
     <ConfirmDialog
@@ -624,5 +644,69 @@ async function removeSection(section) {
 .btn.danger {
   background: #e5484d;
   color: #fff;
+}
+.add-section-inline {
+  margin-top: 0.75rem;
+}
+.add-inline {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.85rem 1rem;
+  border: 1px dashed var(--line-bright);
+  border-radius: 1rem;
+  background: transparent;
+  color: var(--ink-faint);
+  transition: border-color 0.15s, color 0.15s;
+}
+.add-inline:active {
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+.plus-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px dashed var(--line-bright);
+  border-radius: 0.6rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.add-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.form-card {
+  border: 1px solid var(--accent-dim);
+  border-radius: 1rem;
+  background: var(--bg-1);
+  padding: 0.85rem;
+  margin-top: 0.75rem;
+}
+.input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: var(--bg-2);
+  color: var(--ink);
+  outline: none;
+  margin-bottom: 0.5rem;
+}
+.input:focus {
+  border-color: var(--accent-dim);
+}
+.submit {
+  width: 100%;
+  padding: 0.65rem;
+  border-radius: 0.7rem;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
 }
 </style>
