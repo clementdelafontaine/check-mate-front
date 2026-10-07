@@ -137,13 +137,12 @@ export async function directCreateAdmin(app) {
   await client.connect()
   try {
     const { rows } = await client.query(
-      `INSERT INTO users (id, email, username, password_hash, role)
-       VALUES ($1, $2, $3, $4, 'admin')
+      `INSERT INTO users (id, username, password_hash, role)
+       VALUES ($1, $2, $3, 'admin')
        ON CONFLICT (username) DO UPDATE SET role = 'admin'
        RETURNING id, username`,
       [
         'u-test-admin',
-        'admin@test.local',
         'admin',
         await hashTestPassword('adminpass123')
       ]

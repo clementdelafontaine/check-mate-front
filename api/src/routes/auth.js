@@ -36,7 +36,7 @@ export async function authRoutes(app) {
   app.get('/auth/users', async (req, reply) => {
     if (req.user?.role !== 'admin') return reply.code(403).send({ error: 'admin only' })
     const { rows } = await query(
-      'SELECT id, username, email, role, created_at FROM users ORDER BY created_at'
+      'SELECT id, username, role, created_at FROM users ORDER BY created_at'
     )
     return rows
   })
@@ -58,11 +58,10 @@ export async function authRoutes(app) {
       return reply.code(400).send({ error: 'invalid role' })
     }
     const user = await one(
-      `INSERT INTO users (id, email, username, password_hash, role) VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, username, email, role, created_at`,
+      `INSERT INTO users (id, username, password_hash, role) VALUES ($1, $2, $3, $4)
+       RETURNING id, username, role, created_at`,
       [
         uid('u'),
-        `${normalizedUsername}@local`,
         normalizedUsername,
         await hashPassword(String(password)),
         role

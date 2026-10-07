@@ -5,29 +5,25 @@ import { hashPassword } from './password.js'
 
 const SESSION_COOKIE = 'checkmate_session'
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000 // 30 days
-
 const newSessionId = () => randomBytes(32).toString('hex')
 
-export async function ensureAdmin(email, password) {
-  const normalizedEmail = String(email).trim().toLowerCase()
-  const username = normalizedEmail.split('@')[0]
-  const existing = await one(
-    'SELECT * FROM users WHERE email = $1 OR username = $2',
-    [normalizedEmail, username]
-  )
+export async function ensureAdmin(username, password) {
+  const normalizedUsername = String(username).trim().toLowerCase()
+  const existing = await one('SELECT * FROM users WHERE username = $1', [
+    normalizedUsername
+  ])
   if (existing) return existing
   const user = await one(
-    `INSERT INTO users (id, email, username, password_hash, role) VALUES ($1, $2, $3, $4, 'admin') RETURNING *`,
-    [uid('u'), normalizedEmail, username, await hashPassword(password)]
+    `INSERT INTO users (id, username, password_hash, role) VALUES ($1, $2, $3, 'admin') RETURNING *`,
+    [uid('u'), normalizedUsername, await hashPassword(password)]
   )
   return user
 }
 
 export async function authenticate(identifier, password) {
-  const user = await one(
-    'SELECT * FROM users WHERE username = $1 OR email = $1',
-    [String(identifier).trim().toLowerCase()]
-  )
+  const user = await one('SELECT * FROM users WHERE username = $1', [
+    String(identifier).trim().toLowerCase()
+  ])
   if (!user) return null
   const ok = await verify(user.password_hash, password)
   return ok ? user : null
@@ -76,7 +72,7 @@ export async function userFromSession(app, req) {
 
 export function publicUser(user) {
   return user
-    ? { id: user.id, username: user.username, email: user.email, role: user.role, createdAt: user.created_at }
+    ? { id: user.id, username: user.username, role: user.role, createdAt: user.created_at }
     : null
 }
 

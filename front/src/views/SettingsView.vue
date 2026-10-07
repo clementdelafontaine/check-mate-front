@@ -65,10 +65,6 @@ async function logout() {
           <span class="data-value">{{ auth.user?.username ?? '—' }}</span>
         </li>
         <li class="data-row">
-          <span class="data-label font-mono">Email</span>
-          <span class="data-value">{{ auth.user?.email ?? '—' }}</span>
-        </li>
-        <li class="data-row">
           <span class="data-label font-mono">Rôle</span>
           <span class="data-value">{{ auth.user?.role === 'admin' ? 'Administrateur' : 'Utilisateur' }}</span>
         </li>

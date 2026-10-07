@@ -84,7 +84,7 @@ onMounted(refresh)
       <ul v-else class="user-list">
         <li v-for="user in users" :key="user.id" class="user-row">
           <div class="user-info">
-            <span class="user-email">{{ user.username ?? user.email }}</span>
+            <span class="user-name">{{ user.username }}</span>
             <span class="user-role" :class="{ admin: user.role === 'admin' }">
               {{ user.role }}
             </span>
@@ -116,7 +116,7 @@ onMounted(refresh)
           </div>
 
           <div v-if="confirmDelete?.id === user.id" class="confirm-box">
-            <p>Supprimer {{ user.username ?? user.email }} ? Toutes ses listes seront définitivement supprimées.</p>
+            <p>Supprimer {{ user.username }} ? Toutes ses listes seront définitivement supprimées.</p>
             <button class="btn-danger" @click="deleteUser(user)">Supprimer</button>
             <button class="btn-ghost" @click="confirmDelete = null">Annuler</button>
           </div>
@@ -240,7 +240,7 @@ onMounted(refresh)
   justify-content: space-between;
 }
 
-.user-email {
+.user-name {
   font-weight: 600;
   overflow-wrap: anywhere;
 }

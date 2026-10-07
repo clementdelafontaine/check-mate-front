@@ -3,10 +3,10 @@ import { config } from './config.js'
 import { ensureAdmin } from './auth.js'
 import { seedDemoDataForUser, seedUsersWithFriendships } from './seed.js'
 
-if (config.adminEmail && config.adminPassword) {
+if (config.adminUsername && config.adminPassword) {
   try {
-    const admin = await ensureAdmin(config.adminEmail, config.adminPassword)
-    console.log(`admin account ready: ${config.adminEmail}`)
+    const admin = await ensureAdmin(config.adminUsername, config.adminPassword)
+    console.log(`admin account ready: ${config.adminUsername}`)
     try {
       const seeded = await seedDemoDataForUser(admin.id)
       if (seeded) console.log('demo data seeded for admin (recipes, meal plans, lists, templates)')

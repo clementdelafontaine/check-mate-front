@@ -5,6 +5,6 @@ export const config = {
     process.env.DATABASE_URL ??
     'postgres://checkmate:checkmate@localhost:5432/checkmate',
   corsOrigin: process.env.CORS_ORIGIN ?? '*',
-  adminEmail: process.env.ADMIN_EMAIL ?? '',
+  adminUsername: process.env.ADMIN_USERNAME ?? '',
   adminPassword: process.env.ADMIN_PASSWORD ?? ''
 }

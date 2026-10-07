@@ -696,9 +696,9 @@ export async function seedUsersWithFriendships() {
     let user = await one('SELECT * FROM users WHERE username = $1', [username])
     if (!user) {
       user = await one(
-        `INSERT INTO users (id, email, username, password_hash, role)
-         VALUES ($1, $2, $3, $4, 'user') RETURNING *`,
-        [uid('u'), `${username}@local`, username, await hashPassword(password)]
+        `INSERT INTO users (id, username, password_hash, role)
+         VALUES ($1, $2, $3, 'user') RETURNING *`,
+        [uid('u'), username, await hashPassword(password)]
       ).catch(() => null)
       if (user) {
         try {
