@@ -14,7 +14,7 @@ export const GROCERY_LEXICON = [
   'jambon cru', 'jus d’orange', 'kiwis', 'lait', 'laitue', 'lardons',
   'lasagnes', 'lentilles', 'limonade', 'lisettes', 'macaroni', 'maïs',
   'mangue', 'margarine', 'mayonnaise', 'melon', 'menthe', 'miel', 'mozzarella',
-  'moutarde', 'muscade', 'mûres', 'noix', 'noix de muscade', 'oignons',
+  'moutarde', 'muscade', 'mûres', 'noix de muscade', 'oignons',
   'olives', 'oranges', 'origan', 'pain', 'pain de mie', 'pamplemousse',
   'paprika', 'pâtes', 'pates', 'pâtisson', 'poireaux', 'poires', 'poivre',
   'poivrons', 'pomme de terre', 'pommes', 'porc', 'pois chiches', 'poissons',

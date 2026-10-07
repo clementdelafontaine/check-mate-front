@@ -163,21 +163,23 @@ export const useChecklistsStore = defineStore('checklists', {
         seen.add(key)
         results.push(label)
       }
-      for (const list of this.lists) {
-        for (const section of list.sections ?? []) {
-          for (const item of section.items ?? []) add(item.label)
-        }
+      for (const [label] of Object.entries(this.itemFrequency)) {
+        if (label.includes(p)) add(label)
       }
       if (api.useApi) {
         try {
           for (const label of await api.suggestions(p, limit)) add(label)
         } catch { /* offline fallback below */ }
       }
-      for (const [label] of Object.entries(this.itemFrequency)) {
-        if (label.includes(p)) add(label)
-      }
-      for (const word of GROCERY_LEXICON) {
-        if (word.includes(p)) add(word)
+      if (p.length >= 2) {
+        for (const list of this.lists) {
+          for (const section of list.sections ?? []) {
+            for (const item of section.items ?? []) add(item.label)
+          }
+        }
+        for (const word of GROCERY_LEXICON) {
+          if (word.includes(p)) add(word)
+        }
       }
       return results.slice(0, limit)
     },
