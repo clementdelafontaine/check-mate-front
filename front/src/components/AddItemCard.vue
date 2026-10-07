@@ -38,6 +38,7 @@ function applyUnitChoice() {
   quantity.value = unitChoice.value ? `${n ?? 1} ${unitChoice.value}` : String(n ?? 1)
 }
 
+const UNIT_CHOICES = ['-', ...UNITS]
 const KINDS = [
   { id: 'task', label: 'Tâche' },
   { id: 'product', label: 'Produit' }
@@ -161,10 +162,18 @@ async function submit() {
           <button type="button" class="step" :disabled="!quantityNum || quantityNum <= 1" @click="decQuantity">−</button>
           <span class="step-value font-mono">{{ quantityNum ?? 1 }}</span>
           <button type="button" class="step" @click="incQuantity">+</button>
-          <select v-model="unitChoice" class="input select unit-select" @change="applyUnitChoice">
-            <option value="">sans unité</option>
-            <option v-for="u in UNITS" :key="u" :value="u">{{ u }}</option>
-          </select>
+        </div>
+        <div v-if="kind === 'product'" class="unit-tags">
+          <button
+            v-for="u in UNIT_CHOICES"
+            :key="u"
+            type="button"
+            class="unit-tag"
+            :class="{ active: (unitChoice || '-') === u }"
+            @click="unitChoice = (u === '-' ? '' : u); applyUnitChoice()"
+          >
+            {{ u }}
+          </button>
         </div>
         <select v-model="sectionChoice" class="input select">
           <option value="" disabled>Catégorie… ({{ GENERIC_SECTION }} si vide)</option>
@@ -360,9 +369,24 @@ async function submit() {
 }
 </style>
 
-.unit-select {
-  width: auto;
-  min-width: 4.5rem;
-  margin-bottom: 0;
-  flex-shrink: 0;
+.unit-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: -0.2rem 0 0.6rem;
+}
+.unit-tag {
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-1);
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.unit-tag.active {
+  border-color: var(--accent);
+  background: var(--accent-deep);
+  color: var(--accent);
 }
