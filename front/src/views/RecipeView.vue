@@ -7,7 +7,7 @@ import { parseQuantity, stepQuantity, UNITS } from '../services/quantity'
 import AddToGroceryDialog from '../components/AddToGroceryDialog.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import RecipeMetaDialog from '../components/RecipeMetaDialog.vue'
-import { Plus, ArrowRight, Pencil, Trash2, CalendarPlus, MoreVertical } from 'lucide-vue-next'
+import { Plus, ArrowRight, Pencil, Trash2, CalendarPlus, MoreVertical, X } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -182,8 +182,10 @@ const sectionsPayload = () =>
     items: s.items.map((i) => ({ ...i }))
   }))
 
+const itemSectionChoice = ref(null)
 function openItemForm(sectionId) {
   openItemFor.value = sectionId
+  itemSectionChoice.value = sectionId
   itemLabel.value = ''
   itemQuantity.value = ''
   itemUnitChoice.value = ''
@@ -193,7 +195,7 @@ async function submitItem() {
   const label = itemLabel.value.trim()
   if (!label || !recipe.value) return
   const sections = sectionsPayload()
-  const section = sections.find((s) => s.id === openItemFor.value)
+  const section = sections.find((s) => s.id === itemSectionChoice.value)
   if (!section) return
   section.items.push({
     id: null,
@@ -267,6 +269,27 @@ const editingIngredient = ref(null)
 const editLabel = ref('')
 const editQuantity = ref('')
 const editingIndexes = ref(null)
+const editSectionChoice = ref(null)
+
+const editQuantityNum = computed(() => {
+  const { n } = parseQuantity(editQuantity.value)
+  return n !== null && n > 0 ? n : null
+})
+const editUnitChoice = computed(() => parseQuantity(editQuantity.value).unit ?? '')
+
+function incEditQuantity() {
+  editQuantity.value = stepQuantity(editQuantity.value || '1', 1)
+}
+function decEditQuantity() {
+  if (editQuantityNum.value !== null && editQuantityNum.value > 1) {
+    editQuantity.value = stepQuantity(editQuantity.value, -1)
+  }
+}
+function applyEditUnit(u) {
+  const unit = u === '-' ? '' : u
+  const { n } = parseQuantity(editQuantity.value)
+  editQuantity.value = unit ? `${n ?? 1} ${unit}` : String(n ?? 1)
+}
 
 function openIngredientEdit(si, ii) {
   const item = recipe.value?.sections?.[si]?.items?.[ii]
@@ -274,15 +297,33 @@ function openIngredientEdit(si, ii) {
   editingIndexes.value = { si, ii }
   editLabel.value = item.label
   editQuantity.value = item.quantity ?? ''
+  editSectionChoice.value = recipe.value.sections[si]?.id ?? null
   editingIngredient.value = item
 }
 
 async function submitIngredientEdit() {
   if (!editingIndexes.value || !editLabel.value.trim()) return
-  await saveIngredientEdit(editingIndexes.value.si, editingIndexes.value.ii, {
+  const { si, ii } = editingIndexes.value
+  await saveIngredientEdit(si, ii, {
     label: editLabel.value.trim(),
     quantity: editQuantity.value.trim() || null
   })
+  const targetSi = recipe.value.sections.findIndex((s) => s.id === editSectionChoice.value)
+  if (targetSi !== -1 && targetSi !== si) {
+    await moveIngredientById(editingIngredient?.value?.id ?? recipe.value.sections[si]?.items?.[ii]?.id, targetSi)
+  }
+}
+
+async function moveIngredientById(itemId, targetSi) {
+  if (!recipe.value || !itemId) return
+  const sections = recipe.value.sections
+  const fromSi = sections.findIndex((s) => s.items.some((i) => i.id === itemId))
+  if (fromSi === -1) return
+  const fromIdx = sections[fromSi].items.findIndex((i) => i.id === itemId)
+  const [moved] = sections[fromSi].items.splice(fromIdx, 1)
+  sections[targetSi].items.push(moved)
+  await store.updateRecipe(recipe.value.id, { sections: sectionsPayload() })
+  toast.show('Ingrédient déplacé')
 }
 
 const ingredientMenu = ref(null)
@@ -541,6 +582,9 @@ onMounted(() => store.refresh())
             </button>
             </div>
           </div>
+          <select v-model="itemSectionChoice" class="input select">
+            <option v-for="sec in recipe.sections" :key="sec.id" :value="sec.id">{{ sec.name }}</option>
+          </select>
           <button type="submit" class="submit">Ajouter</button>
         </form>
       </div>
@@ -607,10 +651,32 @@ onMounted(() => store.refresh())
 
       <div v-if="editingIngredient" class="overlay" @click.self="editingIngredient = null">
         <div class="dialog">
-          <p class="dialog-text font-mono dialog-title">Modifier l'ingrédient</p>
+          <div class="dialog-head">
+            <span class="font-mono dialog-title">Modifier l'ingrédient</span>
+            <button class="icon-btn" aria-label="Fermer" @click="editingIngredient = null"><X :size="18" /></button>
+          </div>
           <form @submit.prevent="submitIngredientEdit">
             <input v-model="editLabel" class="input" type="text" placeholder="Ingrédient" autofocus />
-            <input v-model="editQuantity" class="input" type="text" placeholder="Quantité (ex : 200 g)" />
+            <div class="qty-row">
+              <button type="button" class="qty-step" :disabled="!editQuantityNum || editQuantityNum <= 1" @click="decEditQuantity">−</button>
+              <input v-model="editQuantity" class="input qty-input" type="text" placeholder="1" />
+              <button type="button" class="qty-step" @click="incEditQuantity">+</button>
+              <div class="unit-tags">
+                <button
+                  v-for="u in RECIPE_UNIT_CHOICES"
+                  :key="u"
+                  type="button"
+                  class="unit-tag"
+                  :class="{ active: (editUnitChoice || '-') === u }"
+                  @click="applyEditUnit(u)"
+                >
+                  {{ u }}
+                </button>
+              </div>
+            </div>
+            <select v-model="editSectionChoice" class="input select">
+              <option v-for="sec in recipe.sections" :key="sec.id" :value="sec.id">{{ sec.name }}</option>
+            </select>
             <button type="submit" class="submit">Enregistrer</button>
           </form>
         </div>

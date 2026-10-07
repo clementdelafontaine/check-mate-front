@@ -395,8 +395,8 @@ async function seedListsForUser(userId, spaceIdMap) {
       for (const [ii, item] of section.items.entries()) {
         await query(
           `INSERT INTO items (id, section_id, label, kind, quantity, position)
-           VALUES ($1, $2, $3, 'product', $4, $5)`,
-          [uid('i'), sectionRow.id, item.label, item.quantity, ii]
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [uid('i'), sectionRow.id, item.label, list.type === 'grocery' ? 'product' : 'task', item.quantity, ii]
         )
       }
     }
@@ -590,8 +590,8 @@ async function seedTemplatesForUser(userId) {
       for (const [ii, item] of section.items.entries()) {
         await query(
           `INSERT INTO template_items (id, section_id, label, kind, quantity, position)
-           VALUES ($1, $2, $3, 'product', $4, $5)`,
-          [uid('ti'), sectionRow.id, item.label, item.quantity, ii]
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [uid('ti'), sectionRow.id, item.label, tpl.type === 'grocery' ? 'product' : 'task', item.quantity, ii]
         )
       }
     }
