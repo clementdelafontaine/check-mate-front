@@ -512,6 +512,7 @@ onMounted(() => store.refresh())
         </li>
       </ul>
       <AddItemCard
+        class="add-item-card"
         :recipe="true"
         :units="RECIPE_UNIT_CHOICES"
         :sections="recipe.sections"
@@ -774,6 +775,9 @@ onMounted(() => store.refresh())
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+}
+.add-item-card {
+  margin-top: 0.6rem;
 }
 .step[draggable='true'] {
   cursor: grab;
