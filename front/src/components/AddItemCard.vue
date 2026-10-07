@@ -338,18 +338,25 @@ async function submit() {
 }
 .suggestions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 0.35rem;
   margin: -0.25rem 0 0.5rem;
+  scrollbar-width: none;
+}
+.suggestions::-webkit-scrollbar {
+  display: none;
 }
 .suggestion {
-  padding: 0.35rem 0.7rem;
+  flex-shrink: 0;
+  padding: 0.22rem 0.55rem;
   border: 1px solid var(--accent-dim);
-  border-radius: 0.55rem;
+  border-radius: 999px;
   background: var(--accent-deep);
   color: var(--accent);
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 600;
+  white-space: nowrap;
 }
 </style>
 

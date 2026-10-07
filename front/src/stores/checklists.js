@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { templates, initialLists, itemFrequencySeed, uid } from '../mocks/data'
+import { GROCERY_LEXICON } from '../services/groceryLexicon'
 import { api } from '../services/api.js'
 
 export const GENERIC_SECTION = 'Divers'
@@ -154,18 +155,31 @@ export const useChecklistsStore = defineStore('checklists', {
     async suggestionsFor(prefix, limit = 5) {
       const p = prefix.trim().toLowerCase()
       if (!p) return []
-      if (api.useApi) {
-        try {
-          return await api.suggestions(p, limit)
-        } catch {
-          return []
+      const results = []
+      const seen = new Set()
+      const add = (label) => {
+        const key = label.toLowerCase()
+        if (!key.includes(p) || seen.has(key)) return
+        seen.add(key)
+        results.push(label)
+      }
+      for (const list of this.lists) {
+        for (const section of list.sections ?? []) {
+          for (const item of section.items ?? []) add(item.label)
         }
       }
-      return Object.entries(this.itemFrequency)
-        .filter(([label]) => label.startsWith(p))
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, limit)
-        .map(([label]) => label)
+      if (api.useApi) {
+        try {
+          for (const label of await api.suggestions(p, limit)) add(label)
+        } catch { /* offline fallback below */ }
+      }
+      for (const [label] of Object.entries(this.itemFrequency)) {
+        if (label.includes(p)) add(label)
+      }
+      for (const word of GROCERY_LEXICON) {
+        if (word.includes(p)) add(word)
+      }
+      return results.slice(0, limit)
     },
 
     async toggleItem(listId, sectionId, itemId) {
