@@ -528,8 +528,7 @@ onMounted(() => store.refresh())
             <button type="button" class="qty-step" :disabled="!itemQuantityNum || itemQuantityNum <= 1" @click="decItemQuantity">−</button>
             <input v-model="itemQuantity" class="input qty-input" type="text" placeholder="1" />
             <button type="button" class="qty-step" @click="incItemQuantity">+</button>
-          </div>
-          <div class="unit-tags">
+            <div class="unit-tags">
             <button
               v-for="u in RECIPE_UNIT_CHOICES"
               :key="u"
@@ -540,6 +539,7 @@ onMounted(() => store.refresh())
             >
               {{ u }}
             </button>
+            </div>
           </div>
           <button type="submit" class="submit">Ajouter</button>
         </form>
@@ -743,8 +743,10 @@ onMounted(() => store.refresh())
 .qty-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 0.75rem;
   margin-bottom: 0.5rem;
+  flex-wrap: wrap;
 }
 .qty-input {
   text-align: center;
@@ -764,23 +766,28 @@ onMounted(() => store.refresh())
 .unit-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
-  margin: -0.2rem 0 0.6rem;
-}
-.unit-tag {
-  padding: 0.2rem 0.55rem;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: 0.35rem;
+  padding: 0.25rem;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: var(--bg-1);
+  background: var(--bg-2);
+}
+.unit-tag {
+  padding: 0.25rem 0.65rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
   color: var(--ink-muted);
   font-size: 0.72rem;
   font-weight: 600;
   white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
 }
 .unit-tag.active {
-  border-color: var(--accent);
-  background: var(--accent-deep);
-  color: var(--accent);
+  background: var(--accent);
+  color: #fff;
 }
 .menu-wrap {
   position: relative;

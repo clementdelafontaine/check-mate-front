@@ -87,18 +87,18 @@ function save() {
           <button type="button" class="step" :disabled="!quantityNum || quantityNum <= 1" @click="decQuantity">−</button>
           <input v-model="quantity" class="input qty-input" type="text" inputmode="numeric" placeholder="1" />
           <button type="button" class="step" @click="incQuantity">+</button>
-        </div>
-        <div v-if="kind === 'product'" class="unit-tags">
-          <button
-            v-for="u in UNIT_CHOICES"
-            :key="u"
-            type="button"
-            class="unit-tag"
-            :class="{ active: (unitChoice || '-') === u }"
-            @click="setUnit(u === '-' ? '' : u)"
-          >
-            {{ u }}
-          </button>
+          <div class="unit-tags">
+            <button
+              v-for="u in UNIT_CHOICES"
+              :key="u"
+              type="button"
+              class="unit-tag"
+              :class="{ active: (unitChoice || '-') === u }"
+              @click="setUnit(u === '-' ? '' : u)"
+            >
+              {{ u }}
+            </button>
+          </div>
         </div>
         <button type="submit" class="submit">Enregistrer</button>
       </form>
@@ -187,8 +187,10 @@ html[data-theme='light'] .input {
 .qty-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 0.75rem;
   margin-bottom: 0.6rem;
+  flex-wrap: wrap;
 }
 .qty-input {
   text-align: center;
@@ -224,21 +226,26 @@ html[data-theme='light'] .input {
 .unit-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
-  margin: -0.2rem 0 0.6rem;
-}
-.unit-tag {
-  padding: 0.2rem 0.55rem;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: 0.35rem;
+  padding: 0.25rem;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: var(--bg-1);
+  background: var(--bg-2);
+}
+.unit-tag {
+  padding: 0.25rem 0.65rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
   color: var(--ink-muted);
   font-size: 0.72rem;
   font-weight: 600;
   white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
 }
 .unit-tag.active {
-  border-color: var(--accent);
-  background: var(--accent-deep);
-  color: var(--accent);
+  background: var(--accent);
+  color: #fff;
 }

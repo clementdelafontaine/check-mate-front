@@ -162,18 +162,18 @@ async function submit() {
           <button type="button" class="step" :disabled="!quantityNum || quantityNum <= 1" @click="decQuantity">−</button>
           <span class="step-value font-mono">{{ quantityNum ?? 1 }}</span>
           <button type="button" class="step" @click="incQuantity">+</button>
-        </div>
-        <div v-if="kind === 'product'" class="unit-tags">
-          <button
-            v-for="u in UNIT_CHOICES"
-            :key="u"
-            type="button"
-            class="unit-tag"
-            :class="{ active: (unitChoice || '-') === u }"
-            @click="unitChoice = (u === '-' ? '' : u); applyUnitChoice()"
-          >
-            {{ u }}
-          </button>
+          <div class="unit-tags">
+            <button
+              v-for="u in UNIT_CHOICES"
+              :key="u"
+              type="button"
+              class="unit-tag"
+              :class="{ active: (unitChoice || '-') === u }"
+              @click="unitChoice = (u === '-' ? '' : u); applyUnitChoice()"
+            >
+              {{ u }}
+            </button>
+          </div>
         </div>
         <select v-model="sectionChoice" class="input select">
           <option value="" disabled>Catégorie… ({{ GENERIC_SECTION }} si vide)</option>
@@ -215,6 +215,33 @@ async function submit() {
   justify-content: center;
   gap: 0.75rem;
   margin-bottom: 0.6rem;
+  flex-wrap: wrap;
+}
+.unit-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: 0.35rem;
+  padding: 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-2);
+}
+.unit-tag {
+  padding: 0.25rem 0.65rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.unit-tag.active {
+  background: var(--accent);
+  color: #fff;
 }
 .step {
   width: 2.2rem;
@@ -369,24 +396,4 @@ async function submit() {
 }
 </style>
 
-.unit-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-  margin: -0.2rem 0 0.6rem;
-}
-.unit-tag {
-  padding: 0.2rem 0.55rem;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--bg-1);
-  color: var(--ink-muted);
-  font-size: 0.72rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.unit-tag.active {
-  border-color: var(--accent);
-  background: var(--accent-deep);
-  color: var(--accent);
-}
+
