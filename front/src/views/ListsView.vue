@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useChecklistsStore } from '../stores/checklists'
 import { useAuthStore } from '../stores/auth'
 import { api } from '../services/api'
@@ -40,8 +40,14 @@ function cycleSort() {
 }
 const sortLabel = computed(() => sortOptions.find((o) => o.id === sortBy.value)?.label ?? '')
 
+const route = useRoute()
 const spaceFilter = ref(null)
 const sharedFilter = ref(false)
+onMounted(() => {
+  if (typeof route.query.space === 'string') {
+    spaceFilter.value = route.query.space
+  }
+})
 const filteredLists = computed(() => {
   let lists = spaceFilter.value
     ? store.lists.filter((l) => l.spaceId === spaceFilter.value)

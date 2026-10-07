@@ -2,6 +2,7 @@
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useChecklistsStore } from '../stores/checklists'
+import { useFriendsStore } from '../stores/friends'
 import { useAuthStore } from '../stores/auth'
 import {
   Sun,
@@ -19,6 +20,7 @@ import {
 
 const store = useChecklistsStore()
 const auth = useAuthStore()
+const friends = useFriendsStore()
 const router = useRouter()
 
 const today = new Date().toISOString().slice(0, 10)
@@ -150,7 +152,7 @@ function goAdmin() { router.push('/admin') }
       <button class="tile" @click="goFriends">
         <span class="tile-icon-wrap"><Users :size="20" class="tile-icon" /></span>
         <span class="tile-label">Amis</span>
-        <span class="tile-value">&mdash;</span>
+        <span class="tile-value">{{ friends.accepted.length }}</span>
         <span class="tile-hint">listes partagées</span>
       </button>
       <button class="tile" @click="goSettings">
@@ -231,7 +233,7 @@ function goAdmin() { router.push('/admin') }
         <router-link
           v-for="g in spacesWithActive"
           :key="g.space.id"
-          to="/lists"
+          :to="`/lists?space=${g.space.id}`"
           class="space-chip"
         >
           <span class="space-chip-emoji">{{ g.space.emoji }}</span>
