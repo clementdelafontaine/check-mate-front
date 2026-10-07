@@ -83,8 +83,8 @@ const SEED_RECIPES = [
         name: 'Épicerie',
         items: [
           { label: 'Pois chiches (boîte)', quantity: '2' },
-          { label: 'Lait de coco', quantity: '400 ml' },
-          { label: 'Pâte de curry', quantity: '2 c. à s.' }
+          { label: 'Lait de coco', quantity: '400 mL' },
+          { label: 'Pâte de curry', quantity: '2' }
         ]
       },
       {
@@ -178,7 +178,7 @@ const SEED_LISTS = [
       {
         name: 'Boucherie',
         items: [
-          { label: 'Jambon blanc', quantity: '4 tranches' },
+          { label: 'Jambon blanc', quantity: '4' },
           { label: 'Poulet', quantity: '1' },
           { label: 'Steak haché', quantity: '500 g' }
         ]
@@ -186,7 +186,7 @@ const SEED_LISTS = [
       {
         name: 'Poissonnerie',
         items: [
-          { label: 'Saumon', quantity: '2 tranches' },
+          { label: 'Saumon', quantity: '2' },
           { label: 'Crevettes', quantity: '300 g' }
         ]
       },
@@ -212,8 +212,8 @@ const SEED_LISTS = [
         items: [
           { label: 'Pâtes', quantity: '500 g' },
           { label: 'Riz', quantity: '1 kg' },
-          { label: 'Huile d\'olive', quantity: '75 cL' },
-          { label: 'Pois chiches', quantity: '2 boîtes' },
+          { label: 'Huile d\'olive', quantity: '750 mL' },
+          { label: 'Pois chiches', quantity: '2' },
           { label: 'Olives', quantity: '200 g' }
         ]
       },
@@ -223,7 +223,7 @@ const SEED_LISTS = [
           { label: 'Farine', quantity: '1 kg' },
           { label: 'Sucre', quantity: '500 g' },
           { label: 'Chocolat noir', quantity: '100 g' },
-          { label: 'Confiture', quantity: '1 pot' }
+          { label: 'Confiture', quantity: '1' }
         ]
       },
       {
@@ -244,7 +244,7 @@ const SEED_LISTS = [
       {
         name: 'Hygiène & Entretien',
         items: [
-          { label: 'Papier toilette', quantity: '6 rouleaux' },
+          { label: 'Papier toilette', quantity: '6' },
           { label: 'Liquide vaisselle', quantity: '1' }
         ]
       }

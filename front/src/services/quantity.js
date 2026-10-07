@@ -8,7 +8,7 @@ const UNIT_ALIASES = {
   boite: 'boîte', boites: 'boîtes', boîte: 'boîte', boîtes: 'boîtes'
 }
 
-export const UNITS = ['L', 'mL', 'g', 'kg', 'tranches', 'pièces', 'sachet', 'boîte', 'botte']
+export const UNITS = ['g', 'kg', 'mL', 'L']
 
 const QUANTITY_RE = /^([0-9]+(?:[.,][0-9]+)?)\s*(.*)$/
 
