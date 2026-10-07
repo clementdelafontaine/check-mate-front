@@ -777,7 +777,7 @@ onMounted(() => store.refresh())
   gap: 0.4rem;
 }
 .add-item-card {
-  margin-top: 0.6rem;
+  margin-top: 1rem;
 }
 .step[draggable='true'] {
   cursor: grab;

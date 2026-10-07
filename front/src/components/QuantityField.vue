@@ -1,6 +1,6 @@
 <script setup>
-import { computed } from 'vue'
-import { parseQuantity, formatQuantity } from '../services/quantity'
+import { computed, ref, watch } from 'vue'
+import { parseQuantity } from '../services/quantity'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -8,32 +8,79 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue'])
 
+const draft = ref(null)
+const inner = ref(props.modelValue)
+
+watch(
+  () => props.modelValue,
+  (v) => {
+    if (v !== inner.value) inner.value = v
+    draft.value = null
+  }
+)
+
 const quantityNum = computed(() => {
-  const { n } = parseQuantity(props.modelValue)
+  const { n } = parseQuantity(inner.value)
   return n !== null && n > 0 ? n : null
 })
-const inputWidth = computed(() => `${Math.max(2.5, String(quantityNum.value ?? 1).length + 1.2)}rem`)
-const unitChoice = computed(() => parseQuantity(props.modelValue).unit ?? '')
+const unitChoice = computed(() => parseQuantity(inner.value).unit ?? '')
 
-function commit(n, unit) {
-  const num = n === null || n === undefined || n === '' ? 1 : n
-  emit('update:modelValue', unit ? `${num} ${unit}` : `${num}`)
+const displayValue = computed(() => (draft.value !== null ? draft.value : String(quantityNum.value ?? 1)))
+const inputWidth = computed(
+  () => `${Math.max(2.5, displayValue.value.length + 1.2)}rem`
+)
+
+function buildValue(n, unit) {
+  const rounded = Math.round(n * 100) / 100
+  return unit ? `${rounded} ${unit}` : `${rounded}`
+}
+function commit(n) {
+  if (n === null || n <= 0) n = 1
+  draft.value = null
+  const value = buildValue(n, unitChoice.value)
+  inner.value = value
+  emit('update:modelValue', value)
+}
+function onInput(e) {
+  const raw = e.target.value
+  const normalized = raw.replace(',', '.')
+  if (normalized === '' || normalized === '.') {
+    draft.value = raw
+    return
+  }
+  const n = Number(normalized)
+  if (Number.isNaN(n) || n < 0) {
+    draft.value = raw.replace(/[^\d.,]/g, '')
+    return
+  }
+  commit(Math.round(n * 100) / 100)
+}
+function onBlur() {
+  if (draft.value !== null) {
+    const { n } = parseQuantity(draft.value)
+    commit(n !== null && n > 0 ? n : 1)
+  }
 }
 function setUnit(u) {
   const unit = u === '-' ? '' : u
-  commit(quantityNum.value, unit)
+  const n =
+    quantityNum.value ??
+    (draft.value !== null ? parseQuantity(draft.value).n : null) ??
+    1
+  commit(n)
+  const value = buildValue(n, unit)
+  inner.value = value
+  emit('update:modelValue', value)
 }
 function inc() {
-  commit((quantityNum.value ?? 0) + 1, unitChoice.value)
+  commit((quantityNum.value ?? 0) + 1)
 }
 function dec() {
   if (quantityNum.value !== null && quantityNum.value > 1) {
-    commit(quantityNum.value - 1, unitChoice.value)
+    commit(quantityNum.value - 1)
+  } else if (quantityNum.value === null) {
+    commit(1)
   }
-}
-function onInput(e) {
-  const { n } = parseQuantity(e.target.value)
-  emit('update:modelValue', n !== null ? formatQuantity(n, unitChoice.value) : e.target.value)
 }
 </script>
 
@@ -45,9 +92,10 @@ function onInput(e) {
         class="qty-value font-mono"
         type="text"
         inputmode="decimal"
-        :value="quantityNum ?? 1"
+        :value="displayValue"
         :style="{ width: inputWidth }"
         @input="onInput"
+        @blur="onBlur"
       />
       <button type="button" class="step" @click="inc">+</button>
     </div>
