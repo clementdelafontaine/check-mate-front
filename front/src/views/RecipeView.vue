@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useRecipesStore } from '../stores/recipes'
 import { useUndoToast } from '../composables/useUndoToast'
+import { parseQuantity, stepQuantity, UNITS } from '../services/quantity'
 import AddToGroceryDialog from '../components/AddToGroceryDialog.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import RecipeMetaDialog from '../components/RecipeMetaDialog.vue'
@@ -69,6 +70,27 @@ const EMOJIS = ['🍳', '🥘', '🍝', '🍲', '🥗', '🍛', '🥐', '🍰', 
 const openItemFor = ref(null)
 const itemLabel = ref('')
 const itemQuantity = ref('')
+const itemUnitChoice = ref('')
+const RECIPE_UNIT_CHOICES = ['-', ...UNITS, 'c. à s.', 'c. à c.', 'pincée', 'botte']
+const itemQuantityNum = computed(() => {
+  const { n } = parseQuantity(itemQuantity.value)
+  return n !== null && n > 0 ? n : null
+})
+function incItemQuantity() {
+  itemQuantity.value = stepQuantity(itemQuantity.value || '1', 1)
+}
+function decItemQuantity() {
+  if (itemQuantityNum.value !== null && itemQuantityNum.value > 1) {
+    itemQuantity.value = stepQuantity(itemQuantity.value, -1)
+  }
+}
+function applyItemUnit(u) {
+  itemUnitChoice.value = u === '-' ? '' : u
+  const { n } = parseQuantity(itemQuantity.value)
+  itemQuantity.value = itemUnitChoice.value
+    ? `${n ?? 1} ${itemUnitChoice.value}`
+    : String(n ?? 1)
+}
 const showSectionForm = ref(false)
 const sectionName = ref('')
 const showStepForm = ref(false)
@@ -164,6 +186,7 @@ function openItemForm(sectionId) {
   openItemFor.value = sectionId
   itemLabel.value = ''
   itemQuantity.value = ''
+  itemUnitChoice.value = ''
 }
 
 async function submitItem() {
@@ -501,7 +524,23 @@ onMounted(() => store.refresh())
       <div v-if="openItemFor === section.id" class="form-card">
         <form @submit.prevent="submitItem">
           <input v-model="itemLabel" class="input" type="text" placeholder="Ingrédient" autofocus />
-          <input v-model="itemQuantity" class="input" type="text" placeholder="Quantité (ex : 200 g)" />
+          <div class="qty-row">
+            <button type="button" class="qty-step" :disabled="!itemQuantityNum || itemQuantityNum <= 1" @click="decItemQuantity">−</button>
+            <input v-model="itemQuantity" class="input qty-input" type="text" placeholder="1" />
+            <button type="button" class="qty-step" @click="incItemQuantity">+</button>
+          </div>
+          <div class="unit-tags">
+            <button
+              v-for="u in RECIPE_UNIT_CHOICES"
+              :key="u"
+              type="button"
+              class="unit-tag"
+              :class="{ active: (itemUnitChoice || '-') === u }"
+              @click="applyItemUnit(u)"
+            >
+              {{ u }}
+            </button>
+          </div>
           <button type="submit" class="submit">Ajouter</button>
         </form>
       </div>
@@ -700,6 +739,48 @@ onMounted(() => store.refresh())
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+.qty-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.qty-input {
+  text-align: center;
+  margin-bottom: 0;
+}
+.qty-step {
+  width: 2.2rem;
+  height: 2.2rem;
+  flex-shrink: 0;
+  border: 1px solid var(--line-bright);
+  border-radius: 0.55rem;
+  background: var(--bg-1);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.unit-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: -0.2rem 0 0.6rem;
+}
+.unit-tag {
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-1);
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.unit-tag.active {
+  border-color: var(--accent);
+  background: var(--accent-deep);
+  color: var(--accent);
 }
 .menu-wrap {
   position: relative;
