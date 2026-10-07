@@ -1,9 +1,10 @@
 <script setup>
+import QuantityField from '../components/QuantityField.vue'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useRecipesStore } from '../stores/recipes'
 import { useUndoToast } from '../composables/useUndoToast'
-import { parseQuantity, stepQuantity, UNITS } from '../services/quantity'
+import { UNITS } from '../services/quantity'
 import AddToGroceryDialog from '../components/AddToGroceryDialog.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import RecipeMetaDialog from '../components/RecipeMetaDialog.vue'
@@ -70,27 +71,7 @@ const EMOJIS = ['🍳', '🥘', '🍝', '🍲', '🥗', '🍛', '🥐', '🍰', 
 const openItemFor = ref(null)
 const itemLabel = ref('')
 const itemQuantity = ref('')
-const itemUnitChoice = ref('')
 const RECIPE_UNIT_CHOICES = ['-', ...UNITS, 'c. à s.', 'c. à c.', 'pincée', 'botte']
-const itemQuantityNum = computed(() => {
-  const { n } = parseQuantity(itemQuantity.value)
-  return n !== null && n > 0 ? n : null
-})
-function incItemQuantity() {
-  itemQuantity.value = stepQuantity(itemQuantity.value || '1', 1)
-}
-function decItemQuantity() {
-  if (itemQuantityNum.value !== null && itemQuantityNum.value > 1) {
-    itemQuantity.value = stepQuantity(itemQuantity.value, -1)
-  }
-}
-function applyItemUnit(u) {
-  itemUnitChoice.value = u === '-' ? '' : u
-  const { n } = parseQuantity(itemQuantity.value)
-  itemQuantity.value = itemUnitChoice.value
-    ? `${n ?? 1} ${itemUnitChoice.value}`
-    : String(n ?? 1)
-}
 const showSectionForm = ref(false)
 const sectionName = ref('')
 const showStepForm = ref(false)
@@ -188,7 +169,6 @@ function openItemForm(sectionId) {
   itemSectionChoice.value = sectionId
   itemLabel.value = ''
   itemQuantity.value = ''
-  itemUnitChoice.value = ''
 }
 
 async function submitItem() {
@@ -270,26 +250,6 @@ const editLabel = ref('')
 const editQuantity = ref('')
 const editingIndexes = ref(null)
 const editSectionChoice = ref(null)
-
-const editQuantityNum = computed(() => {
-  const { n } = parseQuantity(editQuantity.value)
-  return n !== null && n > 0 ? n : null
-})
-const editUnitChoice = computed(() => parseQuantity(editQuantity.value).unit ?? '')
-
-function incEditQuantity() {
-  editQuantity.value = stepQuantity(editQuantity.value || '1', 1)
-}
-function decEditQuantity() {
-  if (editQuantityNum.value !== null && editQuantityNum.value > 1) {
-    editQuantity.value = stepQuantity(editQuantity.value, -1)
-  }
-}
-function applyEditUnit(u) {
-  const unit = u === '-' ? '' : u
-  const { n } = parseQuantity(editQuantity.value)
-  editQuantity.value = unit ? `${n ?? 1} ${unit}` : String(n ?? 1)
-}
 
 function openIngredientEdit(si, ii) {
   const item = recipe.value?.sections?.[si]?.items?.[ii]
@@ -565,23 +525,7 @@ onMounted(() => store.refresh())
       <div v-if="openItemFor === section.id" class="form-card">
         <form @submit.prevent="submitItem">
           <input v-model="itemLabel" class="input" type="text" placeholder="Ingrédient" autofocus />
-          <div class="qty-row">
-            <button type="button" class="qty-step" :disabled="!itemQuantityNum || itemQuantityNum <= 1" @click="decItemQuantity">−</button>
-            <input v-model="itemQuantity" class="input qty-input" type="text" placeholder="1" />
-            <button type="button" class="qty-step" @click="incItemQuantity">+</button>
-            <div class="unit-tags">
-            <button
-              v-for="u in RECIPE_UNIT_CHOICES"
-              :key="u"
-              type="button"
-              class="unit-tag"
-              :class="{ active: (itemUnitChoice || '-') === u }"
-              @click="applyItemUnit(u)"
-            >
-              {{ u }}
-            </button>
-            </div>
-          </div>
+          <QuantityField v-model="itemQuantity" :units="RECIPE_UNIT_CHOICES" />
           <select v-model="itemSectionChoice" class="input select">
             <option v-for="sec in recipe.sections" :key="sec.id" :value="sec.id">{{ sec.name }}</option>
           </select>
@@ -657,23 +601,7 @@ onMounted(() => store.refresh())
           </div>
           <form @submit.prevent="submitIngredientEdit">
             <input v-model="editLabel" class="input" type="text" placeholder="Ingrédient" autofocus />
-            <div class="qty-row">
-              <button type="button" class="qty-step" :disabled="!editQuantityNum || editQuantityNum <= 1" @click="decEditQuantity">−</button>
-              <input v-model="editQuantity" class="input qty-input" type="text" placeholder="1" />
-              <button type="button" class="qty-step" @click="incEditQuantity">+</button>
-              <div class="unit-tags">
-                <button
-                  v-for="u in RECIPE_UNIT_CHOICES"
-                  :key="u"
-                  type="button"
-                  class="unit-tag"
-                  :class="{ active: (editUnitChoice || '-') === u }"
-                  @click="applyEditUnit(u)"
-                >
-                  {{ u }}
-                </button>
-              </div>
-            </div>
+            <QuantityField v-model="editQuantity" :units="RECIPE_UNIT_CHOICES" />
             <select v-model="editSectionChoice" class="input select">
               <option v-for="sec in recipe.sections" :key="sec.id" :value="sec.id">{{ sec.name }}</option>
             </select>
@@ -805,55 +733,6 @@ onMounted(() => store.refresh())
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-.qty-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
-  flex-wrap: wrap;
-}
-.qty-input {
-  text-align: center;
-  margin-bottom: 0;
-}
-.qty-step {
-  width: 2.2rem;
-  height: 2.2rem;
-  flex-shrink: 0;
-  border: 1px solid var(--line-bright);
-  border-radius: 0.55rem;
-  background: var(--bg-1);
-  color: var(--ink);
-  font-weight: 700;
-  font-size: 0.9rem;
-}
-.unit-tags {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem;
-  margin-left: 0.35rem;
-  padding: 0.25rem;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--bg-2);
-}
-.unit-tag {
-  padding: 0.25rem 0.65rem;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--ink-muted);
-  font-size: 0.72rem;
-  font-weight: 600;
-  white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
-}
-.unit-tag.active {
-  background: var(--accent);
-  color: #fff;
 }
 .menu-wrap {
   position: relative;

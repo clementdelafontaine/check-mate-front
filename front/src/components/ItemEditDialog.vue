@@ -1,7 +1,8 @@
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch } from 'vue'
 import { X } from 'lucide-vue-next'
-import { parseQuantity, stepQuantity, UNITS } from '../services/quantity'
+import QuantityField from './QuantityField.vue'
+import { UNITS } from '../services/quantity'
 
 const props = defineProps({
   item: { type: Object, required: true }
@@ -29,26 +30,6 @@ watch(
   { immediate: true }
 )
 
-const quantityNum = computed(() => {
-  const { n } = parseQuantity(quantity.value)
-  return n !== null && n > 0 ? n : null
-})
-const unitChoice = computed(() => parseQuantity(quantity.value).unit ?? '')
-
-function setUnit(u) {
-  const { n } = parseQuantity(quantity.value)
-  quantity.value = u ? `${n ?? 1} ${u}` : String(n ?? 1)
-}
-
-function incQuantity() {
-  quantity.value = stepQuantity(quantity.value || '1', 1)
-}
-
-function decQuantity() {
-  if (quantityNum.value !== null && quantityNum.value > 1) {
-    quantity.value = stepQuantity(quantity.value, -1)
-  }
-}
 
 function save() {
   const trimmed = label.value.trim()
@@ -83,23 +64,7 @@ function save() {
           </button>
         </div>
         <input v-model="label" class="input" type="text" placeholder="Nom de l'item" autofocus />
-        <div v-if="kind === 'product'" class="qty-row">
-          <button type="button" class="step" :disabled="!quantityNum || quantityNum <= 1" @click="decQuantity">−</button>
-          <input v-model="quantity" class="input qty-input" type="text" inputmode="numeric" placeholder="1" />
-          <button type="button" class="step" @click="incQuantity">+</button>
-          <div class="unit-tags">
-            <button
-              v-for="u in UNIT_CHOICES"
-              :key="u"
-              type="button"
-              class="unit-tag"
-              :class="{ active: (unitChoice || '-') === u }"
-              @click="setUnit(u === '-' ? '' : u)"
-            >
-              {{ u }}
-            </button>
-          </div>
-        </div>
+        <QuantityField v-if="kind === 'product'" v-model="quantity" :units="UNIT_CHOICES" />
         <button type="submit" class="submit">Enregistrer</button>
       </form>
     </div>
@@ -184,34 +149,6 @@ html[data-theme='light'] .input {
 .input:focus {
   border-color: var(--accent-dim);
 }
-.qty-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-bottom: 0.6rem;
-  flex-wrap: wrap;
-}
-.qty-input {
-  text-align: center;
-  margin-bottom: 0;
-}
-.step {
-  width: 2.4rem;
-  height: 2.4rem;
-  flex-shrink: 0;
-  border: 1px solid var(--line);
-  border-radius: 0.6rem;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--ink);
-}
-.step:active {
-  background: var(--bg-2);
-}
-.step:disabled {
-  opacity: 0.35;
-}
 .submit {
   width: 100%;
   padding: 0.65rem;
@@ -223,29 +160,3 @@ html[data-theme='light'] .input {
 }
 </style>
 
-.unit-tags {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem;
-  margin-left: 0.35rem;
-  padding: 0.25rem;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--bg-2);
-}
-.unit-tag {
-  padding: 0.25rem 0.65rem;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--ink-muted);
-  font-size: 0.72rem;
-  font-weight: 600;
-  white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
-}
-.unit-tag.active {
-  background: var(--accent);
-  color: #fff;
-}
