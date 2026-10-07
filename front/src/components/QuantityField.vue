@@ -4,8 +4,7 @@ import { parseQuantity, stepQuantity } from '../services/quantity'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
-  units: { type: Array, required: true },
-  autofocus: { type: Boolean, default: false }
+  units: { type: Array, required: true }
 })
 const emit = defineEmits(['update:modelValue'])
 
@@ -15,17 +14,20 @@ const quantityNum = computed(() => {
 })
 const unitChoice = computed(() => parseQuantity(props.modelValue).unit ?? '')
 
+function commit(n, unit) {
+  const num = n === null || n === undefined || n === '' ? 1 : n
+  emit('update:modelValue', unit ? `${num} ${unit}` : `${num}`)
+}
 function setUnit(u) {
   const unit = u === '-' ? '' : u
-  const { n } = parseQuantity(props.modelValue)
-  emit('update:modelValue', unit ? `${n ?? 1} ${unit}` : String(n ?? 1))
+  commit(quantityNum.value, unit)
 }
 function inc() {
-  emit('update:modelValue', stepQuantity(props.modelValue || '1', 1))
+  commit((quantityNum.value ?? 0) + 1, unitChoice.value)
 }
 function dec() {
   if (quantityNum.value !== null && quantityNum.value > 1) {
-    emit('update:modelValue', stepQuantity(props.modelValue, -1))
+    commit(quantityNum.value - 1, unitChoice.value)
   }
 }
 </script>
@@ -34,15 +36,7 @@ function dec() {
   <div class="qty-field">
     <div class="qty-row">
       <button type="button" class="step" :disabled="!quantityNum || quantityNum <= 1" @click="dec">−</button>
-      <input
-        :value="modelValue"
-        class="qty-input font-mono"
-        type="text"
-        inputmode="decimal"
-        placeholder="1"
-        :autofocus="autofocus"
-        @input="emit('update:modelValue', $event.target.value)"
-      />
+      <span class="qty-value font-mono">{{ quantityNum ?? 1 }}</span>
       <button type="button" class="step" @click="inc">+</button>
     </div>
     <div class="unit-tags">
@@ -64,12 +58,14 @@ function dec() {
 .qty-field {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.6rem;
 }
 .qty-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
 }
 .step {
@@ -89,21 +85,21 @@ function dec() {
 .step:disabled {
   opacity: 0.35;
 }
-.qty-input {
-  width: 4.5rem;
-  min-width: 0;
-  flex: 0 1 auto;
-  text-align: center;
-  padding: 0.4rem 0.3rem;
+.qty-value {
+  min-width: 2.5rem;
+  padding: 0.4rem 0.5rem;
   border: 1px solid var(--line);
   border-radius: 0.6rem;
-  background: var(--bg-1);
+  background: var(--bg-2);
   color: var(--ink);
+  text-align: center;
   font-size: 0.95rem;
+  font-weight: 700;
 }
 .unit-tags {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
   gap: 0.35rem;
   padding: 0.25rem;

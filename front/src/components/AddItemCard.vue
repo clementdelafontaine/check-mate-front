@@ -7,9 +7,14 @@ import { UNITS } from '../services/quantity'
 
 const props = defineProps({
   listId: { type: String, default: null },
-  templateId: { type: String, default: null }
+  templateId: { type: String, default: null },
+  recipe: { type: Boolean, default: false },
+  units: { type: Array, default: null },
+  sections: { type: Array, default: null },
+  openSectionId: { type: String, default: null }
 })
 
+const emit = defineEmits(['added'])
 const store = useChecklistsStore()
 const open = ref(false)
 const label = ref('')
@@ -19,7 +24,7 @@ const sectionChoice = ref('')
 const newSectionName = ref('')
 
 
-const UNIT_CHOICES = ['-', ...UNITS]
+const UNIT_CHOICES = props.units ?? ['-', ...UNITS]
 const KINDS = [
   { id: 'task', label: 'Tâche' },
   { id: 'product', label: 'Produit' }
@@ -30,10 +35,19 @@ const target = computed(() =>
 )
 
 watch(open, (isOpen) => {
-  if (isOpen) kind.value = props.listId ? store.defaultItemKind(props.listId) : 'task'
+  if (isOpen) {
+    kind.value = props.recipe
+      ? 'product'
+      : props.listId
+        ? store.defaultItemKind(props.listId)
+        : 'task'
+  }
 })
-const sections = computed(() => target.value?.sections ?? [])
+const sections = computed(() => props.sections ?? target.value?.sections ?? [])
 const isNewSection = computed(() => sectionChoice.value === '__new__')
+watch(open, (isOpen) => {
+  if (isOpen && props.recipe && props.openSectionId) sectionChoice.value = props.openSectionId
+})
 const newSectionPlaceholder = computed(
   () => `Nom de la catégorie ("${GENERIC_SECTION}" si vide)`
 )
@@ -95,7 +109,9 @@ async function submit() {
     sectionId = created?.id ?? ''
   }
 
-  if (props.listId) {
+  if (props.recipe) {
+    emit('added', { label: value, quantity: qty, sectionId })
+  } else if (props.listId) {
     await store.addItem(props.listId, sectionId, value, qty, kind.value)
   } else if (props.templateId) {
     await store.addTemplateItem(props.templateId, sectionId, value, qty, kind.value)
@@ -108,11 +124,11 @@ async function submit() {
   <div>
     <div v-if="open" class="form-card">
       <div class="form-head">
-        <span class="font-mono form-title">Nouvel item</span>
+        <span class="font-mono form-title">{{ props.recipe ? 'Nouvel ingrédient' : 'Nouvel item' }}</span>
         <button class="icon-btn" aria-label="Fermer" @click="close"><X :size="18" /></button>
       </div>
       <form @submit.prevent="submit">
-        <div class="kind-row">
+        <div v-if="!props.recipe" class="kind-row">
           <button
             v-for="k in KINDS"
             :key="k.id"
@@ -124,7 +140,7 @@ async function submit() {
             {{ k.label }}
           </button>
         </div>
-        <input v-model="label" class="input" type="text" placeholder="Nom de l'item" autofocus />
+        <input v-model="label" class="input" type="text" :placeholder="props.recipe ? 'Nom de l\'ingrédient' : 'Nom de l\'item'" autofocus />
         <div v-if="showSuggestions" class="suggestions">
           <button
             v-for="s in suggestions"
@@ -138,9 +154,9 @@ async function submit() {
         </div>
         <QuantityField v-if="kind === 'product'" v-model="quantity" :units="UNIT_CHOICES" />
         <select v-model="sectionChoice" class="input select">
-          <option value="" disabled>Catégorie… ({{ GENERIC_SECTION }} si vide)</option>
+          <option v-if="!props.recipe" value="" disabled>Catégorie… ({{ GENERIC_SECTION }} si vide)</option>
           <option v-for="s in sections" :key="s.id" :value="s.id">{{ s.name }}</option>
-          <option value="__new__">➕ Nouvelle catégorie…</option>
+          <option v-if="!props.recipe" value="__new__">➕ Nouvelle catégorie…</option>
         </select>
         <input
           v-if="isNewSection"
@@ -165,7 +181,7 @@ async function submit() {
     </div>
     <button v-else class="add-inline" @click="open = true">
       <span class="plus-circle">+</span>
-      <span class="add-label">Ajouter un item</span>
+      <span class="add-label">{{ props.recipe ? 'Ajouter un ingrédient' : 'Ajouter un item' }}</span>
     </button>
   </div>
 </template>
@@ -324,6 +340,18 @@ async function submit() {
 }
 .select {
   appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-muted) 50%),
+    linear-gradient(135deg, var(--ink-muted) 50%, transparent 50%);
+  background-position: calc(100% - 1.05rem) calc(50% + 0.1rem), calc(100% - 0.75rem) calc(50% + 0.1rem);
+  background-size: 0.3rem 0.3rem, 0.3rem 0.3rem;
+  background-repeat: no-repeat;
+  padding-right: 2rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+.select:focus {
+  border-color: var(--accent-dim);
 }
 .submit {
   width: 100%;

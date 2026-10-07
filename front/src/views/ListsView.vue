@@ -607,6 +607,18 @@ html[data-theme='light'] .input {
 }
 .select {
   appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-muted) 50%),
+    linear-gradient(135deg, var(--ink-muted) 50%, transparent 50%);
+  background-position: calc(100% - 1.05rem) calc(50% + 0.1rem), calc(100% - 0.75rem) calc(50% + 0.1rem);
+  background-size: 0.3rem 0.3rem, 0.3rem 0.3rem;
+  background-repeat: no-repeat;
+  padding-right: 2rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+.select:focus {
+  border-color: var(--accent-dim);
 }
 .labels-row {
   display: flex;

@@ -1,5 +1,6 @@
 <script setup>
 import QuantityField from '../components/QuantityField.vue'
+import AddItemCard from '../components/AddItemCard.vue'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useRecipesStore } from '../stores/recipes'
@@ -68,9 +69,7 @@ function toggleMetaTag(tag) {
 const EMOJIS = ['🍳', '🥘', '🍝', '🍲', '🥗', '🍛', '🥐', '🍰', '🐟', '🍗', '🥖', '🫕']
 
 // add-item inline forms (one open at a time, per section)
-const openItemFor = ref(null)
-const itemLabel = ref('')
-const itemQuantity = ref('')
+
 const RECIPE_UNIT_CHOICES = ['-', ...UNITS, 'c. à s.', 'c. à c.', 'pincée', 'botte']
 const showSectionForm = ref(false)
 const sectionName = ref('')
@@ -163,27 +162,17 @@ const sectionsPayload = () =>
     items: s.items.map((i) => ({ ...i }))
   }))
 
-const itemSectionChoice = ref(null)
-function openItemForm(sectionId) {
-  openItemFor.value = sectionId
-  itemSectionChoice.value = sectionId
-  itemLabel.value = ''
-  itemQuantity.value = ''
-}
-
-async function submitItem() {
-  const label = itemLabel.value.trim()
+async function submitItem({ label, quantity, sectionId }) {
   if (!label || !recipe.value) return
   const sections = sectionsPayload()
-  const section = sections.find((s) => s.id === itemSectionChoice.value)
+  const section = sections.find((s) => s.id === sectionId)
   if (!section) return
   section.items.push({
     id: null,
     label,
-    quantity: itemQuantity.value.trim() || null
+    quantity: quantity ?? null
   })
   await store.updateRecipe(recipe.value.id, { sections })
-  openItemFor.value = null
 }
 
 async function submitSection() {
@@ -522,20 +511,13 @@ onMounted(() => store.refresh())
           </div>
         </li>
       </ul>
-      <div v-if="openItemFor === section.id" class="form-card">
-        <form @submit.prevent="submitItem">
-          <input v-model="itemLabel" class="input" type="text" placeholder="Ingrédient" autofocus />
-          <QuantityField v-model="itemQuantity" :units="RECIPE_UNIT_CHOICES" />
-          <select v-model="itemSectionChoice" class="input select">
-            <option v-for="sec in recipe.sections" :key="sec.id" :value="sec.id">{{ sec.name }}</option>
-          </select>
-          <button type="submit" class="submit">Ajouter</button>
-        </form>
-      </div>
-      <button v-else class="add-inline" @click="openItemForm(section.id)">
-        <span class="plus-circle">+</span>
-        <span class="add-label">Ajouter un ingrédient</span>
-      </button>
+      <AddItemCard
+        :recipe="true"
+        :units="RECIPE_UNIT_CHOICES"
+        :sections="recipe.sections"
+        :open-section-id="section.id"
+        @added="submitItem"
+      />
     </section>
 
     <div v-if="showSectionForm" class="form-card">
@@ -966,6 +948,21 @@ onMounted(() => store.refresh())
   margin-bottom: 0.5rem;
 }
 .input:focus {
+  border-color: var(--accent-dim);
+}
+.select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-muted) 50%),
+    linear-gradient(135deg, var(--ink-muted) 50%, transparent 50%);
+  background-position: calc(100% - 1.05rem) calc(50% + 0.1rem), calc(100% - 0.75rem) calc(50% + 0.1rem);
+  background-size: 0.3rem 0.3rem, 0.3rem 0.3rem;
+  background-repeat: no-repeat;
+  padding-right: 2rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+.select:focus {
   border-color: var(--accent-dim);
 }
 .two-col {
