@@ -156,31 +156,95 @@ const SEED_LISTS = [
   {
     id: 'l-seed-courses',
     name: 'Courses de la semaine',
-    emoji: '🛒',
+    emoji: '\ud83d\uded2',
     type: 'grocery',
     spaceId: 'sp-seed-courses',
     startDateOffset: null,
     sections: [
       {
-        name: 'Épicerie',
+        name: 'Fruits & Légumes',
         items: [
-          { label: 'Pâtes', quantity: '500 g' },
-          { label: 'Riz', quantity: '1 kg' },
-          { label: 'Café', quantity: '250 g' },
-          { label: 'Farine', quantity: '1 kg' },
-          { label: "Huile d'olive", quantity: '75 cL' },
-          { label: 'Lait de coco', quantity: '400 mL' }
+          { label: 'Tomates', quantity: '500 g' },
+          { label: 'Courgettes', quantity: '3' },
+          { label: 'Pommes', quantity: '1 kg' },
+          { label: 'Bananes', quantity: '1' },
+          { label: 'Salade', quantity: '1' },
+          { label: 'Carottes', quantity: '1 kg' },
+          { label: 'Oignons', quantity: '1 kg' },
+          { label: 'Citrons', quantity: '3' }
         ]
       },
       {
-        name: 'Produits frais',
+        name: 'Boucherie',
+        items: [
+          { label: 'Jambon blanc', quantity: '4 tranches' },
+          { label: 'Poulet', quantity: '1' },
+          { label: 'Steak haché', quantity: '500 g' }
+        ]
+      },
+      {
+        name: 'Poissonnerie',
+        items: [
+          { label: 'Saumon', quantity: '2 tranches' },
+          { label: 'Crevettes', quantity: '300 g' }
+        ]
+      },
+      {
+        name: 'Crèmerie',
         items: [
           { label: 'Lait', quantity: '2 L' },
           { label: 'Œufs', quantity: '6' },
           { label: 'Beurre', quantity: '250 g' },
-          { label: 'Courgettes', quantity: '3' },
-          { label: 'Jambon', quantity: '4 tranches' },
-          { label: 'Pommes', quantity: '1 kg' }
+          { label: 'Yaourts', quantity: '4' },
+          { label: 'Fromage râpé', quantity: '200 g' }
+        ]
+      },
+      {
+        name: 'Boulangerie',
+        items: [
+          { label: 'Pain', quantity: '1' },
+          { label: 'Croissants', quantity: '2' }
+        ]
+      },
+      {
+        name: 'Épicerie salée',
+        items: [
+          { label: 'Pâtes', quantity: '500 g' },
+          { label: 'Riz', quantity: '1 kg' },
+          { label: 'Huile d\'olive', quantity: '75 cL' },
+          { label: 'Pois chiches', quantity: '2 boîtes' },
+          { label: 'Olives', quantity: '200 g' }
+        ]
+      },
+      {
+        name: 'Épicerie sucrée',
+        items: [
+          { label: 'Farine', quantity: '1 kg' },
+          { label: 'Sucre', quantity: '500 g' },
+          { label: 'Chocolat noir', quantity: '100 g' },
+          { label: 'Confiture', quantity: '1 pot' }
+        ]
+      },
+      {
+        name: 'Boissons',
+        items: [
+          { label: 'Café', quantity: '250 g' },
+          { label: 'Jus d\'orange', quantity: '1 L' },
+          { label: 'Eau gazeuse', quantity: '6' }
+        ]
+      },
+      {
+        name: 'Surgelés',
+        items: [
+          { label: 'Épinards', quantity: '450 g' },
+          { label: 'Frites', quantity: '750 g' }
+        ]
+      },
+      {
+        name: 'Hygiène & Entretien',
+        items: [
+          { label: 'Papier toilette', quantity: '6 rouleaux' },
+          { label: 'Liquide vaisselle', quantity: '1' }
         ]
       }
     ]
