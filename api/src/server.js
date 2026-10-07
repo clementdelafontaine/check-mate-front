@@ -1,7 +1,7 @@
 import { buildApp } from './app.js'
 import { config } from './config.js'
 import { ensureAdmin } from './auth.js'
-import { seedDemoDataForUser } from './seed.js'
+import { seedDemoDataForUser, seedUsersWithFriendships } from './seed.js'
 
 if (config.adminEmail && config.adminPassword) {
   try {
@@ -16,6 +16,13 @@ if (config.adminEmail && config.adminPassword) {
   } catch (err) {
     console.error('admin bootstrap failed (db not ready yet?)', err.message)
   }
+}
+
+try {
+  const count = await seedUsersWithFriendships()
+  if (count) console.log(`seed users ready (${count})`)
+} catch (err) {
+  console.error('seed users failed (db not ready yet?)', err.message)
 }
 
 const app = await buildApp({ logger: true })

@@ -1,4 +1,5 @@
 import { query, one, uid } from './db.js'
+import { hashPassword } from './password.js'
 
 const SEED_RECIPES = [
   {
@@ -682,6 +683,48 @@ export async function seedRecipesForUser(userId) {
     )
   }
   return true
+}
+
+export const SEED_USERS = [
+  { username: 'clement', password: 'clement1234' },
+  { username: 'laureline', password: 'laureline' }
+]
+
+export async function seedUsersWithFriendships() {
+  const created = new Map()
+  for (const { username, password } of SEED_USERS) {
+    let user = await one('SELECT * FROM users WHERE username = $1', [username])
+    if (!user) {
+      user = await one(
+        `INSERT INTO users (id, email, username, password_hash, role)
+         VALUES ($1, $2, $3, $4, 'user') RETURNING *`,
+        [uid('u'), `${username}@local`, username, await hashPassword(password)]
+      ).catch(() => null)
+      if (user) {
+        try {
+          await seedDemoDataForUser(user.id)
+        } catch {
+          /* individual demo seeding failure is not fatal */
+        }
+      }
+    }
+    if (user) created.set(username, user)
+  }
+  const clement = created.get('clement')
+  const laureline = created.get('laureline')
+  const admin = await one("SELECT * FROM users WHERE role = 'admin' LIMIT 1")
+  const pairs = []
+  if (clement && laureline) pairs.push([clement.id, laureline.id])
+  if (clement && admin) pairs.push([clement.id, admin.id])
+  for (const [a, b] of pairs) {
+    await query(
+      `INSERT INTO friendships (id, requester_id, addressee_id, status)
+       VALUES ($1, $2, $3, 'accepted')
+       ON CONFLICT (requester_id, addressee_id) DO NOTHING`,
+      [uid('f'), a, b]
+    )
+  }
+  return created.size
 }
 
 export async function seedDemoDataForUser(userId) {
