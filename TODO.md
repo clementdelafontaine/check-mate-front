@@ -2,6 +2,11 @@
 
 ## Features à implémenter
 
+### Listes — épinglage sur l'accueil
+- Pouvoir épingler une liste pour la faire apparaître en écran d'accueil (ex : via le menu « … » de la carte liste, ou un bouton punaise).
+- L'accueil affiche une section dédiée « Listes épinglées » avec les cartes des listes épinglées (emoji, nom, progression, raccourci vers la liste).
+- Réflexions préalables : persistance du pin (colonne `pinned`/`position` sur lists, par utilisateur), ordre des épinglées (glisser-déposer ?), nombre max d'épinglées affichées, et comportement des listes épinglées terminées (masquées ? conservées ?).
+
 ### Recettes — multiplicateur de portions
 - Pouvoir incrémenter le nombre de personnes directement sous le nom de la recette, avec boutons −/+.
 - Les quantités des ingrédients se multiplient proportionnellement (ex : recette 4 pers. → 6 pers. : 200 g de farine devient 300 g).
